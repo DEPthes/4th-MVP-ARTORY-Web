@@ -1,11 +1,9 @@
-import "./App.css";
+import "./index.css";
+import RootProvider from "./providers/RootProvider";
+import React from "react";
 
-function App() {
-  return (
-    <div className="bg-red-500 text-white mx-auto w-1/2 text-3xl">
-      Hello World!
-    </div>
-  );
-}
+const App: React.FC = () => {
+  return <RootProvider />;
+};
 
 export default App;
