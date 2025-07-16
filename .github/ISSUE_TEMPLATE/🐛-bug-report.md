@@ -1,7 +1,7 @@
 ---
 name: "\U0001F41B Bug Report"
 about: "[Fix] 오류/버그 수정"
-title: "[Fix]"
+title: "[Fix] "
 labels: "\U0001F41B Bug"
 assignees: ''
 
