@@ -2,7 +2,7 @@
 name: "\U0001F41B Bug Report"
 about: "[Fix] 오류/버그 수정"
 title: "[Fix] "
-labels: "\U0001F41B Bug"
+labels: "\U0001F41B Bug, ✨ Feat"
 assignees: ''
 
 ---
