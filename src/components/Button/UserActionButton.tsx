@@ -56,7 +56,7 @@ const UserActionButton: React.FC<UserActionButtonProps> = ({
 
   // 버튼 공통 스타일
   const baseClasses =
-    "flex font-asta items-center justify-center w-[223px] h-[50px] border-2 border-[#D32F2F] rounded-full";
+    "flex font-asta font-medium items-center justify-center w-[223px] h-[50px] border-2 border-[#D32F2F] rounded-full";
 
   const variantClasses = {
     following: "text-[#1D1E20] bg-[#D32F2F]/10",
