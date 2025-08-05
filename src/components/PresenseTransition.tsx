@@ -1,8 +1,8 @@
 import {
   AnimatePresence,
   motion,
-  MotionNodeAnimationOptions,
-  Transition,
+  type MotionNodeAnimationOptions,
+  type Transition,
 } from "framer-motion";
 import React, { type PropsWithChildren } from "react";
 

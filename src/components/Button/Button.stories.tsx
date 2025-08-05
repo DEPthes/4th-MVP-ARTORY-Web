@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from "@storybook/react";
 import Button from "./Button";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 
 const meta: Meta<typeof Button> = {
   title: "Components/Button",
@@ -15,7 +15,7 @@ const meta: Meta<typeof Button> = {
     },
     size: {
       control: "select",
-      options: ["sm", "md", "lg"],
+      options: ["sm", "base", "lg"],
     },
     disabled: {
       control: "boolean",
@@ -37,8 +37,11 @@ export const Default: Story = {
 // Primary 버튼
 export const Primary: Story = {
   args: {
-    children: "Primary",
+    children: "완료",
     variant: "primary",
+    className: "w-96",
+    size: "base",
+    disabled: false,
   },
 };
 
@@ -47,6 +50,8 @@ export const Secondary: Story = {
   args: {
     children: "Secondary",
     variant: "secondary",
+    className: "w-96",
+    size: "sm",
   },
 };
 
@@ -55,6 +60,8 @@ export const Disabled: Story = {
   args: {
     children: "Disabled",
     disabled: true,
+    className: "w-96",
+    size: "base",
   },
 };
 
@@ -63,13 +70,17 @@ export const Small: Story = {
   args: {
     children: "Small",
     size: "sm",
+    className: "w-96",
+    variant: "primary",
   },
 };
 
 export const Medium: Story = {
   args: {
     children: "Medium",
-    size: "md",
+    size: "base",
+    className: "w-96",
+    variant: "secondary",
   },
 };
 
@@ -77,5 +88,7 @@ export const Large: Story = {
   args: {
     children: "Large",
     size: "lg",
+    className: "w-96",
+    variant: "tertiary",
   },
 };

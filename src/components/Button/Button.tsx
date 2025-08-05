@@ -1,10 +1,15 @@
 import React from "react";
 import { cn } from "../../utils/classname";
 
+// 버튼 종류가 크게 완료버튼이랑 등록버튼이 있는데,
+// w 값과 round 값만 바꾸면 둘 다 쓸 수 있을 것 같아서,
+// 버튼 종류를 하나의 컴포넌트로 사용할 수 있게 하고, 버튼 종류를 파라미터로 받아서 처리하는 방식으로 구현하기
+// size로 받으면 될듯(완료 버튼은 base, 등록 버튼은 sm.
+
 export interface ButtonProps {
   children: React.ReactNode;
-  variant?: "primary" | "secondary";
-  size?: "sm" | "md" | "lg";
+  variant?: "primary" | "secondary" | "tertiary";
+  size?: "sm" | "base" | "lg";
   disabled?: boolean;
   loading?: boolean;
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
@@ -14,26 +19,26 @@ export interface ButtonProps {
 const Button: React.FC<ButtonProps> = ({
   children,
   variant = "primary",
-  size = "md",
+  size = "base",
   disabled = false,
   loading = false,
   onClick,
   className = "",
 }) => {
   const baseClasses =
-    "inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none active:scale-95";
+    "inline-flex items-center justify-center font-medium transition-colors focus:outline-none active:scale-95";
 
   const variantClasses = {
-    primary:
-      "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 disabled:bg-blue-300",
+    primary: "bg-zinc-900 text-white hover:bg-black disabled:bg-zinc-700",
     secondary:
-      "bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500 disabled:bg-gray-300",
+      "bg-stone-300 text-white hover:bg-stone-400 disabled:bg-stone-200",
+    tertiary: "bg-zinc-500 text-white hover:bg-zinc-600 disabled:bg-zinc-400",
   };
 
   const sizeClasses = {
-    sm: "px-3 py-2 text-sm",
-    md: "px-4 py-2 text-base",
-    lg: "px-6 py-3 text-lg",
+    sm: "px-2 py-4 text-xl rounded-full",
+    base: "p-6 text-xl rounded-lg",
+    lg: "px-2 py-8 text-2xl rounded-lg",
   };
 
   return (
