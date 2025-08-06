@@ -1,5 +1,5 @@
-import Button from "../components/Button/Button";
-import Header from "../components/Layouts/Header";
+import Button from '../components/Button/Button';
+import Header from '../components/Layouts/Header';
 
 const HomePage = () => {
   return (
