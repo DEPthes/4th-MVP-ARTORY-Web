@@ -38,7 +38,7 @@ const EntryList: React.FC<EntryListProps> = ({
   };
 
   return (
-    <div className="flex flex-col space-y-4 items-center">
+    <div className="flex flex-col gap-4 items-center">
       {entries.map(({ id, year, text, registered }) => (
         <EntryRow
           key={id}
@@ -54,7 +54,7 @@ const EntryList: React.FC<EntryListProps> = ({
       ))}
       <button
         onClick={addEntry}
-        className="flex justify-center items-center w-10 h-10 p-2.5 bg-[#D32F2F] rounded-md"
+        className="flex justify-center items-center w-10 h-10 p-2.5 bg-[#D32F2F] rounded-md cursor-pointer"
       >
         <RowPlusIcon />
       </button>
