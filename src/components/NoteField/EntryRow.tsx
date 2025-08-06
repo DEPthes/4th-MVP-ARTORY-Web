@@ -32,7 +32,7 @@ const EntryRow: React.FC<EntryRowProps> = ({
       <select
         value={year}
         onChange={(e) => onYearChange(e.target.value)}
-        className={`w-23.5 h-13.5 font-asta font-medium rounded-md px-7 py-4 bg-[#EAEBED] ${selectTextColorClass} appearance-none cursor-pointer`}
+        className={`w-23.5 h-13.5 font-asta font-medium rounded-md px-7 py-4 bg-[#EAEBED] ${selectTextColorClass} appearance-none cursor-pointer focus:outline-none`}
       >
         <option value="" disabled>
           yyyy
@@ -48,7 +48,7 @@ const EntryRow: React.FC<EntryRowProps> = ({
         value={text}
         onChange={(e) => onTextChange(e.target.value)}
         placeholder={placeholder}
-        className={`font-asta font-thin w-206.5 h-13.5 bg-[#F4F5F6] rounded-md px-5.5 py-4 ${inputTextColorClass} cursor-pointer`}
+        className={`font-asta font-thin w-206.5 h-13.5 bg-[#F4F5F6] rounded-md px-5.5 py-4 ${inputTextColorClass} cursor-pointer focus:outline-none`}
       />
       {isRegistered ? (
         <button
