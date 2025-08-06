@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import DeleteIcon from "../../assets/delete.svg?react";
 
 interface EntryRowProps {
@@ -24,15 +24,15 @@ const EntryRow: React.FC<EntryRowProps> = ({
   isRegistered,
   placeholder = "내용을 입력하세요",
 }) => {
-  const selectTextColorClass = year ? "text-[#1D1E20]" : "text-[#717478]";
-  const inputTextColorClass = text ? "text-[#1D1E20]" : "text-[#717478]";
+  const selectTextColorClass = year ? "text-zinc-900" : "text-zinc-500";
+  const inputTextColorClass = text ? "text-zinc-900" : "text-zinc-500";
 
   return (
     <div className="flex items-center space-x-3">
       <select
         value={year}
         onChange={(e) => onYearChange(e.target.value)}
-        className={`w-23.5 h-13.5 font-asta font-medium rounded-md px-7 py-4 bg-[#EAEBED] ${selectTextColorClass} appearance-none`}
+        className={`w-23.5 h-13.5 font-asta font-medium rounded-md px-7 py-4 bg-[#EAEBED] ${selectTextColorClass} appearance-none cursor-pointer`}
       >
         <option value="" disabled>
           yyyy
@@ -48,12 +48,12 @@ const EntryRow: React.FC<EntryRowProps> = ({
         value={text}
         onChange={(e) => onTextChange(e.target.value)}
         placeholder={placeholder}
-        className={`font-asta font-thin w-206.5 h-13.5 bg-[#F4F5F6] rounded-md px-5.5 py-4 ${inputTextColorClass}`}
+        className={`font-asta font-thin w-206.5 h-13.5 bg-[#F4F5F6] rounded-md px-5.5 py-4 ${inputTextColorClass} cursor-pointer`}
       />
       {isRegistered ? (
         <button
           onClick={onDelete}
-          className="flex justify-center items-center w-19 h-13.5 p-2"
+          className="flex justify-center items-center w-19 h-13.5 p-2 cursor-pointer"
         >
           <DeleteIcon />
         </button>
@@ -61,7 +61,7 @@ const EntryRow: React.FC<EntryRowProps> = ({
         <button
           onClick={onRegister}
           disabled={!year || !text}
-          className={`font-asta font-medium flex justify-center items-center w-19 h-13.5 px-6 py-4 rounded-md ${
+          className={`font-asta font-medium flex justify-center items-center w-19 h-13.5 px-6 py-4 rounded-md cursor-pointer ${
             year && text
               ? "bg-[#1D1E20] text-white"
               : "bg-[#909193] text-white cursor-not-allowed"
