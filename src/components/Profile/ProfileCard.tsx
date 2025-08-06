@@ -1,5 +1,5 @@
 import { cn } from "../../utils/classname";
-import UserActionButton from "../Button/UserActionButton";
+import UserActionButton from "../Profile/UserActionButton";
 import BaseProfileImage from "../../assets/images/BaseProfileImage.png";
 import { useState } from "react";
 
