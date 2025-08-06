@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { cn } from "../../utils/classname";
 import FieldEditIcon from "../../assets/fieldEdit.svg?react";
 import FieldPlusIcon from "../../assets/fieldPlus.svg?react";
@@ -31,7 +31,7 @@ const ProfileFieldEdit: React.FC<ProfileFieldEditProps> = ({
   const text = textMap[variant];
 
   const baseClasses =
-    "flex font-asta font-normal items-center justify-center w-[83px] h-[43px] rounded-md bg-white text-[#1D1E20] border border-[#909193]";
+    "flex font-asta font-normal items-center justify-center w-20.5 h-10.5 rounded-md bg-white text-[#1D1E20] border border-neutral-400 cursor-pointer";
 
   return (
     <button
@@ -39,7 +39,7 @@ const ProfileFieldEdit: React.FC<ProfileFieldEditProps> = ({
       className={cn(baseClasses, className)}
       onClick={onClick}
     >
-      <Icon className="mr-[6px] w-[18px] h-[18px]" />
+      <Icon className="mr-1.5 size-4.5" />
       {text}
     </button>
   );

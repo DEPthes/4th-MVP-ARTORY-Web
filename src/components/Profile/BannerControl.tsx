@@ -29,17 +29,17 @@ const BannerControl: React.FC = () => {
   };
 
   const buttonBaseClasses =
-    "flex items-center justify-center h-11 rounded-md font-asta font-bold bg-[#242121]/60 text-white border border-[#A5A6A9]";
+    "flex items-center justify-center h-11 rounded-md font-asta font-bold bg-[#242121]/60 text-white border border-zinc-400 cursor-pointer";
 
   return (
     <div className="relative">
       <img
         src={imageUrl}
         alt="배너 사진"
-        className="w-full h-[240px] object-cover"
+        className="w-full h-60 object-cover"
       />
 
-      <div className="absolute bottom-10 right-9 flex space-x-4">
+      <div className="absolute bottom-10 right-9 flex gap-4">
         <input
           type="file"
           accept="image/*"
@@ -53,7 +53,7 @@ const BannerControl: React.FC = () => {
           onClick={handleEditClick}
           type="button"
         >
-          <BannerEditIcon className="mr-[6px] w-[18px] h-[18px]" />
+          <BannerEditIcon className="mr-1.5 size-4.5" />
           배너 사진 편집
         </button>
 
@@ -62,7 +62,7 @@ const BannerControl: React.FC = () => {
           onClick={handleResetClick}
           type="button"
         >
-          <ResetIcon className="w-[18px] h-[18px]" />
+          <ResetIcon className="size-4.5" />
         </button>
       </div>
     </div>
