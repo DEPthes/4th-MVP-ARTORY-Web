@@ -64,25 +64,25 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
       <nav className="flex items-center gap-10 lg:gap-20 text-lg font-semibold">
         <button
           onClick={() => navigate("/note")}
-          className=" px-3 py-2 text-zinc-900 hover:text-red-500 transition-colors duration-200"
+          className="cursor-pointer px-3 py-2 text-zinc-900 hover:text-red-500 transition-colors duration-200"
         >
           NOTE
         </button>
         <button
           onClick={() => navigate("/collection")}
-          className=" px-3 py-2 text-zinc-900 hover:text-red-500 transition-colors duration-200"
+          className="cursor-pointer px-3 py-2 text-zinc-900 hover:text-red-500 transition-colors duration-200"
         >
           COLLECTION
         </button>
         <button
           onClick={() => navigate("/exhibition")}
-          className=" px-3 py-2 text-zinc-900 hover:text-red-500 transition-colors duration-200"
+          className="cursor-pointer px-3 py-2 text-zinc-900 hover:text-red-500 transition-colors duration-200"
         >
           EXHIBITION
         </button>
         <button
           onClick={() => navigate("/contest")}
-          className=" px-3 py-2 text-zinc-900 hover:text-red-500 transition-colors duration-200"
+          className="cursor-pointer px-3 py-2 text-zinc-900 hover:text-red-500 transition-colors duration-200"
         >
           CONTEST
         </button>
