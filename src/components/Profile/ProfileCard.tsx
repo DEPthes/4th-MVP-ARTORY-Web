@@ -13,7 +13,7 @@ interface ProfileCardProps {
   birthdate: string;
   education: string;
   phoneNumber: string;
-  email: string;
+  email?: string;
   className?: string;
   isHorizontal?: boolean;
 }
