@@ -1,27 +1,21 @@
-import React, { useState } from "react";
+import React from "react";
 import { cn } from "../../utils/classname";
 import FollowingIcon from "../../assets/following.svg?react";
 import FollowIcon from "../../assets/follow.svg?react";
 import ProfileEditIcon from "../../assets/profileEdit.svg?react";
 
 interface UserActionButtonProps {
-  initialType?: "following" | "follow" | "edit";
+  type: "following" | "follow" | "edit";
   onClick?: () => void;
   className?: string;
 }
 
 const UserActionButton: React.FC<UserActionButtonProps> = ({
-  initialType = "follow",
+  type,
   onClick,
   className = "",
 }) => {
-  const [type, setType] = useState<"following" | "follow" | "edit">(
-    initialType
-  );
-
   const handleClick = () => {
-    if (type === "following") setType("follow");
-    else if (type === "follow") setType("following");
     if (onClick) onClick();
   };
 
