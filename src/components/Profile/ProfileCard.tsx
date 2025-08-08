@@ -1,7 +1,8 @@
 import { cn } from "../../utils/classname";
 import UserActionButton from "../Profile/UserActionButton";
 import BaseProfileImage from "../../assets/images/BaseProfileImage.png";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import EditIcon from "../../assets/editIcon.svg";
 
 interface ProfileCardProps {
   role: string;
@@ -16,6 +17,7 @@ interface ProfileCardProps {
   email?: string;
   className?: string;
   isHorizontal?: boolean;
+  onImageChange?: (file: File) => void;
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({
@@ -31,15 +33,50 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   email,
   className,
   isHorizontal = false,
+  onImageChange,
 }) => {
   const [imageError, setImageError] = useState(false);
+  const [localImage, setLocalImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 이미지가 없거나 빈 문자열이거나 로딩 실패 시 기본 이미지 사용
   const profileImage =
-    image && image.trim() !== "" && !imageError ? image : BaseProfileImage;
+    localImage ||
+    (image && image.trim() !== "" && !imageError ? image : BaseProfileImage);
 
   const handleImageError = () => {
     setImageError(true);
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // 파일 유효성 검사
+      if (!file.type.startsWith("image/")) {
+        alert("이미지 파일만 업로드 가능합니다.");
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        // 5MB 제한
+        alert("파일 크기는 5MB 이하여야 합니다.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setLocalImage(result);
+        if (onImageChange) {
+          onImageChange(file);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleEditClick = () => {
+    fileInputRef.current?.click();
   };
 
   // 가로 모드일 때의 레이아웃
@@ -53,14 +90,30 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
       >
         {/* 빨간 줄 */}
 
-        <div className="flex items-start gap-7">
+        <div className="flex relative items-start gap-7">
           {/* 왼쪽 프로필 이미지 */}
-          <img
-            src={profileImage}
-            alt={nickName}
-            className="size-37.5 rounded-full flex-shrink-0"
-            onError={handleImageError}
-          />
+          <div className="relative">
+            <img
+              src={profileImage}
+              alt={nickName}
+              className="size-37.5 rounded-full flex-shrink-0"
+              onError={handleImageError}
+            />
+            {/* 수정 버튼 */}
+            <button
+              onClick={handleEditClick}
+              className="absolute bottom-2 right-2 bg-red-500 rounded-full p-2 cursor-pointer"
+            >
+              <img src={EditIcon} alt="edit" className="size-4 text-white" />
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+            />
+          </div>
 
           {/* 오른쪽 정보 */}
           <div className="flex flex-col gap-4 flex-1">
@@ -92,12 +145,28 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
       )}
     >
       <div className="flex flex-col gap-6 items-center w-full pb-12">
-        <img
-          src={profileImage}
-          alt={nickName}
-          className="size-40 rounded-full"
-          onError={handleImageError}
-        />
+        <div className="relative">
+          <img
+            src={profileImage}
+            alt={nickName}
+            className="size-40 rounded-full"
+            onError={handleImageError}
+          />
+          {/* 수정 버튼 */}
+          <button
+            onClick={handleEditClick}
+            className="absolute bottom-2 right-2 bg-red-600 rounded-full p-2 cursor-pointer"
+          >
+            <img src={EditIcon} alt="edit" className="size-fit" />
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="hidden"
+          />
+        </div>
 
         <div className="flex flex-col gap-2 items-center text-center">
           <div className="text-lg text-zinc-500">{role}</div>
