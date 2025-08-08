@@ -18,6 +18,7 @@ interface ProfileCardProps {
   className?: string;
   isHorizontal?: boolean;
   onImageChange?: (file: File) => void;
+  isMyProfile: boolean;
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({
@@ -34,6 +35,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   className,
   isHorizontal = false,
   onImageChange,
+  isMyProfile,
 }) => {
   const [imageError, setImageError] = useState(false);
   const [localImage, setLocalImage] = useState<string | null>(null);
@@ -77,6 +79,15 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
 
   const handleEditClick = () => {
     fileInputRef.current?.click();
+  };
+
+  // 팔로우 상태 예시 (실제론 API 연동 필요)
+  const [isFollowing, setIsFollowing] = useState(false);
+
+  // 팔로우/팔로잉 토글 함수
+  const toggleFollow = () => {
+    setIsFollowing((prev) => !prev);
+    // 서버 로직 추가
   };
 
   // 가로 모드일 때의 레이아웃
@@ -153,12 +164,14 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             onError={handleImageError}
           />
           {/* 수정 버튼 */}
-          <button
-            onClick={handleEditClick}
-            className="absolute bottom-2 right-2 bg-red-600 rounded-full p-2 cursor-pointer"
-          >
-            <img src={EditIcon} alt="edit" className="size-fit" />
-          </button>
+          {isMyProfile && (
+            <button
+              onClick={handleEditClick}
+              className="absolute bottom-2 right-2 bg-[#D32F2F] rounded-full p-2 cursor-pointer"
+            >
+              <img src={EditIcon} alt="edit" className="size-fit" />
+            </button>
+          )}
           <input
             ref={fileInputRef}
             type="file"
@@ -182,7 +195,22 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             <span className="font-medium text-zinc-900">{following}</span>
           </div>
         </div>
-        <UserActionButton className="w-full" />
+        {/* 내 프로필이면 편집 버튼, 아니면 팔로우/팔로잉 버튼 */}
+        {isMyProfile ? (
+          <UserActionButton
+            type="edit"
+            className="w-full"
+            onClick={() => {
+              console.log("프로필 편집 클릭");
+            }}
+          />
+        ) : (
+          <UserActionButton
+            type={isFollowing ? "following" : "follow"}
+            className="w-full"
+            onClick={toggleFollow}
+          />
+        )}
         <div className="font-light text-zinc-900 text-center break-words px-3">
           {introduction}
         </div>
