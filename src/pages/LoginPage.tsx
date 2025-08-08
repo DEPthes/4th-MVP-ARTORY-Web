@@ -5,6 +5,7 @@ import { authService } from "../apis";
 import { Header } from "../components";
 import loginBackground from "../assets/images/BackGround.png";
 import googleLogo from "../assets/google.svg";
+import { isDevelopmentMode, mockAuth } from "../utils/mockAuth";
 
 const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -39,6 +40,38 @@ const LoginPage = () => {
     }
   };
 
+  // Mock 로그인 (신규 사용자)
+  const handleMockLoginNew = async () => {
+    setIsLoading(true);
+    try {
+      const result = await mockAuth.mockGoogleLogin(true);
+      if (result.success && result.data) {
+        window.location.href = "/signup/job";
+      }
+    } catch (error) {
+      console.error("Mock login error:", error);
+      alert("Mock 로그인에 실패했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Mock 로그인 (기존 사용자)
+  const handleMockLoginExisting = async () => {
+    setIsLoading(true);
+    try {
+      const result = await mockAuth.mockGoogleLogin(false);
+      if (result.success && result.data) {
+        window.location.href = "/";
+      }
+    } catch (error) {
+      console.error("Mock login error:", error);
+      alert("Mock 로그인에 실패했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="relative min-h-screen bg-white">
       <Header />
@@ -58,7 +91,7 @@ const LoginPage = () => {
         <div className="text-zinc-900 font-semibold text-xl mb-10">
           로그인하고 아토리를 시작해보세요!
         </div>
-        <div className="rounded-lg z-10 w-full max-w-md">
+        <div className="rounded-lg z-10 w-full max-w-md space-y-4">
           <Button
             className="w-full bg-white border p-6 border-stone-300 hover:bg-gray-50 flex items-center justify-center gap-4"
             onClick={handleGoogleLogin}
@@ -70,6 +103,35 @@ const LoginPage = () => {
               Google 계정으로 로그인
             </span>
           </Button>
+
+          {/* 개발 모드일 때만 Mock 버튼들 표시 */}
+          {isDevelopmentMode() && (
+            <>
+              <div className="border-t border-gray-200 my-4 pt-4">
+                <p className="text-center text-sm text-gray-500 mb-3">
+                  🎭 개발 모드 - Mock 로그인
+                </p>
+                <div className="space-y-2">
+                  <Button
+                    className="w-full bg-blue-500 text-white p-3 hover:bg-blue-600"
+                    onClick={handleMockLoginNew}
+                    loading={isLoading}
+                    disabled={isLoading}
+                  >
+                    Mock 로그인 (신규 사용자)
+                  </Button>
+                  <Button
+                    className="w-full bg-green-500 text-white p-3 hover:bg-green-600"
+                    onClick={handleMockLoginExisting}
+                    loading={isLoading}
+                    disabled={isLoading}
+                  >
+                    Mock 로그인 (기존 사용자)
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
       <img

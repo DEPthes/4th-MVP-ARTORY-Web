@@ -1,4 +1,5 @@
 import apiClient from "./client";
+import { isDevelopmentMode, mockAuth } from "../utils/mockAuth";
 
 export interface GoogleAuthResponse {
   accessToken: string;
@@ -8,6 +9,14 @@ export interface GoogleAuthResponse {
     email: string;
     name: string;
     picture?: string;
+    job?: string;
+    nickname?: string;
+    bio?: string;
+    experience?: string;
+    interests?: string[];
+    website?: string;
+    instagram?: string;
+    profileCompleted?: boolean;
   };
   isNewUser?: boolean; // 최초 가입자인지 여부
 }
@@ -21,6 +30,12 @@ export interface LoginResponse {
 class AuthService {
   // 구글 로그인 처리
   async googleLogin(accessToken: string): Promise<LoginResponse> {
+    // Mock 모드인 경우
+    if (isDevelopmentMode()) {
+      console.log("🎭 Mock 모드: 구글 로그인 시뮬레이션");
+      return await mockAuth.mockGoogleLogin(true); // 기본적으로 새 사용자로 시뮬레이션
+    }
+
     try {
       const response = await apiClient.post<GoogleAuthResponse>(
         "/api/auth/google",
@@ -48,13 +63,24 @@ class AuthService {
 
   // 로그아웃
   logout(): void {
+    if (isDevelopmentMode()) {
+      console.log("🎭 Mock 모드: 로그아웃");
+      mockAuth.logout();
+      return;
+    }
+
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
-    window.location.href = "/login";
   }
 
   // 현재 사용자 정보 가져오기
   async getCurrentUser() {
+    // Mock 모드인 경우
+    if (isDevelopmentMode()) {
+      console.log("🎭 Mock 모드: 사용자 정보 조회");
+      return await mockAuth.getCurrentUser();
+    }
+
     try {
       const response = await apiClient.get("/api/auth/me");
       return response.data;
@@ -66,6 +92,12 @@ class AuthService {
 
   // 토큰 갱신
   async refreshToken(): Promise<boolean> {
+    // Mock 모드인 경우
+    if (isDevelopmentMode()) {
+      console.log("🎭 Mock 모드: 토큰 갱신 시뮬레이션");
+      return true;
+    }
+
     try {
       const refreshToken = localStorage.getItem("refreshToken");
       if (!refreshToken) return false;
@@ -85,6 +117,9 @@ class AuthService {
 
   // 로그인 상태 확인
   isLoggedIn(): boolean {
+    if (isDevelopmentMode()) {
+      return mockAuth.isLoggedIn();
+    }
     return !!localStorage.getItem("accessToken");
   }
 

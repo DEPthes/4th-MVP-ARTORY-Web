@@ -80,7 +80,7 @@ Authorization: Bearer {access_token}
 }
 ```
 
-### 4. 프로필 완료 (직업 설정)
+### 4. 프로필 완료 (확장된 프로필 설정)
 
 **POST** `/api/auth/complete-profile`
 
@@ -94,7 +94,13 @@ Authorization: Bearer {access_token}
 
 ```json
 {
-  "job": "artist"
+  "job": "artist",
+  "nickname": "아트마스터",
+  "bio": "현대 미술을 사랑하는 아티스트입니다.",
+  "experience": "개인전 3회, 그룹전 10회 참여 경험",
+  "interests": ["회화", "조각", "현대미술"],
+  "website": "https://myartwebsite.com",
+  "instagram": "artmaster123"
 }
 ```
 
@@ -113,6 +119,35 @@ Authorization: Bearer {access_token}
 {
   "success": false,
   "message": "프로필 설정에 실패했습니다."
+}
+```
+
+### 5. 사용자 프로필 조회 (확장)
+
+**GET** `/api/auth/me`
+
+**Headers:**
+
+```
+Authorization: Bearer {access_token}
+```
+
+**Response:**
+
+```json
+{
+  "id": "user_id",
+  "email": "user@example.com",
+  "name": "사용자 이름",
+  "picture": "https://profile_image_url",
+  "job": "artist",
+  "nickname": "아트마스터",
+  "bio": "현대 미술을 사랑하는 아티스트입니다.",
+  "experience": "개인전 3회, 그룹전 10회 참여 경험",
+  "interests": ["회화", "조각", "현대미술"],
+  "website": "https://myartwebsite.com",
+  "instagram": "artmaster123",
+  "profileCompleted": true
 }
 ```
 
@@ -181,7 +216,21 @@ CREATE TABLE users (
     name VARCHAR(255) NOT NULL,
     picture VARCHAR(500),
     job VARCHAR(50),
+    nickname VARCHAR(100),
+    bio TEXT,
+    experience TEXT,
+    website VARCHAR(500),
+    instagram VARCHAR(100),
+    profile_completed BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE user_interests (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    interest VARCHAR(100) NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_user_interest (user_id, interest)
 );
 ```
