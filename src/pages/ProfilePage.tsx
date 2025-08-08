@@ -450,7 +450,7 @@ const ProfilePage: React.FC = () => {
                   ))
                 ) : (
                   <div
-                    className="col-span-3 mt-35 flex flex-col justify-center items-center py-10 text-[#717478] font-normal whitespace-pre-line text-center px-6"
+                    className="col-span-3 mt-30 flex flex-col justify-center items-center pb-10 text-[#717478] font-normal whitespace-pre-line text-center px-6"
                     style={{ minHeight: "150px" }}
                   >
                     {/* isMyProfile에 따라 다른 메시지 출력 */}
