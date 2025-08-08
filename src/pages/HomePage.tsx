@@ -1,9 +1,9 @@
-import Button from '../components/Button/Button';
-import Header from '../components/Layouts/Header';
+import Button from "../components/Button/Button";
+import Header from "../components/Layouts/Header";
 
 const HomePage = () => {
   return (
-    <div className="min-h-screen bg-gray-white">
+    <div className="min-h-screen bg-white">
       <Header />
       <div className="flex flex-col items-center justify-center h-full min-h-[calc(100vh-4rem)]">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">HomePage</h1>
