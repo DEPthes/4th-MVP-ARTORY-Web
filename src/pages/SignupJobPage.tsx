@@ -85,11 +85,12 @@ const SignupJobPage = () => {
       </div>
       <div className="w-178">
         <Button
-          className="w-full disabled:bg-stone-300"
+          className="w-full disabled:bg-stone-300 transition-all duration-300"
           variant="primary"
           size="base"
           loading={isLoading}
           disabled={!selectedJob || isLoading}
+          onClick={handleSubmit}
         >
           {isLoading ? "설정 중..." : "완료"}
         </Button>

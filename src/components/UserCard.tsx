@@ -4,6 +4,7 @@ import {
   type UserJobType,
 } from "../types/user";
 import { cn } from "../utils/classname";
+import Checkbox from "./Checkbox/Checkbox";
 
 export interface UserCardProps {
   job: UserJobType;
@@ -24,8 +25,7 @@ const UserCard: React.FC<UserCardProps> = ({
     }
   };
 
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.stopPropagation();
+  const handleCheckboxChange = () => {
     if (onSelect) {
       onSelect(job);
     }
@@ -47,37 +47,12 @@ const UserCard: React.FC<UserCardProps> = ({
     >
       <div className="flex flex-col flex-1 items-start px-10 py-8 gap-14">
         <div className="flex items-center gap-4">
-          {/* 커스텀 체크박스 */}
-          <div className="relative">
-            <input
-              type="checkbox"
+          <div onClick={(e) => e.stopPropagation()}>
+            <Checkbox
+              label=""
               checked={isSelected}
               onChange={handleCheckboxChange}
-              className="sr-only"
             />
-            <div
-              className={`size-6 rounded-[0.3rem] border-2 flex items-center justify-center transition-all cursor-pointer ${
-                isSelected
-                  ? "bg-red-600 border-red-600"
-                  : "bg-neutral-200 border-neutral-200"
-              }`}
-            >
-              {isSelected && (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="21"
-                  viewBox="0 0 20 21"
-                  fill="none"
-                >
-                  <path
-                    d="M2 10.1004L8.15833 16.1004L18 4.90039"
-                    stroke="white"
-                    stroke-width="1.8"
-                  />
-                </svg>
-              )}
-            </div>
           </div>
           <div className="font-semibold text-xl text-zinc-900">{job}</div>
         </div>
