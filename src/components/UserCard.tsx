@@ -37,10 +37,10 @@ const UserCard: React.FC<UserCardProps> = ({
   return (
     <div
       className={cn(
-        "w-full flex flex-col border-2 border-gray-100 bg-gray-100 rounded-lg cursor-pointer transition-all",
+        "w-full flex flex-col bg-gray-100 rounded-lg cursor-pointer transition-all",
         className,
         isSelected
-          ? "border-2 border-red-600"
+          ? "ring-2 ring-red-600"
           : "hover:bg-red-200 hover:border-red-200"
       )}
       onClick={handleClick}

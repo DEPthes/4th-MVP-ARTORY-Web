@@ -68,32 +68,34 @@ const SignupJobPage = () => {
   return (
     <div className="flex flex-col items-center justify-center bg-white">
       <Header />
-      <p className="text-[1.75rem] font-bold text-neutral-900 mt-36 mb-20">
-        당신의 활동 분야를 알려주세요 <span className="text-red-600">*</span>
-      </p>
+      <div className="py-20 flex flex-col items-center">
+        <p className="text-[1.75rem] font-bold text-neutral-900 mb-20">
+          당신의 활동 분야를 알려주세요 <span className="text-red-600">*</span>
+        </p>
 
-      <div className="grid grid-cols-3 gap-6 mb-8">
-        {jobOptions.map((job) => (
-          <UserCard
-            key={job}
-            job={job}
-            isSelected={selectedJob === job}
-            onSelect={handleJobSelect}
-            className="w-80"
-          />
-        ))}
-      </div>
-      <div className="w-178">
-        <Button
-          className="w-full disabled:bg-stone-300 transition-all duration-300"
-          variant="primary"
-          size="base"
-          loading={isLoading}
-          disabled={!selectedJob || isLoading}
-          onClick={handleSubmit}
-        >
-          {isLoading ? "설정 중..." : "완료"}
-        </Button>
+        <div className="grid grid-cols-3 gap-6 mb-20">
+          {jobOptions.map((job) => (
+            <UserCard
+              key={job}
+              job={job}
+              isSelected={selectedJob === job}
+              onSelect={handleJobSelect}
+              className="w-80"
+            />
+          ))}
+        </div>
+        <div className="w-178">
+          <Button
+            className="w-full disabled:bg-stone-300 transition-all duration-300"
+            variant="primary"
+            size="base"
+            loading={isLoading}
+            disabled={!selectedJob || isLoading}
+            onClick={handleSubmit}
+          >
+            {isLoading ? "설정 중..." : "완료"}
+          </Button>
+        </div>
       </div>
     </div>
   );
