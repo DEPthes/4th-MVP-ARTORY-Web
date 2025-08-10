@@ -8,7 +8,7 @@ import { cn } from "../../utils/classname";
 
 export interface ButtonProps {
   children: React.ReactNode;
-  variant?: "primary" | "secondary" | "tertiary";
+  variant?: "primary" | "secondary" | "tertiary" | "neutral";
   size?: "sm" | "base" | "lg";
   disabled?: boolean;
   loading?: boolean;
@@ -33,6 +33,8 @@ const Button: React.FC<ButtonProps> = ({
     secondary:
       "bg-stone-300 text-white hover:bg-stone-400 disabled:bg-stone-200",
     tertiary: "bg-zinc-500 text-white hover:bg-zinc-600 disabled:bg-zinc-400",
+    neutral:
+      "bg-neutral-400 text-white hover:bg-neutral-500 disabled:bg-stone-200",
   };
 
   const sizeClasses = {
