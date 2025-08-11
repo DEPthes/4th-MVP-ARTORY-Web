@@ -29,7 +29,7 @@ const MOCK_TOKEN_KEY = "mockAccessToken";
 
 export const mockAuth = {
   // Mock 로그인 (새 사용자 시뮬레이션)
-  async mockGoogleLogin(isNewUser: boolean = true): Promise<any> {
+  async mockGoogleLogin(isNewUser: boolean = false): Promise<any> {
     const mockUser: MockUser = {
       id: "mock_user_" + Date.now(),
       email: "test@artory.com",

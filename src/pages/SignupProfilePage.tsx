@@ -7,6 +7,7 @@ import type { GoogleAuthResponse } from "../apis/auth";
 import { Header } from "../components";
 import { UserJob } from "../types/user";
 import { useNavigate } from "react-router-dom";
+import { isDevelopmentMode } from "../utils/mockAuth";
 
 // 작가/컬렉터용 폼 데이터
 interface ArtistCollectorFormData {
@@ -77,6 +78,20 @@ const SignupProfilePage = () => {
 
   useEffect(() => {
     const loadUserInfo = async () => {
+      // 개발 모드에서는 인증 체크 우회
+      if (isDevelopmentMode()) {
+        console.log("🎭 개발 모드: SignupProfilePage 인증 체크 우회");
+        setUserInfo({
+          id: "dev-user",
+          email: "dev@example.com",
+          name: "개발자",
+        });
+        // 개발 모드에서는 기본 직업을 설정하거나 localStorage에서 가져오기
+        const job = localStorage.getItem("selectedJob") || "Young Artist";
+        setSelectedJob(job);
+        return;
+      }
+
       const user = await authService.getCurrentUser();
       if (!user) {
         window.location.href = "/login";
