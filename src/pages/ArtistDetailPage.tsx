@@ -8,6 +8,7 @@ import DisplayEntry from "../components/Profile/DisplayEntry";
 import ArtworkCard from "../components/ArtworkCard";
 import TagFilterBar from "../components/Profile/TagFilterBar";
 import { useParams } from "react-router-dom";
+import BackNavigate from "../components/Layouts/BackNavigate";
 
 const artistTabs = [
   { id: "artistNote", label: "작가노트" },
@@ -109,8 +110,20 @@ const noContentMessages = {
   },
 };
 
+interface ArtistData {
+  role: string;
+  nickName: string;
+  phoneNumber: string;
+  email: string;
+  introduction: string;
+  birthdate: string;
+  education: string;
+  followers: number;
+  following: number;
+}
+
 // Mock 작가 데이터 (실제로는 API에서 가져와야 함)
-const mockArtistData: Record<string, any> = {
+const mockArtistData: Record<string, ArtistData> = {
   "1": {
     role: "작가",
     nickName: "김아티스트",
@@ -194,6 +207,12 @@ const ArtistDetailPage: React.FC = () => {
     <>
       <Header />
       <div className="relative">
+        <BackNavigate
+          pathname="/note"
+          text="작가노트"
+          variant="primary"
+          className="absolute z-10"
+        />
         <BannerControl isMyProfile={isMyProfile} />
         <ProfileCard
           role={artistData.role}
