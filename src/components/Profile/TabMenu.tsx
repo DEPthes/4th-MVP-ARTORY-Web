@@ -24,7 +24,7 @@ const TabMenu: React.FC<TabMenuProps> = ({
           key={tab.id}
           className={cn(
             "p-[8px]",
-            "flex items-center justify-center text-center",
+            "flex items-center justify-center text-center cursor-pointer",
             "focus:outline-none transition-colors",
             tab.id === selectedTabId
               ? "border-b-2 border-[#D32F2F] text-[#D32F2F] font-semibold"
