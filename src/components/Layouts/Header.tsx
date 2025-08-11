@@ -182,7 +182,7 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
           <div className="flex justify-end items-center">
             <button
               onClick={closeSidebar}
-              className="p-2 rounded-md hover:bg-gray-100 focus:outline-none"
+              className="p-2 rounded-md cursor-pointer focus:outline-none"
               aria-label="메뉴 닫기"
             >
               <div className="">

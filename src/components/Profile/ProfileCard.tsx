@@ -8,16 +8,17 @@ interface ProfileCardProps {
   role: string;
   nickName: string;
   image?: string;
-  followers: number;
-  following: number;
-  introduction: string;
-  birthdate: string;
-  education: string;
+  followers?: number;
+  following?: number;
+  introduction?: string;
+  birthdate?: string;
+  education?: string;
   phoneNumber: string;
   email?: string;
   className?: string;
   isHorizontal?: boolean;
   onImageChange?: (file: File) => void;
+  onClick?: () => void;
   isMyProfile: boolean;
 }
 
@@ -35,6 +36,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   className,
   isHorizontal = false,
   onImageChange,
+  onClick,
   isMyProfile,
 }) => {
   const [imageError, setImageError] = useState(false);
@@ -95,9 +97,11 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     return (
       <div
         className={cn(
-          "flex flex-col w-full border-t-2 py-8 border-red-600",
+          "flex flex-col w-full border-t-2 py-8 border-red-600 hover:bg-red-50",
+          onClick && "cursor-pointer",
           className
         )}
+        onClick={onClick}
       >
         {/* 빨간 줄 */}
 
@@ -111,12 +115,14 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
               onError={handleImageError}
             />
             {/* 수정 버튼 */}
-            <button
-              onClick={handleEditClick}
-              className="absolute bottom-2 right-2 bg-red-500 rounded-full p-2 cursor-pointer"
-            >
-              <img src={EditIcon} alt="edit" className="size-4 text-white" />
-            </button>
+            {isMyProfile && (
+              <button
+                onClick={handleEditClick}
+                className="absolute bottom-2 right-2 bg-red-500 rounded-full p-2 cursor-pointer"
+              >
+                <img src={EditIcon} alt="edit" className="size-4 text-white" />
+              </button>
+            )}
             <input
               ref={fileInputRef}
               type="file"
@@ -152,8 +158,10 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     <div
       className={cn(
         "flex flex-col items-center justify-center w-56",
+        onClick && "cursor-pointer hover:shadow-md transition-shadow",
         className
       )}
+      onClick={onClick}
     >
       <div className="flex flex-col gap-6 items-center w-full pb-12">
         <div className="relative">
