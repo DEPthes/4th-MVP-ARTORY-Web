@@ -3,7 +3,7 @@ import { cn } from "../../utils/classname";
 import DatePicker from "../DatePicker/DatePicker";
 
 interface InputProps {
-  label: string;
+  label?: string;
   value: string;
   onChange: (value: string) => void;
   type?: "text" | "email" | "tel" | "date" | "url";

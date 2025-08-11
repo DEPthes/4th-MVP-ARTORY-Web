@@ -13,8 +13,15 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
   const navigate = useNavigate();
 
   const handleSearch = () => {
-    // 검색 로직 구현
-    console.log("Searching for:", searchQuery);
+    if (searchQuery.trim()) {
+      navigate(`/search?query=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
   };
 
   const handleLogout = () => {
@@ -121,6 +128,7 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
               className="block w-90 pl-10 pr-3 py-3 text-xs rounded-md bg-gray-200 focus:outline-none"
               placeholder="검색어를 입력하세요..."
             />
