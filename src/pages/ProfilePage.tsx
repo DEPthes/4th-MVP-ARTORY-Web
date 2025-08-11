@@ -9,6 +9,7 @@ import EntryList from "../components/NoteField/EntryList";
 import type { Entry } from "../components/NoteField/EntryList";
 import ArtworkCard from "../components/ArtworkCard";
 import TagFilterBar from "../components/Profile/TagFilterBar";
+import { useParams } from "react-router-dom";
 
 const artistTabs = [
   { id: "artistNote", label: "작가노트" },
@@ -144,6 +145,8 @@ const noContentMessages = {
 };
 
 const ProfilePage: React.FC = () => {
+  const { userId } = useParams<{ userId: string }>();
+
   const [userRole, setUserRole] = useState<"artist" | "gallery" | "collector">(
     "artist" // 이 부분에서 역할 바꾸면서 테스트
   );
@@ -160,7 +163,8 @@ const ProfilePage: React.FC = () => {
 
   // 임시 유저 정보 (API 전용)
   const nickname = "고은";
-  const isMyProfile = true; // 내 프로필인지 여부
+  const currentUserId = "current-user-id"; // 실제로는 auth context에서 가져와야 함
+  const isMyProfile = userId === currentUserId; // URL의 userId와 현재 사용자 ID 비교
   const [isEditing, setIsEditing] = useState(false);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
 

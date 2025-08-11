@@ -15,7 +15,7 @@ const TagFilterBar: React.FC<TagFilterBarProps> = ({
     <div className="flex gap-4 pt-2 py-6">
       {/* 전체 버튼 */}
       <button
-        className={`p-2 font-normal ${
+        className={`p-2 font-normal cursor-pointer ${
           selectedTag === null ? "text-[#1D1E20]" : "text-[#A5A6A9]"
         }`}
         onClick={() => onTagSelect(null)}
@@ -29,7 +29,7 @@ const TagFilterBar: React.FC<TagFilterBarProps> = ({
         tags.map((tag) => (
           <button
             key={tag}
-            className={`p-2 font-normal ${
+            className={`p-2 font-normal cursor-pointer ${
               selectedTag === tag ? "text-[#1D1E20]" : "text-[#A5A6A9]"
             }`}
             onClick={() => onTagSelect(tag)}
