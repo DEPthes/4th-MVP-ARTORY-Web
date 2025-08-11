@@ -5,6 +5,7 @@ import type { GoogleAuthResponse } from "../apis/auth";
 import UserCard from "../components/UserCard";
 import { UserJob, type UserJobType } from "../types/user";
 import { Header } from "../components";
+import { isDevelopmentMode } from "../utils/mockAuth";
 
 const SignupJobPage = () => {
   const [selectedJob, setSelectedJob] = useState<UserJobType | "">("");
@@ -16,6 +17,17 @@ const SignupJobPage = () => {
   useEffect(() => {
     // 로그인된 사용자 정보 가져오기
     const loadUserInfo = async () => {
+      // 개발 모드에서는 인증 체크 우회
+      if (isDevelopmentMode()) {
+        console.log("🎭 개발 모드: SignupJobPage 인증 체크 우회");
+        setUserInfo({
+          id: "dev-user",
+          email: "dev@example.com",
+          name: "개발자",
+        });
+        return;
+      }
+
       const user = await authService.getCurrentUser();
       if (!user) {
         // 로그인되지 않은 경우 로그인 페이지로 리다이렉트

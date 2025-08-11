@@ -1,18 +1,23 @@
 import { useState, useEffect } from "react";
-import Button from "../components/Button/Button";
 import Header from "../components/Layouts/Header";
 import { authService } from "../apis";
-import type { GoogleAuthResponse } from "../apis/auth";
+import InfoCard from "../components/InfoCard";
+import { UserJob } from "../types/user";
+import { isDevelopmentMode } from "../utils/mockAuth";
 
 const HomePage = () => {
-  const [userInfo, setUserInfo] = useState<GoogleAuthResponse["user"] | null>(
-    null
-  );
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const checkUserStatus = async () => {
       try {
+        // 개발 모드에서는 인증 체크 우회
+        if (isDevelopmentMode()) {
+          console.log("🎭 개발 모드: 인증 체크 우회");
+          setIsLoading(false);
+          return;
+        }
+
         // 로그인 상태 확인
         if (!authService.isLoggedIn()) {
           window.location.href = "/login";
@@ -40,8 +45,6 @@ const HomePage = () => {
           window.location.href = "/signup/profile";
           return;
         }
-
-        setUserInfo(user);
       } catch (error) {
         console.error("User status check error:", error);
         window.location.href = "/login";
@@ -52,11 +55,6 @@ const HomePage = () => {
 
     checkUserStatus();
   }, []);
-
-  const handleLogout = () => {
-    authService.logout();
-    window.location.href = "/login";
-  };
 
   if (isLoading) {
     return (
@@ -69,31 +67,49 @@ const HomePage = () => {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      <div className="flex flex-col items-center justify-center h-full min-h-[calc(100vh-4rem)]">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            환영합니다, {userInfo?.name}님!
-          </h1>
-          <p className="text-gray-600">ARTORY에 성공적으로 로그인되었습니다.</p>
+      <div className="relative z-10 min-h-[calc(100vh-5rem)] py-30 flex flex-col items-center">
+        <div className="text-lg font-light text-zinc-900">
+          청년 작가의 꿈과 컬렉터의 감각이 만나는 곳
         </div>
-
-        <div className="flex flex-col gap-4 mt-8">
-          <Button size="lg" variant="primary">
-            작품 둘러보기
-          </Button>
-          <Button size="lg" variant="secondary">
-            내 프로필 보기
-          </Button>
-          <Button size="sm" variant="tertiary" onClick={handleLogout}>
-            로그아웃
-          </Button>
+        <div className="bg-zinc-400 w-28 h-0.5 my-16"></div>
+        <div className="text-[2rem] font-bold text-red-600 mb-12">ARTORY</div>
+        <div className="text-xl font-light leading-10 text-zinc-900 text-center mb-30">
+          <span className="font-bold">아토리(ARTORY)</span>는 예술(ART)과
+          이야기(STORY)의 합성어로,
+          <br />
+          청년 작가와 MZ세대를 연결해, 누구나 예술을 사고 즐기고 나누는 참여형
+          예술 플랫폼입니다.
         </div>
-
-        {/* 개발용 테스트 버튼들 (나중에 제거 가능) */}
-        <div className="flex gap-2 mt-10 opacity-50">
-          <Button size="sm">Test 버튼</Button>
-          <Button variant="secondary">Second</Button>
-          <Button loading>로딩하는 버튼</Button>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl w-full px-4">
+          <InfoCard
+            job={UserJob.YOUNG_ARTIST}
+            description1="작가 포트폴리오"
+            description2="전시 홍보"
+          />
+          <InfoCard
+            job={UserJob.ART_COLLECTOR}
+            description1="청년 작가 탐색"
+            description2="작품 아카이빙"
+          />
+          <InfoCard
+            job={UserJob.GALLERY}
+            description1="청년 작가 발굴"
+            description2="전시 및 공모전 홍보"
+          />
+        </div>
+        <div className="flex flex-col items-center mt-30">
+          <p className="text-xl font-light text-zinc-900">
+            청년 작가를 위한 포트폴리오, 아트컬렉터를 위한 작품 추천, 갤러리를
+            위한 작가 발굴
+          </p>
+          <div className="bg-stone-300 w-0.5 h-5 my-10" />
+          <p className="text-xl font-light text-zinc-900">
+            모두를 연결하는 아트 플랫폼
+          </p>
+          <div className="bg-zinc-400 w-28 h-0.5 my-16"></div>
+          <p className="text-2xl font-semibold text-zinc-900">
+            작품 그 너머의 이야기까지, 아토리에서 작가와 직접 나눠보세요
+          </p>
         </div>
       </div>
     </div>
