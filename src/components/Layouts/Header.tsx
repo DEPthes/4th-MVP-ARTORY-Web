@@ -182,24 +182,31 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
           <div className="flex justify-end items-center">
             <button
               onClick={closeSidebar}
-              className="p-1 rounded-md hover:bg-gray-100 focus:outline-none"
+              className="p-2 rounded-md hover:bg-gray-100 focus:outline-none"
               aria-label="메뉴 닫기"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 20 20"
-                fill="none"
-              >
-                <path
-                  d="M15 5L5 15M5 5L15 15"
-                  stroke="#374151"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <div className="">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="22"
+                  height="21"
+                  viewBox="0 0 22 21"
+                  fill="none"
+                >
+                  <path
+                    d="M1.98145 19.604L19.6039 1.9815"
+                    stroke="#D32F2F"
+                    stroke-width="2"
+                    stroke-linecap="square"
+                  />
+                  <path
+                    d="M2.39551 1.98145L20.018 19.6039"
+                    stroke="#1D1E20"
+                    stroke-width="2"
+                    stroke-linecap="square"
+                  />
+                </svg>
+              </div>
             </button>
           </div>
         </div>
@@ -224,7 +231,7 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
                 navigate("/");
                 closeSidebar();
               }}
-              className="w-full flex items-center justify-center font-semibold px-4 py-3 text-zinc-900 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+              className="w-full flex items-center justify-center cursor-pointer font-semibold px-4 py-3 text-zinc-900 hover:bg-gray-100 rounded-lg transition-colors duration-200"
             >
               아토리 가이드
             </button>
@@ -234,7 +241,7 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
                 navigate("/profile");
                 closeSidebar();
               }}
-              className="w-full flex justify-center font-semibold items-center px-4 py-3 text-zinc-900 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+              className="w-full flex justify-center font-semibold cursor-pointer items-center px-4 py-3 text-zinc-900 hover:bg-gray-100 rounded-lg transition-colors duration-200"
             >
               마이페이지
             </button>
@@ -248,7 +255,7 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
               handleLogout();
               closeSidebar();
             }}
-            className="w-fit flex items-center justify-center px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+            className="w-fit flex items-center justify-center cursor-pointer px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
           >
             로그아웃
           </button>
