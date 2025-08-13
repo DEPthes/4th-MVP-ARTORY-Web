@@ -10,10 +10,12 @@ import ExhibitionPage from "../pages/ExhibitionPage"; // ⬅️ 새로 추가
 import ContestPage from "../pages/ContestPage";
 import ArtistNotePage from "../pages/ArtistNotePage";
 import SearchResultPage from "../pages/SearchResultPage";
+import ArtistDetailPage from "../pages/ArtistDetailPage";
 
 export const routes = [
   { path: "/", element: <HomePage /> },
   { path: "/note", element: <ArtistNotePage /> },
+  { path: "/artist/:artistId", element: <ArtistDetailPage /> },
   { path: "/collection", element: <CollectionPage /> },
   { path: "/exhibition", element: <ExhibitionPage /> },
   { path: "/contest", element: <ContestPage /> },
