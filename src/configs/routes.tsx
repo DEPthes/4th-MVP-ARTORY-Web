@@ -24,5 +24,5 @@ export const routes = [
   { path: "/signup/job", element: <SignupJobPage /> },
   { path: "/signup/profile", element: <SignupProfilePage /> },
   { path: "/auth/google/callback", element: <GoogleAuthCallback /> },
-  { path: "/profile", element: <ProfilePage /> },
+  { path: "/profile/:userId", element: <ProfilePage /> },
 ] satisfies RouteObject[];
