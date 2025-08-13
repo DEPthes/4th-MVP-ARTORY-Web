@@ -49,9 +49,9 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({
       )}
 
       {/* 좋아요 */}
-      <div className="flex justify-end items-center w-full py-4 px-6">
+      <div className="mt-auto flex justify-end items-center w-full py-4 px-6">
         <LikeIcon className="size-4 text-red-500" />
-        <span className=" text-zinc-900">{likes}</span>
+        <span className="text-zinc-900">{likes}</span>
       </div>
     </div>
   );

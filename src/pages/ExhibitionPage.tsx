@@ -1,13 +1,13 @@
+// src/pages/ExhibitionPage.tsx
 import React, { useMemo, useState } from 'react';
-import ArtworkCard from '../components/ArtworkCard'; // 카드 UI 그대로 사용
+import ArtworkCard from '../components/ArtworkCard';
 import Chip from '../components/Chip';
 import Header from '../components/Layouts/Header';
 import BannerControl from '../components/Profile/BannerControl';
 import EmptyState from '../components/EmptyState';
 
-import PersonSvg from '../assets/human.svg?react';
-import FrameSvg from '../assets/middle.svg?react';
-import RightFrameSvg from '../assets/left.svg?react';
+// 빈 상태 이미지
+import humanImg from '../assets/images/human.png';
 
 const categories = [
   '전체',
@@ -19,28 +19,46 @@ const categories = [
   '미디어아트',
   '인테리어',
   '기타',
+] as const;
+type Category = (typeof categories)[number];
+
+type Exhibition = {
+  imageUrl: string;
+  exhibitionName: string;
+  likes: number;
+  category: Category;
+};
+
+// ⬇️ 전시 예시 데이터 (4~5개)
+const exhibitions: Exhibition[] = [
+  { imageUrl: '', exhibitionName: '봄, 색의 변주', likes: 7, category: '회화' },
+  {
+    imageUrl: '',
+    exhibitionName: '빛과 공간의 대화',
+    likes: 11,
+    category: '건축',
+  },
+  { imageUrl: '', exhibitionName: '시간의 조각', likes: 4, category: '조각' },
+  { imageUrl: '', exhibitionName: '사소한 물성', likes: 2, category: '공예' },
+  { imageUrl: '', exhibitionName: '프레임 너머', likes: 9, category: '사진' },
+  // 빈 상태 테스트: const exhibitions: Exhibition[] = [];
 ];
 
-// ⬇️ 전시용 목데이터 (title → exhibitionName)
-const exhibitions = Array.from({ length: 9 }, () => ({
-  imageUrl: '',
-  exhibitionName: '전시명',
-  likes: 0,
-}));
-
 const ExhibitionPage: React.FC = () => {
-  const [selectedCategory, setSelectedCategory] = useState('전체');
+  const [selectedCategory, setSelectedCategory] = useState<Category>('전체');
 
   const filtered = useMemo(() => {
-    // 카테고리 필터가 붙으면 여기서 처리
-    return exhibitions;
+    return selectedCategory === '전체'
+      ? exhibitions
+      : exhibitions.filter((e) => e.category === selectedCategory);
   }, [selectedCategory]);
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <BannerControl />
+      <BannerControl isMyProfile={false} />
 
+      {/* 카테고리 탭바 */}
       <div className="bg-gray-50 mt-[2.5rem]">
         <div className="h-16 max-w-[59.625rem] w-full mx-auto px-4 flex items-center justify-center gap-4">
           {categories.map((c) => (
@@ -54,16 +72,14 @@ const ExhibitionPage: React.FC = () => {
         </div>
       </div>
 
+      {/* 본문 */}
       <main className="max-w-[59.625rem] w-full mx-auto px-4 pt-16 pb-40">
         {filtered.length === 0 ? (
           <EmptyState
-            className="mt-[7.5rem] mb-[10rem]"
-            title="전시를 준비 중이거나, 새로운 전시를 만들어보세요."
-            description="전시를 생성하고 작품을 소개해 보세요."
-            PersonSvg={PersonSvg}
-            Frame1Svg={FrameSvg}
-            Frame2Svg={FrameSvg}
-            Frame3Svg={RightFrameSvg}
+            className="mt-1 mb-10 text-[#717478]"
+            imageSrc={humanImg}
+            title="전시를 준비 중입니다. 곧 새로운 전시 소식을 전해드릴게요!"
+            description="" // 기본 문구 숨김
           />
         ) : (
           <div className="grid grid-cols-3 gap-x-6 gap-y-8 justify-items-center">
@@ -71,8 +87,8 @@ const ExhibitionPage: React.FC = () => {
               <div key={i} className="w-[17.1875rem]">
                 <ArtworkCard
                   imageUrl={e.imageUrl}
-                  title={e.exhibitionName} // ⬅️ 전시명으로 교체
-                  author={undefined} // 필요없다면 숨기거나 카드에서 조건부 렌더
+                  title={e.exhibitionName}
+                  author={undefined}
                   likes={e.likes}
                 />
               </div>

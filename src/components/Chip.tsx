@@ -6,17 +6,31 @@ interface ChipProps {
   label: string;
   isActive?: boolean;
   onClick?: () => void;
+  disabled?: boolean;
+  className?: string;
 }
 
-const Chip: React.FC<ChipProps> = ({ label, isActive = false, onClick }) => {
+const Chip: React.FC<ChipProps> = ({
+  label,
+  isActive = false,
+  onClick,
+  disabled = false,
+  className,
+}) => {
+  const interactive = !!onClick && !disabled;
+
   return (
     <button
+      type="button"
       onClick={onClick}
+      disabled={disabled}
       className={cn(
-        'flex items-center justify-center px-5 py-2.5 rounded-full text-sm font-medium border',
+        'inline-flex items-center h-10 px-4 rounded-full text-sm transition-colors select-none',
         isActive
-          ? 'bg-red-500 text-white border-red-500'
-          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+          ? 'bg-red-500 text-white'
+          : 'bg-zinc-100 text-zinc-800 hover:bg-zinc-200',
+        interactive ? 'cursor-pointer' : 'cursor-default',
+        className
       )}
     >
       {label}
