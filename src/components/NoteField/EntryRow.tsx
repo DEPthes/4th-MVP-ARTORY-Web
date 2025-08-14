@@ -28,7 +28,7 @@ const EntryRow: React.FC<EntryRowProps> = ({
   const inputTextColorClass = text ? "text-zinc-900" : "text-zinc-500";
 
   return (
-    <div className="flex items-center space-x-3">
+    <div className="flex items-center w-full space-x-3">
       <select
         value={year}
         onChange={(e) => onYearChange(e.target.value)}
@@ -48,7 +48,7 @@ const EntryRow: React.FC<EntryRowProps> = ({
         value={text}
         onChange={(e) => onTextChange(e.target.value)}
         placeholder={placeholder}
-        className={`font-asta font-thin w-206.5 h-13.5 bg-[#F4F5F6] rounded-md px-5.5 py-4 ${inputTextColorClass} cursor-pointer focus:outline-none`}
+        className={`font-asta font-thin w-full h-13.5 bg-[#F4F5F6] rounded-md px-5.5 py-4 ${inputTextColorClass} cursor-pointer focus:outline-none`}
       />
       {isRegistered ? (
         <button
