@@ -1,6 +1,6 @@
-import React from 'react';
-import { cn } from '../utils/classname';
-import LikeIcon from '../assets/like.svg?react';
+import React from "react";
+import { cn } from "../utils/classname";
+import LikeIcon from "../assets/like.svg?react";
 
 export interface ArtworkCardProps {
   imageUrl: string;
@@ -23,16 +23,16 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({
     <div
       onClick={onClick}
       className={cn(
-        'flex flex-col items-start w-[18.875rem] h-[31.25rem] bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow',
+        "flex flex-col w-full max-w-75.5 h-[31.25rem] bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow",
         className
       )}
     >
       {/* 상단 이미지 */}
-      <div className="flex justify-center items-center bg-white pt-5 px-5 pb-2 ">
+      <div className="bg-white pt-5 px-5 pb-2 ">
         <img
           src={imageUrl}
           alt={title}
-          className="w-[16.375rem] h-[21rem] object-cover bg-gray-200"
+          className="max-w-65.5 h-[21rem] object-cover bg-gray-200"
         />
       </div>
 
