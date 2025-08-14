@@ -164,7 +164,7 @@ const ProfilePage: React.FC = () => {
   // 임시 유저 정보 (API 전용)
   const nickname = "고은";
   const currentUserId = "current-user-id"; // 실제로는 auth context에서 가져와야 함
-  const isMyProfile = userId === currentUserId; // URL의 userId와 현재 사용자 ID 비교
+  const isMyProfile = true; // URL의 userId와 현재 사용자 ID 비교
   const [isEditing, setIsEditing] = useState(false);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
@@ -293,183 +293,193 @@ const ProfilePage: React.FC = () => {
   return (
     <>
       <Header />
-      <div className="relative">
+      <div className="relative mx-auto w-full">
         <BannerControl isMyProfile={isMyProfile} />
-        <ProfileCard
-          role={
-            userRole === "artist"
-              ? "작가"
-              : userRole === "gallery"
-              ? "갤러리"
-              : userRole === "collector"
-              ? "아트 컬렉터"
-              : "" // 기본값
-          }
-          nickName={nickname}
-          followers={123}
-          following={45}
-          introduction="안녕하세요, 고은입니다."
-          birthdate="2003.10.17"
-          education="명지대학교 졸업"
-          phoneNumber="010-9999-8888"
-          email="goeun@example.com"
-          isMyProfile={isMyProfile}
-          className="absolute top-40 left-60"
-        />
-      </div>
-      <div className="flex flex-col ml-133.5 mt-7">
-        <TabMenu
-          tabs={currentTabs}
-          selectedTabId={selectedTabId}
-          onTabChange={handleTabChange}
-        />
-        <UserTabInfo
-          nickname={nickname}
-          currentTabLabel={
-            artistTabs.find((t) => t.id === selectedTabId)?.label || ""
-          }
-          isMyProfile={isMyProfile}
-          isEditing={isEditing}
-          onEditClick={handleEditClick}
-          onCompleteClick={handleCompleteClick}
-          onRegisterClick={handleRegisterClick}
-          counts={dynamicCounts}
-        />
-        <div className="flex flex-col px-10 py-4 w-286 min-h-132.5 bg-[#F4F5F6]">
-          {selectedTabId === "artistNote" && (
-            <>
-              <div className="w-full h-13.5 py-4 font-semibold text-[#1D1E20]">
-                이력 및 수상 경력
-              </div>
-              <div className="flex flex-col gap-4 w-full min-h-15.5 px-6 py-5 bg-white">
-                {/* 편집모드면 EntryList 렌더, 아니면 등록된 결과 렌더 */}
-                {isEditing ? (
-                  <>
-                    <EntryList
-                      entries={temporaryEntries.achievement} // 이력 및 수상 경력 임시 상태
-                      onChange={handleAchievementChange}
-                      placeholder="이력 및 수상 경력을 기재해주세요."
-                    />
-                  </>
-                ) : (
-                  <>
-                    {/* 등록 상태 보여주기 (빈 배열이면 아무것도 안보이게 처리) */}
-                    {registeredEntries.achievement.length > 0 &&
-                      registeredEntries.achievement.map(({ year, text }) => (
-                        <DisplayEntry
-                          key={year + text}
-                          year={year}
-                          text={text}
-                        />
-                      ))}
-                  </>
-                )}
-              </div>
-              <div className="w-full h-13.5 mt-4 py-4 font-semibold text-[#1D1E20]">
-                단체전
-              </div>
-              <div className="w-full min-h-15.5 px-6 py-5 bg-white">
-                {isEditing ? (
-                  <>
-                    <EntryList
-                      entries={temporaryEntries.groupExhibition} // 단체전 임시 상태
-                      onChange={handleGroupExhibitionChange}
-                      placeholder="전시 이력을 기재해주세요."
-                    />
-                  </>
-                ) : (
-                  <>
-                    {registeredEntries.groupExhibition.length > 0 &&
-                      registeredEntries.groupExhibition.map(
-                        ({ year, text }) => (
-                          <DisplayEntry
-                            key={year + text}
-                            year={year}
-                            text={text}
-                          />
-                        )
-                      )}
-                  </>
-                )}
-              </div>
-              <div className="w-full h-13.5 mt-4 py-4 font-semibold text-[#1D1E20]">
-                개인전
-              </div>
-              <div className="w-full min-h-15.5 px-6 py-5 bg-white">
-                {isEditing ? (
-                  <>
-                    <EntryList
-                      entries={temporaryEntries.soloExhibition} // 개인전 임시 상태
-                      onChange={handleSoloExhibitionChange}
-                      placeholder="전시 이력을 기재해주세요."
-                    />
-                  </>
-                ) : (
-                  <>
-                    {registeredEntries.soloExhibition.length > 0 &&
-                      registeredEntries.soloExhibition.map(({ year, text }) => (
-                        <DisplayEntry
-                          key={year + text}
-                          year={year}
-                          text={text}
-                        />
-                      ))}
-                  </>
-                )}
-              </div>
-            </>
-          )}
-
-          {/* 작업, 전시, 공모전, 아카이브 탭 콘텐츠 추가 */}
-          {(selectedTabId === "works" ||
-            selectedTabId === "exhibition" ||
-            selectedTabId === "contest" ||
-            selectedTabId === "archive") && (
-            <>
-              {/* 태그 필터 바 */}
-
-              <TagFilterBar
-                tags={currentTags}
-                selectedTag={selectedTag}
-                onTagSelect={(tag) => setSelectedTag(tag)}
+        <div className="flex">
+          <div className="-mt-24 z-10 pl-60 xl:pl-40 md:pl-20 sm:pl-5">
+            <div className="sticky top-24">
+              <ProfileCard
+                role={
+                  userRole === "artist"
+                    ? "작가"
+                    : userRole === "gallery"
+                    ? "갤러리"
+                    : userRole === "collector"
+                    ? "아트 컬렉터"
+                    : "" // 기본값
+                }
+                nickName={nickname}
+                followers={123}
+                following={45}
+                introduction="안녕하세요, 고은입니다."
+                birthdate="2003.10.17"
+                education="명지대학교 졸업"
+                phoneNumber="010-9999-8888"
+                email="goeun@example.com"
+                isMyProfile={isMyProfile}
               />
+            </div>
+          </div>
 
-              {/* ArtworkCard 그리드 */}
-              <div className="grid grid-cols-3 gap-6 px-13.5">
-                {getFilteredData().length > 0 ? (
-                  getFilteredData().map((item) => (
-                    <ArtworkCard
-                      key={item.id}
-                      imageUrl={item.imageUrl}
-                      title={item.title}
-                      author={item.author}
-                      likes={item.likes}
-                      onClick={() => {
-                        console.log(
-                          `${selectedTabId}의 ${item.title} 상세페이지`
-                        );
-                        // 상세 페이지 이동 로직 (예: navigate('/artwork/${item.id}'))
-                      }}
-                    />
-                  ))
-                ) : (
-                  <div
-                    className="col-span-3 mt-30 flex flex-col justify-center items-center pb-10 text-[#717478] font-normal whitespace-pre-line text-center px-6"
-                    style={{ minHeight: "150px" }}
-                  >
-                    {/* isMyProfile에 따라 다른 메시지 출력 */}
-                    {isMyProfile
-                      ? noContentMessages.myProfile[
-                          selectedTabId as keyof typeof noContentMessages.myProfile
-                        ]
-                      : noContentMessages.otherProfile[
-                          selectedTabId as keyof typeof noContentMessages.otherProfile
-                        ]}
+          <div className="flex flex-col w-full mt-7 pl-15 pr-60 xl:pr-40 md:pr-20 sm:pr-5">
+            <TabMenu
+              tabs={currentTabs}
+              selectedTabId={selectedTabId}
+              onTabChange={handleTabChange}
+            />
+            <UserTabInfo
+              nickname={nickname}
+              currentTabLabel={
+                artistTabs.find((t) => t.id === selectedTabId)?.label || ""
+              }
+              isMyProfile={isMyProfile}
+              isEditing={isEditing}
+              onEditClick={handleEditClick}
+              onCompleteClick={handleCompleteClick}
+              onRegisterClick={handleRegisterClick}
+              counts={dynamicCounts}
+            />
+            <div className="flex flex-col px-10 py-4 min-h-132.5 bg-[#F4F5F6]">
+              {selectedTabId === "artistNote" && (
+                <>
+                  <div className="w-full h-13.5 py-4 font-semibold text-[#1D1E20]">
+                    이력 및 수상 경력
                   </div>
-                )}
-              </div>
-            </>
-          )}
+                  <div className="flex flex-col gap-4 w-full min-h-15.5 px-6 py-5 bg-white">
+                    {/* 편집모드면 EntryList 렌더, 아니면 등록된 결과 렌더 */}
+                    {isEditing ? (
+                      <>
+                        <EntryList
+                          entries={temporaryEntries.achievement} // 이력 및 수상 경력 임시 상태
+                          onChange={handleAchievementChange}
+                          placeholder="이력 및 수상 경력을 기재해주세요."
+                        />
+                      </>
+                    ) : (
+                      <>
+                        {/* 등록 상태 보여주기 (빈 배열이면 아무것도 안보이게 처리) */}
+                        {registeredEntries.achievement.length > 0 &&
+                          registeredEntries.achievement.map(
+                            ({ year, text }) => (
+                              <DisplayEntry
+                                key={year + text}
+                                year={year}
+                                text={text}
+                              />
+                            )
+                          )}
+                      </>
+                    )}
+                  </div>
+                  <div className="w-full h-13.5 mt-4 py-4 font-semibold text-[#1D1E20]">
+                    단체전
+                  </div>
+                  <div className="flex flex-col gap-4 w-full min-h-15.5 px-6 py-5 bg-white">
+                    {isEditing ? (
+                      <>
+                        <EntryList
+                          entries={temporaryEntries.groupExhibition} // 단체전 임시 상태
+                          onChange={handleGroupExhibitionChange}
+                          placeholder="전시 이력을 기재해주세요."
+                        />
+                      </>
+                    ) : (
+                      <>
+                        {registeredEntries.groupExhibition.length > 0 &&
+                          registeredEntries.groupExhibition.map(
+                            ({ year, text }) => (
+                              <DisplayEntry
+                                key={year + text}
+                                year={year}
+                                text={text}
+                              />
+                            )
+                          )}
+                      </>
+                    )}
+                  </div>
+                  <div className="w-full h-13.5 mt-4 py-4 font-semibold text-[#1D1E20]">
+                    개인전
+                  </div>
+                  <div className="flex flex-col gap-4 w-full min-h-15.5 px-6 py-5 bg-white">
+                    {isEditing ? (
+                      <>
+                        <EntryList
+                          entries={temporaryEntries.soloExhibition} // 개인전 임시 상태
+                          onChange={handleSoloExhibitionChange}
+                          placeholder="전시 이력을 기재해주세요."
+                        />
+                      </>
+                    ) : (
+                      <>
+                        {registeredEntries.soloExhibition.length > 0 &&
+                          registeredEntries.soloExhibition.map(
+                            ({ year, text }) => (
+                              <DisplayEntry
+                                key={year + text}
+                                year={year}
+                                text={text}
+                              />
+                            )
+                          )}
+                      </>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* 작업, 전시, 공모전, 아카이브 탭 콘텐츠 추가 */}
+              {(selectedTabId === "works" ||
+                selectedTabId === "exhibition" ||
+                selectedTabId === "contest" ||
+                selectedTabId === "archive") && (
+                <>
+                  {/* 태그 필터 바 */}
+
+                  <TagFilterBar
+                    tags={currentTags}
+                    selectedTag={selectedTag}
+                    onTagSelect={(tag) => setSelectedTag(tag)}
+                  />
+
+                  {/* ArtworkCard 그리드 */}
+                  <div className="grid grid-cols-3 gap-6 px-13.5">
+                    {getFilteredData().length > 0 ? (
+                      getFilteredData().map((item) => (
+                        <ArtworkCard
+                          key={item.id}
+                          imageUrl={item.imageUrl}
+                          title={item.title}
+                          author={item.author}
+                          likes={item.likes}
+                          onClick={() => {
+                            console.log(
+                              `${selectedTabId}의 ${item.title} 상세페이지`
+                            );
+                            // 상세 페이지 이동 로직 (예: navigate('/artwork/${item.id}'))
+                          }}
+                        />
+                      ))
+                    ) : (
+                      <div
+                        className="col-span-3 mt-30 flex flex-col justify-center items-center pb-10 text-[#717478] font-normal whitespace-pre-line text-center px-6"
+                        style={{ minHeight: "150px" }}
+                      >
+                        {/* isMyProfile에 따라 다른 메시지 출력 */}
+                        {isMyProfile
+                          ? noContentMessages.myProfile[
+                              selectedTabId as keyof typeof noContentMessages.myProfile
+                            ]
+                          : noContentMessages.otherProfile[
+                              selectedTabId as keyof typeof noContentMessages.otherProfile
+                            ]}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </>
