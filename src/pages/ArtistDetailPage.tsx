@@ -206,7 +206,7 @@ const ArtistDetailPage: React.FC = () => {
   return (
     <>
       <Header />
-      <div className="relative">
+      <div className="relative mx-auto w-full">
         <BackNavigate
           pathname="/note"
           text="작가노트"
@@ -214,131 +214,150 @@ const ArtistDetailPage: React.FC = () => {
           className="absolute z-10"
         />
         <BannerControl isMyProfile={isMyProfile} />
-        <ProfileCard
-          role={artistData.role}
-          nickName={artistData.nickName}
-          followers={artistData.followers}
-          following={artistData.following}
-          introduction={artistData.introduction}
-          birthdate={artistData.birthdate}
-          education={artistData.education}
-          phoneNumber={artistData.phoneNumber}
-          email={artistData.email}
-          isMyProfile={isMyProfile}
-          className="absolute top-40 left-60"
-        />
-      </div>
-      <div className="flex flex-col ml-133.5 mt-7">
-        <TabMenu
-          tabs={artistTabs}
-          selectedTabId={selectedTabId}
-          onTabChange={handleTabChange}
-        />
-        <UserTabInfo
-          nickname={artistData.nickName}
-          currentTabLabel={
-            artistTabs.find((t) => t.id === selectedTabId)?.label || ""
-          }
-          isMyProfile={isMyProfile}
-          isEditing={false}
-          onEditClick={() => {}}
-          onCompleteClick={() => {}}
-          onRegisterClick={() => {}}
-          counts={dynamicCounts}
-        />
-        <div className="flex flex-col px-10 py-4 w-286 min-h-132.5 bg-[#F4F5F6]">
-          {selectedTabId === "artistNote" && (
-            <>
-              <div className="w-full h-13.5 py-4 font-semibold text-[#1D1E20]">
-                이력 및 수상 경력
-              </div>
-              <div className="flex flex-col gap-4 w-full min-h-15.5 px-6 py-5 bg-white">
-                {registeredEntries.achievement.length > 0 ? (
-                  registeredEntries.achievement.map(({ year, text }) => (
-                    <DisplayEntry key={year + text} year={year} text={text} />
-                  ))
-                ) : (
-                  <div className="text-[#717478] text-center py-4">
-                    등록된 이력이 없습니다.
-                  </div>
-                )}
-              </div>
-              <div className="w-full h-13.5 mt-4 py-4 font-semibold text-[#1D1E20]">
-                단체전
-              </div>
-              <div className="flex flex-col w-full gap-4 min-h-15.5 px-6 py-5 bg-white">
-                {registeredEntries.groupExhibition.length > 0 ? (
-                  registeredEntries.groupExhibition.map(({ year, text }) => (
-                    <DisplayEntry key={year + text} year={year} text={text} />
-                  ))
-                ) : (
-                  <div className="text-[#717478] text-center py-4">
-                    등록된 단체전이 없습니다.
-                  </div>
-                )}
-              </div>
-              <div className="w-full h-13.5 mt-4 py-4 font-semibold text-[#1D1E20]">
-                개인전
-              </div>
-              <div className="flex flex-col w-full gap-4 min-h-15.5 px-6 py-5 bg-white">
-                {registeredEntries.soloExhibition.length > 0 ? (
-                  registeredEntries.soloExhibition.map(({ year, text }) => (
-                    <DisplayEntry key={year + text} year={year} text={text} />
-                  ))
-                ) : (
-                  <div className="text-[#717478] text-center py-4">
-                    등록된 개인전이 없습니다.
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-
-          {/* 작업, 전시, 공모전, 아카이브 탭 콘텐츠 */}
-          {(selectedTabId === "works" ||
-            selectedTabId === "exhibition" ||
-            selectedTabId === "contest" ||
-            selectedTabId === "archive") && (
-            <>
-              {/* 태그 필터 바 */}
-              <TagFilterBar
-                tags={currentTags}
-                selectedTag={selectedTag}
-                onTagSelect={(tag) => setSelectedTag(tag)}
+        <div className="flex">
+          <div className="-mt-24 z-10 pl-60 xl:pl-40 md:pl-20 sm:pl-5">
+            <div className="sticky top-24">
+              <ProfileCard
+                role={artistData.role}
+                nickName={artistData.nickName}
+                followers={artistData.followers}
+                following={artistData.following}
+                introduction={artistData.introduction}
+                birthdate={artistData.birthdate}
+                education={artistData.education}
+                phoneNumber={artistData.phoneNumber}
+                email={artistData.email}
+                isMyProfile={isMyProfile}
               />
-
-              {/* ArtworkCard 그리드 */}
-              <div className="grid grid-cols-3 gap-6 px-13.5">
-                {getFilteredData().length > 0 ? (
-                  getFilteredData().map((item) => (
-                    <ArtworkCard
-                      key={item.id}
-                      imageUrl={item.imageUrl}
-                      title={item.title}
-                      author={item.author}
-                      likes={item.likes}
-                      onClick={() => {
-                        console.log(
-                          `${selectedTabId}의 ${item.title} 상세페이지`
-                        );
-                      }}
-                    />
-                  ))
-                ) : (
-                  <div
-                    className="col-span-3 mt-30 flex flex-col justify-center items-center pb-10 text-[#717478] font-normal whitespace-pre-line text-center px-6"
-                    style={{ minHeight: "150px" }}
-                  >
-                    {
-                      noContentMessages.otherProfile[
-                        selectedTabId as keyof typeof noContentMessages.otherProfile
-                      ]
-                    }
+            </div>
+          </div>
+          <div className="flex flex-col w-full mt-7 pl-15 pr-60 xl:pr-40 md:pr-20 sm:pr-5">
+            <TabMenu
+              tabs={artistTabs}
+              selectedTabId={selectedTabId}
+              onTabChange={handleTabChange}
+            />
+            <UserTabInfo
+              nickname={artistData.nickName}
+              currentTabLabel={
+                artistTabs.find((t) => t.id === selectedTabId)?.label || ""
+              }
+              isMyProfile={isMyProfile}
+              isEditing={false}
+              onEditClick={() => {}}
+              onCompleteClick={() => {}}
+              onRegisterClick={() => {}}
+              counts={dynamicCounts}
+            />
+            <div className="flex flex-col px-10 py-4 min-h-132.5 bg-[#F4F5F6]">
+              {selectedTabId === "artistNote" && (
+                <>
+                  <div className="w-full h-13.5 py-4 font-semibold text-[#1D1E20]">
+                    이력 및 수상 경력
                   </div>
-                )}
-              </div>
-            </>
-          )}
+                  <div className="flex flex-col gap-4 w-full min-h-15.5 px-6 py-5 bg-white">
+                    {registeredEntries.achievement.length > 0 ? (
+                      registeredEntries.achievement.map(({ year, text }) => (
+                        <DisplayEntry
+                          key={year + text}
+                          year={year}
+                          text={text}
+                        />
+                      ))
+                    ) : (
+                      <div className="text-[#717478] text-center py-4">
+                        등록된 이력이 없습니다.
+                      </div>
+                    )}
+                  </div>
+                  <div className="w-full h-13.5 mt-4 py-4 font-semibold text-[#1D1E20]">
+                    단체전
+                  </div>
+                  <div className="flex flex-col w-full gap-4 min-h-15.5 px-6 py-5 bg-white">
+                    {registeredEntries.groupExhibition.length > 0 ? (
+                      registeredEntries.groupExhibition.map(
+                        ({ year, text }) => (
+                          <DisplayEntry
+                            key={year + text}
+                            year={year}
+                            text={text}
+                          />
+                        )
+                      )
+                    ) : (
+                      <div className="text-[#717478] text-center py-4">
+                        등록된 단체전이 없습니다.
+                      </div>
+                    )}
+                  </div>
+                  <div className="w-full h-13.5 mt-4 py-4 font-semibold text-[#1D1E20]">
+                    개인전
+                  </div>
+                  <div className="flex flex-col w-full gap-4 min-h-15.5 px-6 py-5 bg-white">
+                    {registeredEntries.soloExhibition.length > 0 ? (
+                      registeredEntries.soloExhibition.map(({ year, text }) => (
+                        <DisplayEntry
+                          key={year + text}
+                          year={year}
+                          text={text}
+                        />
+                      ))
+                    ) : (
+                      <div className="text-[#717478] text-center py-4">
+                        등록된 개인전이 없습니다.
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* 작업, 전시, 공모전, 아카이브 탭 콘텐츠 */}
+              {(selectedTabId === "works" ||
+                selectedTabId === "exhibition" ||
+                selectedTabId === "contest" ||
+                selectedTabId === "archive") && (
+                <>
+                  {/* 태그 필터 바 */}
+                  <TagFilterBar
+                    tags={currentTags}
+                    selectedTag={selectedTag}
+                    onTagSelect={(tag) => setSelectedTag(tag)}
+                  />
+
+                  {/* ArtworkCard 그리드 */}
+                  <div className="grid grid-cols-3 gap-6 px-13.5">
+                    {getFilteredData().length > 0 ? (
+                      getFilteredData().map((item) => (
+                        <ArtworkCard
+                          key={item.id}
+                          imageUrl={item.imageUrl}
+                          title={item.title}
+                          author={item.author}
+                          likes={item.likes}
+                          onClick={() => {
+                            console.log(
+                              `${selectedTabId}의 ${item.title} 상세페이지`
+                            );
+                          }}
+                        />
+                      ))
+                    ) : (
+                      <div
+                        className="col-span-3 mt-30 flex flex-col justify-center items-center pb-10 text-[#717478] font-normal whitespace-pre-line text-center px-6"
+                        style={{ minHeight: "150px" }}
+                      >
+                        {
+                          noContentMessages.otherProfile[
+                            selectedTabId as keyof typeof noContentMessages.otherProfile
+                          ]
+                        }
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </>

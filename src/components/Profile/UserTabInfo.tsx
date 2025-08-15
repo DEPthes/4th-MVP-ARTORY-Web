@@ -34,7 +34,7 @@ const UserTabInfo: React.FC<UserTabInfoProps> = ({
   const isArchiveTab = currentTabLabel === "아카이브";
 
   return (
-    <div className="flex justify-between items-center w-286 h-17 px-10 py-3 bg-[#C7C7C9] text-[#1D1E20] font-normal">
+    <div className="flex justify-between items-center w-full h-17 px-10 py-3 bg-[#C7C7C9] text-[#1D1E20] font-normal">
       <div className="flex items-center gap-1">
         <div className="font-semibold">{nickname}</div>님의 {currentTabLabel}
         {showCount && <span className="text-[#D32F2F]">({currentCount})</span>}

@@ -47,7 +47,7 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({
         <img
           src={imageUrl}
           alt={title}
-          className="w-[16.375rem] h-[21rem] object-cover bg-gray-200"
+          className="max-w-65.5 h-[21rem] object-cover bg-gray-200"
         />
       </div>
 
