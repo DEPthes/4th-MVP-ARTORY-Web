@@ -1,84 +1,94 @@
-import React, { useMemo, useState } from 'react';
-import ArtworkCard from '../components/ArtworkCard';
-import Chip from '../components/Chip';
-import Header from '../components/Layouts/Header';
-import BannerControl from '../components/Profile/BannerControl';
-import EmptyState from '../components/EmptyState';
+// src/pages/ContestPage.tsx
+import React, { useMemo, useState } from "react";
+import ArtworkCard from "../components/ArtworkCard";
+import Chip from "../components/Chip";
+import Header from "../components/Layouts/Header";
+import BannerControl from "../components/Profile/BannerControl";
+import EmptyState from "../components/EmptyState";
 
-// SVGs (svgr)
-import PersonSvg from '../assets/human.svg?react';
-import FrameSvg from '../assets/middle.svg?react';
-import RightFrameSvg from '../assets/left.svg?react';
+// 빈 상태 이미지
 
 const categories = [
-  '전체',
-  '회화',
-  '조각',
-  '공예',
-  '건축',
-  '사진',
-  '미디어아트',
-  '인테리어',
-  '기타',
+  "전체",
+  "회화",
+  "조각",
+  "공예",
+  "건축",
+  "사진",
+  "미디어아트",
+  "인테리어",
+  "기타",
+] as const;
+type Category = (typeof categories)[number];
+
+type Contest = {
+  imageUrl: string;
+  contestName: string;
+  likes: number;
+  category: Category;
+};
+
+// ⬇️ 공모전 예시 데이터 (4~5개)
+const contests: Contest[] = [
+  {
+    imageUrl: "",
+    contestName: "뉴미디어 아트 공모전",
+    likes: 12,
+    category: "미디어아트",
+  },
+  { imageUrl: "", contestName: "청년 사진 공모전", likes: 5, category: "사진" },
+  { imageUrl: "", contestName: "도시 공간 디자인", likes: 8, category: "건축" },
+  {
+    imageUrl: "",
+    contestName: "현대 회화 기획전 공모",
+    likes: 3,
+    category: "회화",
+  },
+  { imageUrl: "", contestName: "공예 리빙 디자인", likes: 2, category: "공예" },
+  // 빈 상태 테스트: const contests: Contest[] = [];
 ];
 
-// ⬇️ 공모전용 목데이터 (카드의 메인 텍스트를 공모전명으로)
-const contests = Array.from({ length: 9 }, () => ({
-  imageUrl: '',
-  contestName: '공모전명',
-  likes: 0,
-  // category: '회화',
-}));
-
 const ContestPage: React.FC = () => {
-  const [selectedCategory, setSelectedCategory] = useState('전체');
+  const [selectedCategory, setSelectedCategory] = useState<Category>("전체");
 
   const filteredContests = useMemo(() => {
-    // 카테고리 필터가 생기면 아래 로직 주석 해제
-    // return contests.filter(c => selectedCategory === '전체' || c.category === selectedCategory);
-    return contests;
+    return selectedCategory === "전체"
+      ? contests
+      : contests.filter((c) => c.category === selectedCategory);
   }, [selectedCategory]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       {/* 헤더 + 상단 배너 */}
       <Header />
-      <BannerControl />
+      <BannerControl isMyProfile={false} />
 
-      {/* 카테고리 탭바 (배너와 칩 사이 40px) */}
-      <div className="bg-gray-50 mt-[2.5rem]">
-        <div className="h-16 max-w-[59.625rem] w-full mx-auto px-4 flex items-center justify-center gap-4">
-          {categories.map((c) => (
-            <Chip
-              key={c}
-              label={c}
-              isActive={selectedCategory === c}
-              onClick={() => setSelectedCategory(c)}
-            />
-          ))}
-        </div>
+      <div className="mt-10 w-full mx-auto px-4 flex items-center justify-center gap-4">
+        {categories.map((c) => (
+          <Chip
+            key={c}
+            label={c}
+            isActive={selectedCategory === c}
+            onClick={() => setSelectedCategory(c)}
+          />
+        ))}
       </div>
 
       {/* 본문 */}
-      <main className="max-w-[59.625rem] w-full mx-auto px-4 pt-16 pb-40">
+      <main className="max-w-[59.625rem] w-full mx-auto pb-40">
         {filteredContests.length === 0 ? (
           <EmptyState
-            className="mt-[7.5rem] mb-[10rem]"
-            title="다음 공모전을 준비 중입니다."
-            description="새로운 기회를 곧 알려드릴게요!"
-            PersonSvg={PersonSvg}
-            Frame1Svg={FrameSvg}
-            Frame2Svg={FrameSvg}
-            Frame3Svg={RightFrameSvg}
+            className="mt-24"
+            text="다음 공모전을 준비 중입니다. 새로운 기회가 곧 열릴 예정이에요!"
           />
         ) : (
-          <div className="grid grid-cols-3 gap-x-6 gap-y-8 justify-items-center">
+          <div className="grid grid-cols-3 gap-x-6 gap-y-8 justify-items-center mt-16">
             {filteredContests.map((c, i) => (
               <div key={i} className="w-[17.1875rem]">
                 <ArtworkCard
                   imageUrl={c.imageUrl}
-                  title={c.contestName} // ⬅️ 카드 타이틀을 공모전명으로
-                  author="" // 공모전은 작가명 없으니 빈 값 전달
+                  title={c.contestName}
+                  author={undefined} // 공모전은 작가명 없음
                   likes={c.likes}
                 />
               </div>

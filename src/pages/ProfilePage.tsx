@@ -442,44 +442,43 @@ const ProfilePage: React.FC = () => {
                     onTagSelect={(tag) => setSelectedTag(tag)}
                   />
 
-                  {/* ArtworkCard 그리드 */}
-                  <div className="grid grid-cols-3 gap-6 px-13.5">
-                    {getFilteredData().length > 0 ? (
-                      getFilteredData().map((item) => (
-                        <ArtworkCard
-                          key={item.id}
-                          imageUrl={item.imageUrl}
-                          title={item.title}
-                          author={item.author}
-                          likes={item.likes}
-                          onClick={() => {
-                            console.log(
-                              `${selectedTabId}의 ${item.title} 상세페이지`
-                            );
-                            // 상세 페이지 이동 로직 (예: navigate('/artwork/${item.id}'))
-                          }}
-                        />
-                      ))
-                    ) : (
-                      <div
-                        className="col-span-3 mt-30 flex flex-col justify-center items-center pb-10 text-[#717478] font-normal whitespace-pre-line text-center px-6"
-                        style={{ minHeight: "150px" }}
-                      >
-                        {/* isMyProfile에 따라 다른 메시지 출력 */}
-                        {isMyProfile
-                          ? noContentMessages.myProfile[
-                              selectedTabId as keyof typeof noContentMessages.myProfile
-                            ]
-                          : noContentMessages.otherProfile[
-                              selectedTabId as keyof typeof noContentMessages.otherProfile
-                            ]}
-                      </div>
-                    )}
+              {/* ArtworkCard 그리드 */}
+              <div className="grid grid-cols-3 gap-6 px-13.5">
+                {getFilteredData().length > 0 ? (
+                  getFilteredData().map((item) => (
+                    <ArtworkCard
+                      key={item.id}
+                      imageUrl={item.imageUrl}
+                      title={item.title}
+                      author={item.author}
+                      likes={item.likes}
+                      variant="primary"
+                      onClick={() => {
+                        console.log(
+                          `${selectedTabId}의 ${item.title} 상세페이지`
+                        );
+                        // 상세 페이지 이동 로직 (예: navigate('/artwork/${item.id}'))
+                      }}
+                    />
+                  ))
+                ) : (
+                  <div
+                    className="col-span-3 mt-30 flex flex-col justify-center items-center pb-10 text-[#717478] font-normal whitespace-pre-line text-center px-6"
+                    style={{ minHeight: "150px" }}
+                  >
+                    {/* isMyProfile에 따라 다른 메시지 출력 */}
+                    {isMyProfile
+                      ? noContentMessages.myProfile[
+                          selectedTabId as keyof typeof noContentMessages.myProfile
+                        ]
+                      : noContentMessages.otherProfile[
+                          selectedTabId as keyof typeof noContentMessages.otherProfile
+                        ]}
                   </div>
-                </>
-              )}
-            </div>
-          </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </>
