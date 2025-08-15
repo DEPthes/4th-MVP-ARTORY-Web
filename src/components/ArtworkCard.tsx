@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { cn } from "../utils/classname";
 import LikeIcon from "../assets/like.svg?react";
 
@@ -9,7 +9,13 @@ export interface ArtworkCardProps {
   likes?: number;
   onClick?: () => void;
   className?: string;
+  variant?: "primary" | "secondary";
 }
+
+const variantClasses = {
+  primary: "bg-white",
+  secondary: "bg-gray-100",
+};
 
 const ArtworkCard: React.FC<ArtworkCardProps> = ({
   imageUrl,
@@ -18,17 +24,26 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({
   likes = 0,
   onClick,
   className,
+  variant = "secondary",
 }) => {
+  const [isLiked, setIsLiked] = useState(false);
+
+  const handleLikeClick = () => {
+    console.log("좋아요 클릭");
+    setIsLiked(!isLiked);
+  };
+
   return (
     <div
       onClick={onClick}
       className={cn(
-        "flex flex-col relative items-start w-[18.875rem] h-[31.25rem] bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow",
-        className
+        "flex flex-col relative items-start w-[18.875rem] h-[31.25rem] bg-gray-100 rounded-lg cursor-pointer hover:shadow-sm transition-all duration-300",
+        className,
+        variantClasses[variant]
       )}
     >
       {/* 상단 이미지 */}
-      <div className="flex justify-center items-center bg-white pt-5 px-5 pb-2 ">
+      <div className="flex justify-center items-center pt-5 px-5 pb-2 ">
         <img
           src={imageUrl}
           alt={title}
@@ -49,8 +64,19 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({
       )}
 
       {/* 좋아요 */}
-      <div className="absolute bottom-4 right-6 flex items-center gap-1">
-        <LikeIcon className="size-4 text-red-500" />
+      <div
+        className="absolute bottom-4 right-6 flex items-center gap-1 cursor-pointer hover:scale-120 transition-transform"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleLikeClick();
+        }}
+      >
+        <LikeIcon
+          className={cn(
+            "size-4 transition-colors",
+            isLiked ? "text-red-500 fill-red-500" : "text-red-500"
+          )}
+        />
         <span className="text-zinc-900">{likes}</span>
       </div>
     </div>

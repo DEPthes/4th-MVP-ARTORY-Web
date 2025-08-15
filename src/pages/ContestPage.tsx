@@ -1,24 +1,23 @@
 // src/pages/ContestPage.tsx
-import React, { useMemo, useState } from 'react';
-import ArtworkCard from '../components/ArtworkCard';
-import Chip from '../components/Chip';
-import Header from '../components/Layouts/Header';
-import BannerControl from '../components/Profile/BannerControl';
-import EmptyState from '../components/EmptyState';
+import React, { useMemo, useState } from "react";
+import ArtworkCard from "../components/ArtworkCard";
+import Chip from "../components/Chip";
+import Header from "../components/Layouts/Header";
+import BannerControl from "../components/Profile/BannerControl";
+import EmptyState from "../components/EmptyState";
 
 // 빈 상태 이미지
-import humanImg from '../assets/images/human.png';
 
 const categories = [
-  '전체',
-  '회화',
-  '조각',
-  '공예',
-  '건축',
-  '사진',
-  '미디어아트',
-  '인테리어',
-  '기타',
+  "전체",
+  "회화",
+  "조각",
+  "공예",
+  "건축",
+  "사진",
+  "미디어아트",
+  "인테리어",
+  "기타",
 ] as const;
 type Category = (typeof categories)[number];
 
@@ -32,63 +31,58 @@ type Contest = {
 // ⬇️ 공모전 예시 데이터 (4~5개)
 const contests: Contest[] = [
   {
-    imageUrl: '',
-    contestName: '뉴미디어 아트 공모전',
+    imageUrl: "",
+    contestName: "뉴미디어 아트 공모전",
     likes: 12,
-    category: '미디어아트',
+    category: "미디어아트",
   },
-  { imageUrl: '', contestName: '청년 사진 공모전', likes: 5, category: '사진' },
-  { imageUrl: '', contestName: '도시 공간 디자인', likes: 8, category: '건축' },
+  { imageUrl: "", contestName: "청년 사진 공모전", likes: 5, category: "사진" },
+  { imageUrl: "", contestName: "도시 공간 디자인", likes: 8, category: "건축" },
   {
-    imageUrl: '',
-    contestName: '현대 회화 기획전 공모',
+    imageUrl: "",
+    contestName: "현대 회화 기획전 공모",
     likes: 3,
-    category: '회화',
+    category: "회화",
   },
-  { imageUrl: '', contestName: '공예 리빙 디자인', likes: 2, category: '공예' },
+  { imageUrl: "", contestName: "공예 리빙 디자인", likes: 2, category: "공예" },
   // 빈 상태 테스트: const contests: Contest[] = [];
 ];
 
 const ContestPage: React.FC = () => {
-  const [selectedCategory, setSelectedCategory] = useState<Category>('전체');
+  const [selectedCategory, setSelectedCategory] = useState<Category>("전체");
 
   const filteredContests = useMemo(() => {
-    return selectedCategory === '전체'
+    return selectedCategory === "전체"
       ? contests
       : contests.filter((c) => c.category === selectedCategory);
   }, [selectedCategory]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       {/* 헤더 + 상단 배너 */}
       <Header />
       <BannerControl isMyProfile={false} />
 
-      {/* 카테고리 탭바 */}
-      <div className="bg-gray-50 mt-[2.5rem]">
-        <div className="h-16 max-w-[59.625rem] w-full mx-auto px-4 flex items-center justify-center gap-4">
-          {categories.map((c) => (
-            <Chip
-              key={c}
-              label={c}
-              isActive={selectedCategory === c}
-              onClick={() => setSelectedCategory(c)}
-            />
-          ))}
-        </div>
+      <div className="mt-10 w-full mx-auto px-4 flex items-center justify-center gap-4">
+        {categories.map((c) => (
+          <Chip
+            key={c}
+            label={c}
+            isActive={selectedCategory === c}
+            onClick={() => setSelectedCategory(c)}
+          />
+        ))}
       </div>
 
       {/* 본문 */}
-      <main className="max-w-[59.625rem] w-full mx-auto px-4 pt-16 pb-40">
+      <main className="max-w-[59.625rem] w-full mx-auto pb-40">
         {filteredContests.length === 0 ? (
           <EmptyState
-            className="mt-1 mb-10 text-[#717478]"
-            imageSrc={humanImg}
-            title="다음 공모전을 준비 중입니다. 새로운 기회가 곧 열릴 예정이에요!"
-            description="" // 기본 문구 숨김
+            className="mt-24"
+            text="다음 공모전을 준비 중입니다. 새로운 기회가 곧 열릴 예정이에요!"
           />
         ) : (
-          <div className="grid grid-cols-3 gap-x-6 gap-y-8 justify-items-center">
+          <div className="grid grid-cols-3 gap-x-6 gap-y-8 justify-items-center mt-16">
             {filteredContests.map((c, i) => (
               <div key={i} className="w-[17.1875rem]">
                 <ArtworkCard

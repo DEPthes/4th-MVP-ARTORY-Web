@@ -444,6 +444,7 @@ const ProfilePage: React.FC = () => {
                       title={item.title}
                       author={item.author}
                       likes={item.likes}
+                      variant="primary"
                       onClick={() => {
                         console.log(
                           `${selectedTabId}의 ${item.title} 상세페이지`
