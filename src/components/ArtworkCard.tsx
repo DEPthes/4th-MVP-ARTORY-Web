@@ -1,6 +1,6 @@
-import React from 'react';
-import { cn } from '../utils/classname';
-import LikeIcon from '../assets/like.svg?react';
+import React from "react";
+import { cn } from "../utils/classname";
+import LikeIcon from "../assets/like.svg?react";
 
 export interface ArtworkCardProps {
   imageUrl: string;
@@ -23,7 +23,7 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({
     <div
       onClick={onClick}
       className={cn(
-        'flex flex-col items-start w-[18.875rem] h-[31.25rem] bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow',
+        "flex flex-col relative items-start w-[18.875rem] h-[31.25rem] bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow",
         className
       )}
     >
@@ -49,7 +49,7 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({
       )}
 
       {/* 좋아요 */}
-      <div className="mt-auto flex justify-end items-center w-full py-4 px-6">
+      <div className="absolute bottom-4 right-6 flex items-center gap-1">
         <LikeIcon className="size-4 text-red-500" />
         <span className="text-zinc-900">{likes}</span>
       </div>
