@@ -9,7 +9,6 @@ import EntryList from "../components/NoteField/EntryList";
 import type { Entry } from "../components/NoteField/EntryList";
 import ArtworkCard from "../components/ArtworkCard";
 import TagFilterBar from "../components/Profile/TagFilterBar";
-import { useParams } from "react-router-dom";
 
 const artistTabs = [
   { id: "artistNote", label: "작가노트" },
@@ -35,17 +34,6 @@ interface ArtworkItem {
   likes: number;
   tags?: string[]; // optional
 }
-
-const tagsMock = [
-  "회화",
-  "조각",
-  "공예",
-  "건축",
-  "사진",
-  "미디어아트",
-  "인테리어",
-  "기타",
-];
 
 // 각 탭별 아카이브 데이터 Mock (API 나오면 실제 데이터로 대체)
 const artworkDataMock: Record<string, ArtworkItem[]> = {
@@ -145,9 +133,9 @@ const noContentMessages = {
 };
 
 const ProfilePage: React.FC = () => {
-  const { userId } = useParams<{ userId: string }>();
+  // const { userId } = useParams<{ userId: string }>(); // 현재 미사용
 
-  const [userRole, setUserRole] = useState<"artist" | "gallery" | "collector">(
+  const [userRole] = useState<"artist" | "gallery" | "collector">(
     "artist" // 이 부분에서 역할 바꾸면서 테스트
   );
 
@@ -163,7 +151,6 @@ const ProfilePage: React.FC = () => {
 
   // 임시 유저 정보 (API 전용)
   const nickname = "고은";
-  const currentUserId = "current-user-id"; // 실제로는 auth context에서 가져와야 함
   const isMyProfile = true; // URL의 userId와 현재 사용자 ID 비교
   const [isEditing, setIsEditing] = useState(false);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
@@ -442,43 +429,45 @@ const ProfilePage: React.FC = () => {
                     onTagSelect={(tag) => setSelectedTag(tag)}
                   />
 
-              {/* ArtworkCard 그리드 */}
-              <div className="grid grid-cols-3 gap-6 px-13.5">
-                {getFilteredData().length > 0 ? (
-                  getFilteredData().map((item) => (
-                    <ArtworkCard
-                      key={item.id}
-                      imageUrl={item.imageUrl}
-                      title={item.title}
-                      author={item.author}
-                      likes={item.likes}
-                      variant="primary"
-                      onClick={() => {
-                        console.log(
-                          `${selectedTabId}의 ${item.title} 상세페이지`
-                        );
-                        // 상세 페이지 이동 로직 (예: navigate('/artwork/${item.id}'))
-                      }}
-                    />
-                  ))
-                ) : (
-                  <div
-                    className="col-span-3 mt-30 flex flex-col justify-center items-center pb-10 text-[#717478] font-normal whitespace-pre-line text-center px-6"
-                    style={{ minHeight: "150px" }}
-                  >
-                    {/* isMyProfile에 따라 다른 메시지 출력 */}
-                    {isMyProfile
-                      ? noContentMessages.myProfile[
-                          selectedTabId as keyof typeof noContentMessages.myProfile
-                        ]
-                      : noContentMessages.otherProfile[
-                          selectedTabId as keyof typeof noContentMessages.otherProfile
-                        ]}
+                  {/* ArtworkCard 그리드 */}
+                  <div className="grid md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 px-13.5">
+                    {getFilteredData().length > 0 ? (
+                      getFilteredData().map((item) => (
+                        <ArtworkCard
+                          key={item.id}
+                          imageUrl={item.imageUrl}
+                          title={item.title}
+                          author={item.author}
+                          likes={item.likes}
+                          variant="primary"
+                          onClick={() => {
+                            console.log(
+                              `${selectedTabId}의 ${item.title} 상세페이지`
+                            );
+                            // 상세 페이지 이동 로직 (예: navigate('/artwork/${item.id}'))
+                          }}
+                        />
+                      ))
+                    ) : (
+                      <div
+                        className="col-span-3 mt-30 flex flex-col justify-center items-center pb-10 text-[#717478] font-normal whitespace-pre-line text-center px-6"
+                        style={{ minHeight: "150px" }}
+                      >
+                        {/* isMyProfile에 따라 다른 메시지 출력 */}
+                        {isMyProfile
+                          ? noContentMessages.myProfile[
+                              selectedTabId as keyof typeof noContentMessages.myProfile
+                            ]
+                          : noContentMessages.otherProfile[
+                              selectedTabId as keyof typeof noContentMessages.otherProfile
+                            ]}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </>
-          )}
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </>

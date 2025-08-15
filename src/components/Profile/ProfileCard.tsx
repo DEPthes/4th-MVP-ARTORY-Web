@@ -118,7 +118,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             {isMyProfile && (
               <button
                 onClick={handleEditClick}
-                className="absolute bottom-2 right-2 bg-red-500 rounded-full p-2 cursor-pointer"
+                className="absolute bottom-2 right-2 cursor-pointer bg-red-500 rounded-full p-2 cursor-pointer"
               >
                 <img src={EditIcon} alt="edit" className="size-4 text-white" />
               </button>
