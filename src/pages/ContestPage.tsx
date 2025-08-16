@@ -1,23 +1,24 @@
 // src/pages/ContestPage.tsx
-import React, { useMemo, useState } from "react";
-import ArtworkCard from "../components/ArtworkCard";
-import Chip from "../components/Chip";
-import Header from "../components/Layouts/Header";
-import BannerControl from "../components/Profile/BannerControl";
-import EmptyState from "../components/EmptyState";
+import React, { useMemo, useState } from 'react';
+import ArtworkCard from '../components/ArtworkCard';
+import Chip from '../components/Chip';
+import Header from '../components/Layouts/Header';
+import BannerControl from '../components/Profile/BannerControl';
+import EmptyState from '../components/EmptyState';
+import { useNavigate } from 'react-router-dom'; //추가
 
 // 빈 상태 이미지
 
 const categories = [
-  "전체",
-  "회화",
-  "조각",
-  "공예",
-  "건축",
-  "사진",
-  "미디어아트",
-  "인테리어",
-  "기타",
+  '전체',
+  '회화',
+  '조각',
+  '공예',
+  '건축',
+  '사진',
+  '미디어아트',
+  '인테리어',
+  '기타',
 ] as const;
 type Category = (typeof categories)[number];
 
@@ -31,28 +32,29 @@ type Contest = {
 // ⬇️ 공모전 예시 데이터 (4~5개)
 const contests: Contest[] = [
   {
-    imageUrl: "",
-    contestName: "뉴미디어 아트 공모전",
+    imageUrl: '',
+    contestName: '뉴미디어 아트 공모전',
     likes: 12,
-    category: "미디어아트",
+    category: '미디어아트',
   },
-  { imageUrl: "", contestName: "청년 사진 공모전", likes: 5, category: "사진" },
-  { imageUrl: "", contestName: "도시 공간 디자인", likes: 8, category: "건축" },
+  { imageUrl: '', contestName: '청년 사진 공모전', likes: 5, category: '사진' },
+  { imageUrl: '', contestName: '도시 공간 디자인', likes: 8, category: '건축' },
   {
-    imageUrl: "",
-    contestName: "현대 회화 기획전 공모",
+    imageUrl: '',
+    contestName: '현대 회화 기획전 공모',
     likes: 3,
-    category: "회화",
+    category: '회화',
   },
-  { imageUrl: "", contestName: "공예 리빙 디자인", likes: 2, category: "공예" },
+  { imageUrl: '', contestName: '공예 리빙 디자인', likes: 2, category: '공예' },
   // 빈 상태 테스트: const contests: Contest[] = [];
 ];
 
 const ContestPage: React.FC = () => {
-  const [selectedCategory, setSelectedCategory] = useState<Category>("전체");
+  const navigate = useNavigate(); //추가
+  const [selectedCategory, setSelectedCategory] = useState<Category>('전체');
 
   const filteredContests = useMemo(() => {
-    return selectedCategory === "전체"
+    return selectedCategory === '전체'
       ? contests
       : contests.filter((c) => c.category === selectedCategory);
   }, [selectedCategory]);
@@ -88,8 +90,12 @@ const ContestPage: React.FC = () => {
                 <ArtworkCard
                   imageUrl={c.imageUrl}
                   title={c.contestName}
-                  author={undefined} // 공모전은 작가명 없음
+                  author={undefined}
                   likes={c.likes}
+                  onClick={() => {
+                    const originalIndex = contests.indexOf(c);
+                    navigate(`/contest/${originalIndex + 1}`);
+                  }}
                 />
               </div>
             ))}
