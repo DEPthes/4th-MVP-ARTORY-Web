@@ -3,6 +3,8 @@ import { Header } from "../components";
 import InfoCard from "../components/InfoCard";
 import { UserJob } from "../types/user";
 
+import DesignLine from "../assets/designLine.svg?react";
+
 const HomePage = () => {
   const { isLoggedIn, isLoading } = useIsLoggedIn();
 
@@ -44,7 +46,8 @@ const HomePage = () => {
           청년 작가와 MZ세대를 연결해, 누구나 예술을 사고 즐기고 나누는 참여형
           예술 플랫폼입니다.
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl w-full px-4">
+        <DesignLine className="w-full absolute top-125 z-- left-0" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl w-full px-4 z-10">
           <InfoCard
             job={UserJob.YOUNG_ARTIST}
             description1="작가 포트폴리오"
@@ -60,6 +63,20 @@ const HomePage = () => {
             description1="전시 기획"
             description2="아티스트 발굴"
           />
+        </div>
+        <div className="flex flex-col items-center mt-30">
+          <p className="text-xl font-light text-zinc-900">
+            청년 작가를 위한 포트폴리오, 아트컬렉터를 위한 작품 추천, 갤러리를
+            위한 작가 발굴
+          </p>
+          <div className="bg-stone-300 w-0.5 h-5 my-10" />
+          <p className="text-xl font-light text-zinc-900">
+            모두를 연결하는 아트 플랫폼
+          </p>
+          <div className="bg-zinc-400 w-28 h-0.5 my-16"></div>
+          <p className="text-2xl font-semibold text-zinc-900">
+            작품 그 너머의 이야기까지, 아토리에서 작가와 직접 나눠보세요
+          </p>
         </div>
       </div>
     </div>

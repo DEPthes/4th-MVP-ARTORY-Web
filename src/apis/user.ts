@@ -73,6 +73,14 @@ export interface GalleryRegistrationData {
   registrationNumber: string;
 }
 
+// 사이드바 프로필 응답 타입
+export interface SidebarProfileResponse {
+  id: number;
+  username: string;
+  profileImageURL: string;
+  userType: "ARTIST" | "GALLERY" | "COLLECTOR";
+}
+
 // User API 객체
 export const userApi = {
   // Google 로그인 (실제 제공된 API)
@@ -246,5 +254,38 @@ export const userApi = {
     localStorage.removeItem("refreshToken"); // legacy
     localStorage.removeItem("userInfo");
     console.log("🚪 로그아웃: googleID 및 관련 정보 제거 완료");
+  },
+
+  // 사이드바 프로필 정보 조회
+  async getSidebarProfile(googleId: string): Promise<SidebarProfileResponse> {
+    console.log("📋 사이드바 프로필 정보 조회 시작, googleId:", googleId);
+
+    // 인터셉터를 우회하여 직접 axios 사용
+    const baseURL = import.meta.env.DEV
+      ? "http://localhost:5173" // 개발환경에서는 프록시 사용
+      : import.meta.env.VITE_API_BASE_URL || "http://13.209.252.181:8080";
+
+    console.log("🔗 사이드바 프로필 API 호출");
+    const response = await axios.get<{
+      code: number;
+      status: string;
+      message: string;
+      data: SidebarProfileResponse;
+    }>(
+      `${baseURL}/api/user/side/profile?google_id=${encodeURIComponent(
+        googleId
+      )}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        timeout: 30000,
+      }
+    );
+
+    console.log("📦 사이드바 프로필 백엔드 응답:", response.data);
+    console.log("📋 사이드바 프로필 데이터:", response.data.data);
+
+    return response.data.data;
   },
 };

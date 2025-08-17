@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { cn } from "../../utils/classname";
 import { Button } from "../Button";
 import { useNavigate } from "react-router-dom";
-import { useLogout } from "../../hooks/useUser";
+import { useLogout, useSidebarProfile } from "../../hooks/useUser";
 
 interface HeaderProps {
   className?: string;
@@ -13,6 +13,16 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const logoutMutation = useLogout();
+
+  // Google ID 가져오기
+  const googleId = localStorage.getItem("googleID");
+
+  // 사이드바 프로필 정보 조회 (최초 한번만 호출, 캐싱으로 재사용)
+  const {
+    data: sidebarProfile,
+    isLoading: isProfileLoading,
+    error: profileError,
+  } = useSidebarProfile(googleId);
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
@@ -235,10 +245,66 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
           <div className="flex flex-col items-center">
             {/* 프로필 이미지 */}
             <div className="size-45 rounded-full mb-8.5 bg-zinc-300 flex items-center justify-center overflow-hidden">
-              <img alt="프로필 이미지" className="object-cover" />
+              {sidebarProfile?.profileImageURL ? (
+                <img
+                  src={sidebarProfile.profileImageURL}
+                  alt="프로필 이미지"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-zinc-300 flex items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="32"
+                    height="32"
+                    viewBox="0 0 32 32"
+                    fill="none"
+                  >
+                    <path
+                      d="M16 8C18.2091 8 20 9.79086 20 12C20 14.2091 18.2091 16 16 16C13.7909 16 12 14.2091 12 12C12 9.79086 13.7909 8 16 8Z"
+                      fill="#9CA3AF"
+                    />
+                    <path
+                      d="M16 18C21.5228 18 26 22.4772 26 28H6C6 22.4772 10.4772 18 16 18Z"
+                      fill="#9CA3AF"
+                    />
+                  </svg>
+                </div>
+              )}
             </div>
-            <p className="text-xl text-zinc-500 mb-6">작가</p>
-            <p className="text-2xl font-semibold text-zinc-900">닉네임</p>
+
+            {/* 로딩 상태 */}
+            {isProfileLoading ? (
+              <>
+                <div className="w-16 h-6 bg-zinc-300 rounded mb-6 animate-pulse"></div>
+                <div className="w-24 h-8 bg-zinc-300 rounded animate-pulse"></div>
+              </>
+            ) : profileError ? (
+              <>
+                <p className="text-xl text-red-500 mb-6">오류</p>
+                <p className="text-2xl font-semibold text-zinc-900">
+                  프로필 로드 실패
+                </p>
+              </>
+            ) : sidebarProfile ? (
+              <>
+                <p className="text-xl text-zinc-500 mb-6">
+                  {sidebarProfile.userType === "ARTIST" && "작가"}
+                  {sidebarProfile.userType === "GALLERY" && "갤러리"}
+                  {sidebarProfile.userType === "COLLECTOR" && "컬렉터"}
+                </p>
+                <p className="text-2xl font-semibold text-zinc-900">
+                  {sidebarProfile.username}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-xl text-zinc-500 mb-6">-</p>
+                <p className="text-2xl font-semibold text-zinc-900">
+                  프로필을 불러오는 중...
+                </p>
+              </>
+            )}
           </div>
         </div>
 
