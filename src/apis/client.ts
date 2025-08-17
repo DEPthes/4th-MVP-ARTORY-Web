@@ -1,77 +1,66 @@
 import axios from "axios";
-import { isDevelopmentMode, mockAuth } from "../utils/mockAuth";
 
-// API 기본 설정
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+// API 기본 설정 - 개발 환경에서는 프록시 사용
+const API_BASE_URL = import.meta.env.DEV
+  ? ""
+  : import.meta.env.VITE_API_BASE_URL || "http://13.209.252.181:8080";
+
+console.log("🔧 API 설정 정보:");
+console.log("- DEV 모드:", import.meta.env.DEV);
+console.log("- VITE_API_BASE_URL:", import.meta.env.VITE_API_BASE_URL);
+console.log("- 최종 API_BASE_URL:", API_BASE_URL);
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
+  timeout: 30000, // 30초 타임아웃으로 증가
 });
 
-// Mock API 응답 시뮬레이션
-const mockApiResponse = (url: string, method: string, data?: any) => {
-  console.log(`🎭 Mock API: ${method.toUpperCase()} ${url}`, data);
-
-  // /api/auth/complete-profile POST 요청 시뮬레이션
-  if (url.includes("/api/auth/complete-profile") && method === "post") {
-    return mockAuth.completeProfile(data);
-  }
-
-  // 기본 성공 응답
-  return Promise.resolve({
-    data: {
-      success: true,
-      message: "Mock API 응답",
-    },
-  });
-};
-
-// 요청 인터셉터 - 토큰 자동 추가 및 Mock 모드 처리
+// 요청 인터셉터 - 토큰 자동 추가
 apiClient.interceptors.request.use(
   async (config) => {
-    // Mock 모드인 경우 실제 API 호출 대신 Mock 응답 반환
-    if (isDevelopmentMode()) {
-      const mockResponse = await mockApiResponse(
-        config.url || "",
-        config.method || "get",
-        config.data
-      );
+    console.log(
+      `🚀 API 요청: ${config.method?.toUpperCase()} ${config.baseURL}${
+        config.url
+      }`
+    );
 
-      // 실제 요청을 취소하고 Mock 응답을 반환
-      config.adapter = () =>
-        Promise.resolve({
-          data: mockResponse.data,
-          status: 200,
-          statusText: "OK",
-          headers: {},
-          config,
-        });
-    }
-
-    const token =
-      localStorage.getItem("accessToken") ||
-      localStorage.getItem("mockAccessToken");
+    const token = localStorage.getItem("accessToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
   (error) => {
+    console.error("📤 요청 인터셉터 에러:", error);
     return Promise.reject(error);
   }
 );
 
 // 응답 인터셉터 - 에러 처리
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log(
+      `✅ API 응답: ${
+        response.status
+      } ${response.config.method?.toUpperCase()} ${response.config.url}`
+    );
+    return response;
+  },
   (error) => {
-    // Mock 모드가 아닐 때만 에러 처리
-    if (!isDevelopmentMode() && error.response?.status === 401) {
+    console.error("💥 API 에러 상세 정보:");
+    console.error("- 메시지:", error.message);
+    console.error("- 코드:", error.code);
+    console.error("- 상태:", error.response?.status);
+    console.error("- 응답 데이터:", error.response?.data);
+    console.error("- 요청 URL:", error.config?.url);
+    console.error("- 전체 에러:", error);
+
+    if (error.response?.status === 401) {
       // 토큰이 만료되었을 때 로그인 페이지로 리다이렉트
+      console.warn("🔒 인증 토큰 만료 - 로그인 페이지로 이동");
       localStorage.removeItem("accessToken");
       window.location.href = "/login";
     }

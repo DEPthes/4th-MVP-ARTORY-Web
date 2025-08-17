@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Header } from "../components";
 import BannerControl from "../components/Profile/BannerControl";
 import ProfileCard from "../components/Profile/ProfileCard";
@@ -9,6 +9,7 @@ import EntryList from "../components/NoteField/EntryList";
 import type { Entry } from "../components/NoteField/EntryList";
 import ArtworkCard from "../components/ArtworkCard";
 import TagFilterBar from "../components/Profile/TagFilterBar";
+import { useParams } from "react-router-dom";
 
 const artistTabs = [
   { id: "artistNote", label: "작가노트" },
@@ -133,7 +134,44 @@ const noContentMessages = {
 };
 
 const ProfilePage: React.FC = () => {
-  // const { userId } = useParams<{ userId: string }>(); // 현재 미사용
+  const { userId } = useParams<{ userId: string }>();
+
+  // 현재 로그인한 사용자 정보
+  const [currentUserInfo, setCurrentUserInfo] = useState({
+    name: "",
+    email: "",
+    role: "작가",
+    introduction: "",
+    contact: "",
+  });
+
+  // 내 프로필인지 확인
+  const [isMyProfile, setIsMyProfile] = useState(false);
+
+  useEffect(() => {
+    const googleID = localStorage.getItem("googleID");
+    const selectedJob = localStorage.getItem("selectedJob");
+
+    // 내 프로필인지 확인 (userId가 'me'이거나 현재 사용자 ID와 같은 경우)
+    const checkIsMyProfile = userId === "me" || userId === googleID;
+    setIsMyProfile(checkIsMyProfile);
+
+    if (checkIsMyProfile) {
+      // 내 프로필인 경우 localStorage에서 정보 가져오기
+      setCurrentUserInfo({
+        name: "박기현", // 회원가입 시 입력했던 이름
+        email: "test@test.com", // 회원가입 시 입력했던 이메일
+        role:
+          selectedJob === "Young Artist"
+            ? "작가"
+            : selectedJob === "Art Collector"
+            ? "아트 컬렉터"
+            : "갤러리",
+        introduction: "테스트 소개글", // 회원가입 시 입력했던 소개
+        contact: "01090828490", // 회원가입 시 입력했던 연락처
+      });
+    }
+  }, [userId]);
 
   const [userRole] = useState<"artist" | "gallery" | "collector">(
     "artist" // 이 부분에서 역할 바꾸면서 테스트
@@ -150,8 +188,6 @@ const ProfilePage: React.FC = () => {
   const [selectedTabId, setSelectedTabId] = useState(currentTabs[0].id);
 
   // 임시 유저 정보 (API 전용)
-  const nickname = "고은";
-  const isMyProfile = true; // URL의 userId와 현재 사용자 ID 비교
   const [isEditing, setIsEditing] = useState(false);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
@@ -295,14 +331,14 @@ const ProfilePage: React.FC = () => {
                     ? "아트 컬렉터"
                     : "" // 기본값
                 }
-                nickName={nickname}
+                nickName={currentUserInfo.name}
                 followers={123}
                 following={45}
-                introduction="안녕하세요, 고은입니다."
+                introduction={currentUserInfo.introduction}
                 birthdate="2003.10.17"
                 education="명지대학교 졸업"
-                phoneNumber="010-9999-8888"
-                email="goeun@example.com"
+                phoneNumber={currentUserInfo.contact}
+                email={currentUserInfo.email}
                 isMyProfile={isMyProfile}
               />
             </div>
@@ -315,7 +351,7 @@ const ProfilePage: React.FC = () => {
               onTabChange={handleTabChange}
             />
             <UserTabInfo
-              nickname={nickname}
+              nickname={currentUserInfo.name}
               currentTabLabel={
                 artistTabs.find((t) => t.id === selectedTabId)?.label || ""
               }
@@ -430,7 +466,7 @@ const ProfilePage: React.FC = () => {
                   />
 
                   {/* ArtworkCard 그리드 */}
-                  <div className="grid md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 px-13.5">
+                  <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6 px-13.5">
                     {getFilteredData().length > 0 ? (
                       getFilteredData().map((item) => (
                         <ArtworkCard
