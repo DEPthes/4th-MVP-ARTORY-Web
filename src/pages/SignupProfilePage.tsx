@@ -2,12 +2,24 @@ import { useState, useEffect } from "react";
 import Button from "../components/Button/Button";
 import Input from "../components/Input/Input";
 import Checkbox from "../components/Checkbox/Checkbox";
-import { authService, apiClient } from "../apis";
-import type { GoogleAuthResponse } from "../apis/auth";
+import {
+  useRegisterArtist,
+  useRegisterCollector,
+  useRegisterGallery,
+} from "../hooks/useUser";
+import {
+  useBusinessLookup,
+  usePhoneVerification,
+  useCodeVerification,
+} from "../hooks/useGallery";
+import type {
+  ArtistRegistrationData,
+  CollectorRegistrationData,
+  GalleryRegistrationData,
+} from "../apis/user";
 import { Header } from "../components";
 import { UserJob } from "../types/user";
 import { useNavigate } from "react-router-dom";
-import { isDevelopmentMode } from "../utils/mockAuth";
 
 // 작가/컬렉터용 폼 데이터
 interface ArtistCollectorFormData {
@@ -41,9 +53,15 @@ interface GalleryFormData {
 
 const SignupProfilePage = () => {
   const navigate = useNavigate();
-  const [userInfo, setUserInfo] = useState<GoogleAuthResponse["user"] | null>(
-    null
-  );
+  const registerArtistMutation = useRegisterArtist();
+  const registerCollectorMutation = useRegisterCollector();
+  const registerGalleryMutation = useRegisterGallery();
+
+  // 갤러리 관련 훅들
+  const businessLookupMutation = useBusinessLookup();
+  const phoneVerificationMutation = usePhoneVerification();
+  const codeVerificationMutation = useCodeVerification();
+
   const [selectedJob, setSelectedJob] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -78,32 +96,27 @@ const SignupProfilePage = () => {
 
   useEffect(() => {
     const loadUserInfo = async () => {
-      // 개발 모드에서는 인증 체크 우회
-      if (isDevelopmentMode()) {
-        console.log("🎭 개발 모드: SignupProfilePage 인증 체크 우회");
-        setUserInfo({
-          id: "dev-user",
-          email: "dev@example.com",
-          name: "개발자",
-        });
-        // 개발 모드에서는 기본 직업을 설정하거나 localStorage에서 가져오기
-        const job = localStorage.getItem("selectedJob") || "Young Artist";
-        setSelectedJob(job);
-        return;
-      }
-
-      const user = await authService.getCurrentUser();
-      if (!user) {
+      // 임시 Google ID 확인 (회원가입 과정 중)
+      const tempGoogleID = localStorage.getItem("tempGoogleID");
+      if (!tempGoogleID) {
+        console.log("❌ 임시 Google ID 없음 - 로그인 페이지로 이동");
         window.location.href = "/login";
         return;
       }
-      setUserInfo(user);
 
       const job = localStorage.getItem("selectedJob");
       if (!job) {
+        console.log("❌ 선택된 직업 없음 - 직업 선택 페이지로 이동");
         window.location.href = "/signup/job";
         return;
       }
+
+      console.log(
+        "✅ 프로필 페이지 진입, 임시 Google ID:",
+        tempGoogleID,
+        "직업:",
+        job
+      );
       setSelectedJob(job);
     };
 
@@ -145,23 +158,39 @@ const SignupProfilePage = () => {
     }
 
     try {
-      // 여기에 실제 사업자 등록번호 조회 API 호출
-      // const response = await apiClient.post("/api/business/lookup", {
-      //   businessNumber: galleryForm.businessRegistrationNumber
-      // });
+      console.log(
+        "🏢 사업자 등록번호 조회 시작:",
+        galleryForm.businessRegistrationNumber
+      );
 
-      // 임시로 성공/실패 처리 (테스트용으로 "123456"을 올바른 사업자번호로 설정)
-      if (galleryForm.businessRegistrationNumber === "123456") {
+      const result = await businessLookupMutation.mutateAsync(
+        galleryForm.businessRegistrationNumber
+      );
+
+      if (result.success && result.isValid) {
+        // 유효한 사업자 등록번호
         setGalleryForm((prev) => ({ ...prev, isBusinessVerified: true }));
         setErrors((prev) => ({ ...prev, businessRegistrationNumber: "" }));
-      } else {
+        console.log("✅ 유효한 사업자 등록번호 확인됨");
+      } else if (result.success && !result.isValid) {
+        // 유효하지 않은 사업자 등록번호
         setErrors((prev) => ({
           ...prev,
           businessRegistrationNumber:
             "등록되지 않은 사업자 등록번호입니다. 다시 확인해주세요.",
         }));
+        console.log("❌ 유효하지 않은 사업자 등록번호");
+      } else {
+        // API 호출 실패
+        setErrors((prev) => ({
+          ...prev,
+          businessRegistrationNumber:
+            result.message || "사업자 등록번호 조회에 실패했습니다.",
+        }));
+        console.log("💥 사업자 등록번호 조회 실패:", result.message);
       }
-    } catch {
+    } catch (error) {
+      console.error("💥 사업자 등록번호 조회 에러:", error);
       setErrors((prev) => ({
         ...prev,
         businessRegistrationNumber:
@@ -181,14 +210,33 @@ const SignupProfilePage = () => {
     }
 
     try {
-      // 여기에 실제 휴대폰 인증 API 호출
-      // const response = await apiClient.post("/api/auth/send-sms", { phone: galleryForm.verificationPhone });
+      console.log(
+        "📱 휴대폰 인증번호 발송 시작:",
+        galleryForm.verificationPhone
+      );
 
-      // 임시로 성공 처리
-      alert("인증번호가 발송되었습니다.");
-      setGalleryForm((prev) => ({ ...prev, isVerificationCodeSent: true }));
-    } catch {
-      alert("인증번호 발송에 실패했습니다.");
+      const result = await phoneVerificationMutation.mutateAsync(
+        galleryForm.verificationPhone
+      );
+
+      if (result.success) {
+        // 인증번호 발송 성공
+        alert("인증번호가 발송되었습니다.");
+        setGalleryForm((prev) => ({
+          ...prev,
+          isVerificationCodeSent: true,
+          verificationCode: "", // 기존 입력된 인증번호 초기화
+        }));
+        setErrors((prev) => ({ ...prev, verificationPhone: "" }));
+        console.log("✅ 인증번호 발송 성공");
+      } else {
+        // 인증번호 발송 실패
+        alert(result.message || "인증번호 발송에 실패했습니다.");
+        console.log("❌ 인증번호 발송 실패:", result.message);
+      }
+    } catch (error) {
+      console.error("💥 휴대폰 인증번호 발송 에러:", error);
+      alert("인증번호 발송에 실패했습니다. 다시 시도해주세요.");
     }
   };
 
@@ -203,27 +251,42 @@ const SignupProfilePage = () => {
     }
 
     try {
-      // 여기에 실제 인증번호 확인 API 호출
-      // const response = await apiClient.post("/api/auth/verify-sms", {
-      //   phone: galleryForm.verificationPhone,
-      //   code: galleryForm.verificationCode
-      // });
+      console.log("🔐 인증번호 확인 시작:", {
+        phoneNumber: galleryForm.verificationPhone,
+        code: galleryForm.verificationCode,
+      });
 
-      // 임시로 성공/실패 처리 (테스트용으로 "123456"을 올바른 인증번호로 설정)
-      if (galleryForm.verificationCode === "123456") {
+      const result = await codeVerificationMutation.mutateAsync({
+        phoneNumber: galleryForm.verificationPhone,
+        code: galleryForm.verificationCode,
+      });
+
+      if (result.success && result.isValid) {
+        // 인증번호 확인 성공
         setGalleryForm((prev) => ({
           ...prev,
           isPhoneVerified: true,
-          verificationCode: "",
+          verificationCode: "", // 인증 성공 후 인증번호 초기화
         }));
         setErrors((prev) => ({ ...prev, verificationCode: "" }));
-      } else {
+        console.log("✅ 인증번호 확인 성공");
+      } else if (result.success && !result.isValid) {
+        // 인증번호가 올바르지 않음
         setErrors((prev) => ({
           ...prev,
           verificationCode: "인증번호가 올바르지 않습니다. 다시 확인해주세요.",
         }));
+        console.log("❌ 올바르지 않은 인증번호");
+      } else {
+        // API 호출 실패
+        setErrors((prev) => ({
+          ...prev,
+          verificationCode: result.message || "인증번호 확인에 실패했습니다.",
+        }));
+        console.log("💥 인증번호 확인 실패:", result.message);
       }
-    } catch {
+    } catch (error) {
+      console.error("💥 인증번호 확인 에러:", error);
       setErrors((prev) => ({
         ...prev,
         verificationCode: "인증번호 확인에 실패했습니다. 다시 시도해주세요.",
@@ -297,57 +360,147 @@ const SignupProfilePage = () => {
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) return;
+    console.log("🚀 회원가입 폼 제출 시작");
+    console.log("📝 선택된 직업:", selectedJob);
+    console.log("✅ 폼 검증 시작...");
 
+    if (!validateForm()) {
+      console.log("❌ 폼 검증 실패");
+      return;
+    }
+
+    console.log("✅ 폼 검증 통과");
     setIsLoading(true);
 
     try {
-      let profileData;
+      const tempGoogleID = localStorage.getItem("tempGoogleID");
+      // 🧪 임시 테스트: 새로운 googleID 사용
+      const testGoogleID = "TEST_GALLERY_" + Date.now();
+      const testBusinessNumber = "TEST" + Date.now().toString().slice(-6); // 마지막 6자리로 사업자번호 생성
+      console.log("🔍 임시 Google ID 확인:", tempGoogleID);
+      console.log("🧪 테스트용 Google ID 사용:", testGoogleID);
+      console.log("🧪 테스트용 사업자번호 사용:", testBusinessNumber);
 
-      if (selectedJob === UserJob.GALLERY) {
-        profileData = {
-          job: selectedJob,
-          galleryName: galleryForm.galleryName,
-          businessRegistrationNumber: galleryForm.businessRegistrationNumber,
-          isBusinessVerified: galleryForm.isBusinessVerified,
-          galleryLocation: galleryForm.galleryLocation,
-          verificationPhone: galleryForm.verificationPhone,
-          managerName: galleryForm.managerName,
-          managerPhone: galleryForm.managerPhone,
-          managerEmail: galleryForm.managerEmail,
-          bio: galleryForm.bio,
-          isPhoneVerified: galleryForm.isPhoneVerified,
-        };
-      } else {
-        profileData = {
-          job: selectedJob,
-          name: artistCollectorForm.name,
-          birthDate: artistCollectorForm.birthDate,
-          education: artistCollectorForm.education,
-          isEducationPublic: artistCollectorForm.isEducationPublic,
-          phone: artistCollectorForm.phone,
-          email: artistCollectorForm.email,
-          bio: artistCollectorForm.bio,
-        };
+      if (!tempGoogleID) {
+        console.log("❌ 임시 Google ID 없음");
+        alert("회원가입 과정이 올바르지 않습니다.");
+        navigate("/login");
+        return;
       }
 
-      const response = await apiClient.post(
-        "/api/auth/complete-profile",
-        profileData
-      );
+      console.log("✅ 임시 Google ID 확인 완료");
 
-      if (response.data.success) {
-        localStorage.removeItem("selectedJob");
-        navigate("/");
+      if (selectedJob === UserJob.YOUNG_ARTIST) {
+        // 작가 회원가입 API 호출
+        const artistData: ArtistRegistrationData = {
+          name: artistCollectorForm.name,
+          googleID: tempGoogleID, // 임시 Google ID 사용
+          email: artistCollectorForm.email,
+          introduction: artistCollectorForm.bio,
+          contact: artistCollectorForm.phone,
+          birth: artistCollectorForm.birthDate,
+          educationBackground: artistCollectorForm.education,
+          disclosureStatus: artistCollectorForm.isEducationPublic,
+        };
+
+        console.log("🎨 작가 회원가입 데이터:", artistData);
+
+        const response = await registerArtistMutation.mutateAsync(artistData);
+
+        if (response.success) {
+          console.log("✅ 작가 회원가입 성공");
+          console.log("🏠 홈페이지로 이동 준비 중...");
+
+          // 회원가입 완료 후 로그인 상태로 전환
+          localStorage.setItem("googleID", tempGoogleID);
+          localStorage.removeItem("tempGoogleID");
+          localStorage.removeItem("selectedJob");
+
+          console.log("🏠 홈페이지로 이동 시작");
+          navigate("/");
+        } else {
+          console.log("❌ 작가 회원가입 실패:", response.message);
+          alert(response.message || "작가 회원가입에 실패했습니다.");
+        }
+      } else if (selectedJob === UserJob.GALLERY) {
+        // 갤러리 회원가입 API 호출
+        const galleryData: GalleryRegistrationData = {
+          userName: galleryForm.managerName,
+          googleID: tempGoogleID, // 실제 Google ID 사용
+          email: galleryForm.managerEmail,
+          introduction: galleryForm.bio,
+          contact: galleryForm.managerPhone,
+          galleryName: galleryForm.galleryName,
+          location: galleryForm.galleryLocation,
+          registrationNumber: galleryForm.businessRegistrationNumber, // 실제 사업자번호 사용
+        };
+
+        console.log("🏛️ 갤러리 회원가입 데이터:", galleryData);
+
+        const response = await registerGalleryMutation.mutateAsync(galleryData);
+
+        if (response.success) {
+          console.log("✅ 갤러리 회원가입 성공");
+          console.log("🏠 홈페이지로 이동 준비 중...");
+
+          // 회원가입 완료 후 로그인 상태로 전환
+          localStorage.setItem("googleID", tempGoogleID);
+          localStorage.removeItem("tempGoogleID");
+          localStorage.removeItem("selectedJob");
+
+          console.log("🏠 홈페이지로 이동 시작");
+          navigate("/");
+        } else {
+          console.log("❌ 갤러리 회원가입 실패:", response.message);
+          alert(response.message || "갤러리 회원가입에 실패했습니다.");
+        }
+      } else if (selectedJob === UserJob.ART_COLLECTOR) {
+        // 컬렉터 회원가입 API 호출
+        const collectorData: CollectorRegistrationData = {
+          name: artistCollectorForm.name,
+          googleID: tempGoogleID, // 임시 Google ID 사용
+          email: artistCollectorForm.email,
+          introduction: artistCollectorForm.bio,
+          contact: artistCollectorForm.phone,
+          birth: artistCollectorForm.birthDate,
+          educationBackground: artistCollectorForm.education,
+          disclosureStatus: artistCollectorForm.isEducationPublic,
+        };
+
+        console.log("👥 컬렉터 회원가입 데이터:", collectorData);
+
+        const response = await registerCollectorMutation.mutateAsync(
+          collectorData
+        );
+
+        if (response.success) {
+          console.log("✅ 컬렉터 회원가입 성공");
+          console.log("🏠 홈페이지로 이동 준비 중...");
+
+          // 회원가입 완료 후 로그인 상태로 전환
+          localStorage.setItem("googleID", tempGoogleID);
+          localStorage.removeItem("tempGoogleID");
+          localStorage.removeItem("selectedJob");
+
+          console.log("🏠 홈페이지로 이동 시작");
+          navigate("/");
+        } else {
+          console.log("❌ 컬렉터 회원가입 실패:", response.message);
+          alert(response.message || "컬렉터 회원가입에 실패했습니다.");
+        }
+      } else {
+        alert("올바르지 않은 직업이 선택되었습니다.");
       }
     } catch (error) {
-      console.error("Profile completion error:", error);
+      console.error("💥 회원가입 중 에러 발생:", error);
+      alert("회원가입 중 오류가 발생했습니다. 다시 시도해주세요.");
     } finally {
+      console.log("🔄 로딩 상태 해제");
       setIsLoading(false);
     }
   };
 
-  if (!userInfo || !selectedJob) {
+  if (!selectedJob) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>

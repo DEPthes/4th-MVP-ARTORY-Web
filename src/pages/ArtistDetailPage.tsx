@@ -325,7 +325,7 @@ const ArtistDetailPage: React.FC = () => {
                   />
 
                   {/* ArtworkCard 그리드 */}
-                  <div className="grid grid-cols-3 gap-6 px-13.5">
+                  <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6 px-13.5">
                     {getFilteredData().length > 0 ? (
                       getFilteredData().map((item) => (
                         <ArtworkCard
@@ -334,6 +334,7 @@ const ArtistDetailPage: React.FC = () => {
                           title={item.title}
                           author={item.author}
                           likes={item.likes}
+                          variant="primary"
                           onClick={() => {
                             console.log(
                               `${selectedTabId}의 ${item.title} 상세페이지`

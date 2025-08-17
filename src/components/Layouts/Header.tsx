@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { cn } from "../../utils/classname";
 import { Button } from "../Button";
 import { useNavigate } from "react-router-dom";
+import { useLogout } from "../../hooks/useUser";
 
 interface HeaderProps {
   className?: string;
@@ -11,6 +12,7 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
+  const logoutMutation = useLogout();
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
@@ -24,11 +26,20 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
     }
   };
 
-  const handleLogout = () => {
-    // 로그아웃 로직 구현
-    console.log("로그아웃");
-    // 예: localStorage.removeItem('token');
-    // navigate('/login');
+  const handleLogout = async () => {
+    try {
+      console.log("🚪 로그아웃 시작");
+
+      // TanStack Query 로그아웃 mutation 실행
+      await logoutMutation.mutateAsync();
+
+      console.log("✅ 로그아웃 완료 - 로그인 페이지로 이동");
+      navigate("/login");
+    } catch (error) {
+      console.error("💥 로그아웃 에러:", error);
+      // 에러가 발생해도 로컬 스토리지 정리는 되었으므로 로그인 페이지로 이동
+      navigate("/login");
+    }
   };
 
   const closeSidebar = () => {
@@ -60,20 +71,20 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
               <path
                 d="M1.66602 1H28.3327"
                 stroke="#D32F2F"
-                stroke-width="2"
-                stroke-linecap="square"
+                strokeWidth="2"
+                strokeLinecap="square"
               />
               <path
                 d="M1.66602 9H28.3327"
                 stroke="#1D1E20"
-                stroke-width="2"
-                stroke-linecap="square"
+                strokeWidth="2"
+                strokeLinecap="square"
               />
               <path
                 d="M1.66602 17H28.3327"
                 stroke="#1D1E20"
-                stroke-width="2"
-                stroke-linecap="square"
+                strokeWidth="2"
+                strokeLinecap="square"
               />
             </svg>
           </button>
@@ -152,7 +163,7 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
               <path
                 d="M13.999 5.66699C16.3921 5.66699 18.3328 7.60692 18.333 10C18.333 12.3932 16.3923 14.334 13.999 14.334C11.606 14.3338 9.66602 12.3931 9.66602 10C9.66619 7.60703 11.6061 5.66718 13.999 5.66699Z"
                 stroke="#D32F2F"
-                stroke-width="2"
+                strokeWidth="2"
               />
               <path
                 d="M14.5117 16.6768C19.0151 16.8384 22.7297 19.128 23.7295 23.1133C23.1903 23.6889 22.6008 24.2166 21.9678 24.6895C21.8147 22.8479 21.0065 21.4608 19.8037 20.4795C18.4217 19.3522 16.3979 18.668 13.9971 18.668C11.5964 18.668 9.57236 19.3523 8.19043 20.4795C6.98778 21.4608 6.17838 22.848 6.02539 24.6895C5.39277 24.2168 4.80447 23.6885 4.26562 23.1133C5.30323 18.9774 9.26454 16.6681 13.9971 16.668L14.5117 16.6768Z"
@@ -163,7 +174,7 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
                 cy="14.0003"
                 r="12.3333"
                 stroke="#1D1E20"
-                stroke-width="2"
+                strokeWidth="2"
               />
             </svg>
           </button>
@@ -204,14 +215,14 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
                   <path
                     d="M1.98145 19.604L19.6039 1.9815"
                     stroke="#D32F2F"
-                    stroke-width="2"
-                    stroke-linecap="square"
+                    strokeWidth="2"
+                    strokeLinecap="square"
                   />
                   <path
                     d="M2.39551 1.98145L20.018 19.6039"
                     stroke="#1D1E20"
-                    stroke-width="2"
-                    stroke-linecap="square"
+                    strokeWidth="2"
+                    strokeLinecap="square"
                   />
                 </svg>
               </div>

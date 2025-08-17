@@ -44,7 +44,7 @@ const BackNavigate: React.FC<BackNavigateProps> = ({
           <path
             d="M14.1665 2.16797L5.83317 10.5013L14.1665 18.8346"
             stroke={variant === "primary" ? "white" : "#1D1E20"}
-            stroke-width="1.25"
+            strokeWidth="1.25"
           />
         </svg>
         {text}

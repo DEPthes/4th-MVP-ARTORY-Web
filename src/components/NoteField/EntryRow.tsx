@@ -61,7 +61,7 @@ const EntryRow: React.FC<EntryRowProps> = ({
         <button
           onClick={onRegister}
           disabled={!year || !text}
-          className={`font-asta font-medium flex justify-center items-center w-19 h-13.5 px-6 py-4 rounded-md cursor-pointer ${
+          className={`font-asta text-nowrap font-medium flex justify-center items-center w-19 h-13.5 px-6 py-4 rounded-md cursor-pointer ${
             year && text
               ? "bg-[#1D1E20] text-white"
               : "bg-[#909193] text-white cursor-not-allowed"
