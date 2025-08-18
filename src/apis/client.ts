@@ -1,9 +1,7 @@
 import axios from "axios";
 
-// API 기본 설정 - 개발 환경에서는 프록시 사용
-const API_BASE_URL = import.meta.env.DEV
-  ? ""
-  : import.meta.env.VITE_API_BASE_URL || "http://13.209.252.181:8080";
+// API 기본 설정 - 항상 프록시 사용 (Mixed Content 에러 방지)
+const API_BASE_URL = "";
 
 console.log("🔧 API 설정 정보:");
 console.log("- DEV 모드:", import.meta.env.DEV);
