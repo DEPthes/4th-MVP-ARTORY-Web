@@ -1,14 +1,12 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import Button from "../components/Button/Button";
 import { getGoogleAuthUrl } from "../utils/googleAuth";
-import { useGoogleLogin, useIsLoggedIn } from "../hooks/useUser";
+import { useIsLoggedIn } from "../hooks/useUser";
 import { Header } from "../components";
 import loginBackground from "../assets/images/BackGround.png";
 import googleLogo from "../assets/google.svg";
 
 const LoginPage = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const googleLoginMutation = useGoogleLogin();
   const { isLoggedIn } = useIsLoggedIn();
 
   // 이미 로그인된 상태면 홈페이지로 리다이렉트
@@ -60,7 +58,7 @@ const LoginPage = () => {
           <Button
             className="w-full bg-white border p-6 border-stone-300 hover:bg-gray-50 flex items-center justify-center gap-4"
             onClick={handleGoogleLogin}
-loading={false}
+            loading={false}
             disabled={false}
           >
             <img src={googleLogo} alt="Google Logo" className="size-8" />
