@@ -5,21 +5,11 @@ import Chip from "../components/Chip";
 import Header from "../components/Layouts/Header";
 import BannerControl from "../components/Profile/BannerControl";
 import EmptyState from "../components/EmptyState";
+import { useTagList } from "../hooks/useTag";
 
 // 빈 상태 이미지
 
-const categories = [
-  "전체",
-  "회화",
-  "조각",
-  "공예",
-  "건축",
-  "사진",
-  "미디어아트",
-  "인테리어",
-  "기타",
-] as const;
-type Category = (typeof categories)[number];
+type Category = "전체" | string;
 
 type Exhibition = {
   imageUrl: string;
@@ -45,6 +35,17 @@ const exhibitions: Exhibition[] = [
 
 const ExhibitionPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category>("전체");
+
+  // 태그 리스트 조회
+  const { data: tagResponse } = useTagList();
+
+  // 동적으로 가져온 태그를 포함한 카테고리 목록 생성
+  const categories = useMemo(() => {
+    if (!tagResponse?.data) {
+      return ["전체"]; // 태그 로딩 중이거나 실패한 경우 기본값
+    }
+    return ["전체", ...tagResponse.data.map((tag) => tag.name)];
+  }, [tagResponse]);
 
   const filtered = useMemo(() => {
     return selectedCategory === "전체"

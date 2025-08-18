@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { cn } from "../../utils/classname";
 import { Button } from "../Button";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useLogout, useSidebarProfile } from "../../hooks/useUser";
 
 interface HeaderProps {
@@ -12,6 +12,7 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
   const logoutMutation = useLogout();
 
   // Google ID 가져오기
@@ -54,6 +55,11 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
 
   const closeSidebar = () => {
     setIsMenuOpen(false);
+  };
+
+  // 현재 경로에 따른 active 상태 확인
+  const isActiveMenu = (path: string) => {
+    return location.pathname === path;
   };
 
   return (
@@ -104,25 +110,45 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
         <nav className="flex items-center gap-10 lg:gap-20 text-lg font-semibold">
           <button
             onClick={() => navigate("/note")}
-            className="cursor-pointer px-3 py-2 text-zinc-900 hover:text-red-500 transition-colors duration-200"
+            className={cn(
+              "cursor-pointer px-3 py-2 transition-colors duration-200",
+              isActiveMenu("/note")
+                ? "text-red-500"
+                : "text-zinc-900 hover:text-red-500"
+            )}
           >
             NOTE
           </button>
           <button
             onClick={() => navigate("/collection")}
-            className="cursor-pointer px-3 py-2 text-zinc-900 hover:text-red-500 transition-colors duration-200"
+            className={cn(
+              "cursor-pointer px-3 py-2 transition-colors duration-200",
+              isActiveMenu("/collection")
+                ? "text-red-500"
+                : "text-zinc-900 hover:text-red-500"
+            )}
           >
             COLLECTION
           </button>
           <button
             onClick={() => navigate("/exhibition")}
-            className="cursor-pointer px-3 py-2 text-zinc-900 hover:text-red-500 transition-colors duration-200"
+            className={cn(
+              "cursor-pointer px-3 py-2 transition-colors duration-200",
+              isActiveMenu("/exhibition")
+                ? "text-red-500"
+                : "text-zinc-900 hover:text-red-500"
+            )}
           >
             EXHIBITION
           </button>
           <button
             onClick={() => navigate("/contest")}
-            className="cursor-pointer px-3 py-2 text-zinc-900 hover:text-red-500 transition-colors duration-200"
+            className={cn(
+              "cursor-pointer px-3 py-2 transition-colors duration-200",
+              isActiveMenu("/contest")
+                ? "text-red-500"
+                : "text-zinc-900 hover:text-red-500"
+            )}
           >
             CONTEST
           </button>
