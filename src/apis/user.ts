@@ -87,19 +87,15 @@ export const userApi = {
   async googleLogin(code: string): Promise<BackendLoginResponse> {
     console.log("🚀 Google 로그인 요청 시작, code:", code);
 
-    // 인터셉터를 우회하여 직접 axios 사용 (googleID 기반으로 토큰 불필요)
-    const baseURL = import.meta.env.DEV
-      ? "http://localhost:5173" // 개발환경에서는 프록시 사용
-      : import.meta.env.VITE_API_BASE_URL || "http://13.209.252.181:8080";
-
-    console.log("🔗 실제 백엔드 API 호출");
+    // 프록시를 통한 API 호출 (Mixed Content 에러 방지)
+    console.log("🔗 프록시를 통한 백엔드 API 호출");
     const response = await axios.post<{
       code: number;
       status: string;
       message: string;
       data: BackendLoginResponse;
     }>(
-      `${baseURL}/api/auth/login`,
+      "/api/auth/login",
       {
         code,
       },
@@ -119,17 +115,13 @@ export const userApi = {
 
   // 작가 회원가입 (실제 제공된 API)
   async registerArtist(data: ArtistRegistrationData): Promise<ApiResponse> {
-    // 인터셉터를 우회하여 직접 axios 사용 (회원가입 과정에서는 토큰 불필요)
-    const baseURL = import.meta.env.DEV
-      ? "http://localhost:5173" // 개발환경에서는 프록시 사용
-      : import.meta.env.VITE_API_BASE_URL || "http://13.209.252.181:8080";
-
+    // 프록시를 통한 API 호출
     const response = await axios.post<{
       code: number;
       status: string;
       message: string;
       data: boolean | Record<string, unknown>;
-    }>(`${baseURL}/api/user/register/artist`, data, {
+    }>("/api/user/register/artist", data, {
       headers: {
         "Content-Type": "application/json",
       },
@@ -151,17 +143,13 @@ export const userApi = {
   async registerCollector(
     data: CollectorRegistrationData
   ): Promise<ApiResponse> {
-    // 인터셉터를 우회하여 직접 axios 사용 (회원가입 과정에서는 토큰 불필요)
-    const baseURL = import.meta.env.DEV
-      ? "http://localhost:5173" // 개발환경에서는 프록시 사용
-      : import.meta.env.VITE_API_BASE_URL || "http://13.209.252.181:8080";
-
+    // 프록시를 통한 API 호출
     const response = await axios.post<{
       code: number;
       status: string;
       message: string;
       data: boolean | Record<string, unknown>;
-    }>(`${baseURL}/api/user/register/collector`, data, {
+    }>("/api/user/register/collector", data, {
       headers: {
         "Content-Type": "application/json",
       },
@@ -188,18 +176,15 @@ export const userApi = {
         JSON.stringify(data, null, 2)
       );
 
-      // 인터셉터를 우회하여 직접 axios 사용 (회원가입 과정에서는 토큰 불필요)
-      const baseURL = import.meta.env.DEV
-        ? "http://localhost:5173" // 개발환경에서는 프록시 사용
-        : import.meta.env.VITE_API_BASE_URL || "http://13.209.252.181:8080";
-      console.log("🌐 프록시를 통한 요청:", baseURL);
+      // 프록시를 통한 API 호출
+      console.log("🌐 프록시를 통한 갤러리 회원가입 요청");
 
       const response = await axios.post<{
         code: number;
         status: string;
         message: string;
         data: boolean | Record<string, unknown>;
-      }>(`${baseURL}/api/user/register/gallery`, data, {
+      }>("/api/user/register/gallery", data, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -260,21 +245,15 @@ export const userApi = {
   async getSidebarProfile(googleId: string): Promise<SidebarProfileResponse> {
     console.log("📋 사이드바 프로필 정보 조회 시작, googleId:", googleId);
 
-    // 인터셉터를 우회하여 직접 axios 사용
-    const baseURL = import.meta.env.DEV
-      ? "http://localhost:5173" // 개발환경에서는 프록시 사용
-      : import.meta.env.VITE_API_BASE_URL || "http://13.209.252.181:8080";
-
-    console.log("🔗 사이드바 프로필 API 호출");
+    // 프록시를 통한 API 호출
+    console.log("🔗 프록시를 통한 사이드바 프로필 API 호출");
     const response = await axios.get<{
       code: number;
       status: string;
       message: string;
       data: SidebarProfileResponse;
     }>(
-      `${baseURL}/api/user/side/profile?google_id=${encodeURIComponent(
-        googleId
-      )}`,
+      `/api/user/side/profile?google_id=${encodeURIComponent(googleId)}`,
       {
         headers: {
           "Content-Type": "application/json",
