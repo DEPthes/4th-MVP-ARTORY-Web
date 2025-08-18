@@ -15,6 +15,7 @@ export const userKeys = {
 export const useGoogleLogin = () => {
   return useMutation({
     mutationFn: userApi.googleLogin,
+    retry: false,
     onSuccess: (data: BackendLoginResponse) => {
       console.log("✅ 로그인 성공");
       console.log("📝 Google ID:", data.googleID);

@@ -1,14 +1,14 @@
-import { useEffect } from "react";
-import {
-  getAuthorizationCode,
-  validateState,
-} from "../utils/googleAuth";
+import { useEffect, useRef } from "react";
+import { getAuthorizationCode, validateState } from "../utils/googleAuth";
 import { useGoogleLogin } from "../hooks/useUser";
 
 const GoogleAuthCallback = () => {
   const googleLoginMutation = useGoogleLogin();
+  const hasHandledRef = useRef(false);
 
   useEffect(() => {
+    if (hasHandledRef.current) return; // 중복 실행 방지
+    hasHandledRef.current = true;
     const handleAuthCallback = async () => {
       try {
         // URL에서 authorization code와 state 추출
@@ -92,11 +92,13 @@ const GoogleAuthCallback = () => {
         }
       } catch (error) {
         console.error("💥 OAuth 콜백 처리 중 에러:", error);
-        
+
         // 에러 타입에 따른 구체적인 메시지
         if (error instanceof Error) {
           if (error.message.includes("timeout")) {
-            alert("서버 응답 시간이 초과되었습니다. 백엔드 서버를 확인해주세요.");
+            alert(
+              "서버 응답 시간이 초과되었습니다. 백엔드 서버를 확인해주세요."
+            );
           } else if (error.message.includes("Network Error")) {
             alert(
               "네트워크 연결에 실패했습니다. 백엔드 서버가 실행 중인지 확인해주세요."
@@ -107,13 +109,13 @@ const GoogleAuthCallback = () => {
         } else {
           alert("로그인에 실패했습니다.");
         }
-        
+
         window.location.href = "/login";
       }
     };
 
     handleAuthCallback();
-  }, [googleLoginMutation]);
+  }, []);
 
   return (
     <div className="flex items-center justify-center h-screen bg-gray-50">
