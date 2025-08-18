@@ -1,11 +1,13 @@
 import { useEffect } from "react";
 import {
-  sendAuthMessage,
   getAuthorizationCode,
   validateState,
 } from "../utils/googleAuth";
+import { useGoogleLogin } from "../hooks/useUser";
 
 const GoogleAuthCallback = () => {
+  const googleLoginMutation = useGoogleLogin();
+
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
@@ -22,18 +24,16 @@ const GoogleAuthCallback = () => {
         // 에러가 있는 경우
         if (error) {
           console.error("OAuth 에러:", error);
-          sendAuthMessage("GOOGLE_AUTH_ERROR", {
-            error: `OAuth 인증 실패: ${error}`,
-          });
+          alert(`OAuth 인증 실패: ${error}`);
+          window.location.href = "/login";
           return;
         }
 
         // Authorization code가 없는 경우
         if (!code) {
           console.error("Authorization code가 없습니다.");
-          sendAuthMessage("GOOGLE_AUTH_ERROR", {
-            error: "인증 코드를 찾을 수 없습니다.",
-          });
+          alert("인증 코드를 찾을 수 없습니다.");
+          window.location.href = "/login";
           return;
         }
 
@@ -50,9 +50,8 @@ const GoogleAuthCallback = () => {
           console.error("- 저장된 state:", storedState);
           console.error("- 받은 state:", state);
 
-          sendAuthMessage("GOOGLE_AUTH_ERROR", {
-            error: "보안 검증에 실패했습니다. 다시 시도해주세요.",
-          });
+          alert("보안 검증에 실패했습니다. 다시 시도해주세요.");
+          window.location.href = "/login";
           return;
         }
 
@@ -61,23 +60,60 @@ const GoogleAuthCallback = () => {
           stateValid: true,
         });
 
-        // 성공 메시지를 부모 창으로 전송
-        sendAuthMessage("GOOGLE_AUTH_SUCCESS", {
-          code: code,
-        });
+        // 백엔드 서버로 코드 전송
+        console.log("🚀 백엔드 서버로 코드 전송 중...");
+        const result = await googleLoginMutation.mutateAsync(code);
+        console.log("📋 백엔드 응답:", result);
+
+        // 회원 여부 확인 (isMember 직접 사용)
+        console.log("🔍 isMember 값:", result.isMember);
+        console.log("📝 googleID:", result.googleID);
+        console.log("🆔 userID:", result.userID);
+
+        if (!result.isMember) {
+          // 신규 사용자: 직업설정 페이지로 이동
+          console.log(
+            "👤 신규 사용자 (isMember: false) - 직업설정 페이지로 이동"
+          );
+
+          // Google ID를 임시 저장 (회원가입 과정에서만 사용)
+          localStorage.setItem("tempGoogleID", result.googleID);
+          console.log("💾 임시 Google ID 저장 완료:", result.googleID);
+
+          window.location.href = "/signup/job";
+        } else {
+          // 기존 사용자: 홈페이지로 이동
+          console.log("🏠 기존 사용자 (isMember: true) - 홈페이지로 이동");
+
+          // Google ID 저장 (로그인 상태 유지용)
+          localStorage.setItem("googleID", result.googleID);
+
+          window.location.href = "/";
+        }
       } catch (error) {
-        console.error("OAuth 콜백 처리 중 에러:", error);
-        sendAuthMessage("GOOGLE_AUTH_ERROR", {
-          error:
-            error instanceof Error
-              ? error.message
-              : "인증 처리 중 오류가 발생했습니다.",
-        });
+        console.error("💥 OAuth 콜백 처리 중 에러:", error);
+        
+        // 에러 타입에 따른 구체적인 메시지
+        if (error instanceof Error) {
+          if (error.message.includes("timeout")) {
+            alert("서버 응답 시간이 초과되었습니다. 백엔드 서버를 확인해주세요.");
+          } else if (error.message.includes("Network Error")) {
+            alert(
+              "네트워크 연결에 실패했습니다. 백엔드 서버가 실행 중인지 확인해주세요."
+            );
+          } else {
+            alert(`로그인 실패: ${error.message}`);
+          }
+        } else {
+          alert("로그인에 실패했습니다.");
+        }
+        
+        window.location.href = "/login";
       }
     };
 
     handleAuthCallback();
-  }, []);
+  }, [googleLoginMutation]);
 
   return (
     <div className="flex items-center justify-center h-screen bg-gray-50">

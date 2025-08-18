@@ -7,9 +7,8 @@
 다음 환경 변수들을 설정해야 합니다:
 
 ```bash
-# Google OAuth 설정
+# Google OAuth 설정 (프론트엔드용)
 VITE_GOOGLE_CLIENT_ID=your_google_client_id_here
-VITE_GOOGLE_CLIENT_SECRET=your_google_client_secret_here
 
 # API 서버 설정
 VITE_API_BASE_URL=http://13.209.252.181:8080
