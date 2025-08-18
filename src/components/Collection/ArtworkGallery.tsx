@@ -22,10 +22,7 @@ const ArtworkGallery = ({ artwork }: Props) => {
   return (
     <div className="mt-6 space-y-10">
       {hasWide && (
-        <div
-          className="mx-auto w-full bg-gray-200 rounded-md overflow-hidden"
-          style={{ maxWidth: '720px', aspectRatio: '16 / 9' }}
-        >
+        <div className="mx-auto w-full max-w-3xl bg-gray-200 rounded-md overflow-hidden aspect-video">
           {wideSrc && (
             <img
               src={wideSrc}
@@ -37,10 +34,7 @@ const ArtworkGallery = ({ artwork }: Props) => {
       )}
 
       {hasTall && (
-        <div
-          className="mx-auto w-full bg-gray-200 rounded-md overflow-hidden"
-          style={{ maxWidth: '480px', aspectRatio: '3 / 4' }}
-        >
+        <div className="mx-auto w-full max-w-lg bg-gray-200 rounded-md overflow-hidden aspect-[3/4]">
           {tallSrc && (
             <img
               src={tallSrc}
