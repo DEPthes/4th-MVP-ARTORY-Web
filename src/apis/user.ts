@@ -85,32 +85,51 @@ export interface SidebarProfileResponse {
 export const userApi = {
   // Google 로그인 (실제 제공된 API)
   async googleLogin(code: string): Promise<BackendLoginResponse> {
-    console.log("🚀 Google 로그인 요청 시작, code:", code);
+    try {
+      console.log("🚀 Google 로그인 요청 시작, code:", code);
 
-    // 프록시를 통한 API 호출 (Mixed Content 에러 방지)
-    console.log("🔗 프록시를 통한 백엔드 API 호출");
-    const response = await axios.post<{
-      code: number;
-      status: string;
-      message: string;
-      data: BackendLoginResponse;
-    }>(
-      "/api/auth/login",
-      {
-        code,
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
+      // 프록시를 통한 API 호출 (Mixed Content 에러 방지)
+      console.log("🔗 프록시를 통한 백엔드 API 호출");
+      const response = await axios.post<{
+        code: number;
+        status: string;
+        message: string;
+        data: BackendLoginResponse;
+      }>(
+        "/api/auth/login",
+        {
+          code,
         },
-        timeout: 30000,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          timeout: 30000,
+        }
+      );
+
+      console.log("📦 백엔드 원본 응답:", response.data);
+      console.log("📋 실제 로그인 데이터:", response.data.data);
+
+      return response.data.data; // 백엔드 응답 그대로 반환
+    } catch (error: unknown) {
+      console.error("💥 Google 로그인 API 에러:", error);
+
+      if (error instanceof Error && "response" in error) {
+        const axiosError = error as {
+          response?: {
+            status?: number;
+            data?: unknown;
+            headers?: Record<string, string>;
+          };
+        };
+        console.error("📋 에러 상태코드:", axiosError.response?.status);
+        console.error("📋 에러 응답 데이터:", axiosError.response?.data);
+        console.error("📋 에러 헤더:", axiosError.response?.headers);
       }
-    );
 
-    console.log("📦 백엔드 원본 응답:", response.data);
-    console.log("📋 실제 로그인 데이터:", response.data.data);
-
-    return response.data.data; // 백엔드 응답 그대로 반환
+      throw error; // 원래 에러를 다시 던짐
+    }
   },
 
   // 작가 회원가입 (실제 제공된 API)
@@ -252,15 +271,12 @@ export const userApi = {
       status: string;
       message: string;
       data: SidebarProfileResponse;
-    }>(
-      `/api/user/side/profile?google_id=${encodeURIComponent(googleId)}`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        timeout: 30000,
-      }
-    );
+    }>(`/api/user/side/profile?google_id=${encodeURIComponent(googleId)}`, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      timeout: 30000,
+    });
 
     console.log("📦 사이드바 프로필 백엔드 응답:", response.data);
     console.log("📋 사이드바 프로필 데이터:", response.data.data);
