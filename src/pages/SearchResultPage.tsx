@@ -1,48 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Button, Header } from "../components";
 import TabMenu from "../components/Profile/TabMenu";
 import ArtworkCard from "../components/ArtworkCard";
 import Chip from "../components/Chip";
+import { useTagList } from "../hooks/useTag";
 
-// 탭별 카테고리 정의
-const categories = {
-  artworkCollection: [
-    "전체",
-    "회화",
-    "조각",
-    "공예",
-    "건축",
-    "사진",
-    "미디어아트",
-    "인테리어",
-    "기타",
-  ],
-  exhibition: [
-    "전체",
-    "회화",
-    "조각",
-    "공예",
-    "건축",
-    "사진",
-    "미디어아트",
-    "인테리어",
-    "기타",
-  ],
-  contest: [
-    "전체",
-    "회화",
-    "조각",
-    "공예",
-    "건축",
-    "사진",
-    "미디어아트",
-    "인테리어",
-    "기타",
-  ],
-} as const;
+// 탭별 카테고리 정의 (동적으로 생성됨)
 
-type TabId = keyof typeof categories;
+type TabId = "artworkCollection" | "exhibition" | "contest";
 type Category = string;
 
 // 타입 정의
@@ -104,6 +70,30 @@ const SearchResultPage = () => {
   const [selectedTabId, setSelectedTabId] =
     useState<TabId>("artworkCollection");
   const [selectedCategory, setSelectedCategory] = useState<Category>("전체");
+
+  // 태그 리스트 조회
+  const { data: tagResponse } = useTagList();
+
+  // 동적으로 가져온 태그를 포함한 카테고리 목록 생성
+  const categories = useMemo(() => {
+    const defaultCategories = ["전체"];
+    if (!tagResponse?.data) {
+      return {
+        artworkCollection: defaultCategories,
+        exhibition: defaultCategories,
+        contest: defaultCategories,
+      };
+    }
+    const dynamicCategories = [
+      "전체",
+      ...tagResponse.data.map((tag) => tag.name),
+    ];
+    return {
+      artworkCollection: dynamicCategories,
+      exhibition: dynamicCategories,
+      contest: dynamicCategories,
+    };
+  }, [tagResponse]);
 
   // URL 파라미터에서 검색어 가져오기
   useEffect(() => {

@@ -11,3 +11,9 @@ export {
   type CollectorRegistrationData,
   type GalleryRegistrationData,
 } from "./user";
+
+// 작가 노트 관련 API
+export { artistNoteApi } from "./artistNote";
+
+// 태그 관련 API
+export { tagApi } from "./tag";
