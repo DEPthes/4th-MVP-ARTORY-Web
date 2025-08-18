@@ -48,14 +48,20 @@ npm i -g vercel
 vercel login
 ```
 
-#### 2. 프로젝트 배포
+#### 2. 프로젝트 배포 (Main 브랜치 기준)
 
 ```bash
-# 프로젝트 루트에서 실행
-vercel
+# main 브랜치로 체크아웃
+git checkout main
 
-# 또는 GitHub 연동하여 자동 배포 설정
+# GitHub 연동으로 자동 배포 설정 (추천)
+vercel --prod
+
+# 또는 수동 배포
+vercel deploy --prod
 ```
+
+**중요**: Vercel은 main 브랜치만 자동 배포하도록 설정됨
 
 #### 3. 환경 변수 설정
 
