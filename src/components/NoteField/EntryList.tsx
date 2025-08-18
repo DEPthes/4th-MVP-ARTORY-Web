@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import EntryRow from "./EntryRow";
 import RowPlusIcon from "../../assets/rowPlus.svg?react";
 
