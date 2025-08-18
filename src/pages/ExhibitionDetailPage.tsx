@@ -1,4 +1,5 @@
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import Header from '../components/Layouts/Header';
 import BackNavigate from '../components/Layouts/BackNavigate';
 
@@ -7,8 +8,10 @@ import ArtworkMeta from '../components/Collection/ArtworkMeta';
 import ArtworkGallery from '../components/Collection/ArtworkGallery';
 import DescriptionCard from '../components/Collection/DescriptionCard';
 import ArchiveBar from '../components/Collection/ArchiveBar';
+import ConfirmModal from '../components/Modals/ConfirmModal';
+import OwnerActions from '../components/Detail/OwnerActions';
 
-/** Exhibition 전용 로컬 타입/데이터 (공용 타입 파일 없이 사용) */
+/** Exhibition 전용 로컬 타입/데이터 */
 const Category = [
   '전체',
   '회화',
@@ -29,9 +32,9 @@ type Exhibition = {
   curator?: string;
   likes: number;
   category: Category;
+  ownerId?: string;
 };
 
-// ⛳️ 예시 데이터 (목록 페이지와 동일 컨셉, 상세는 1-based index로 진입)
 const exhibitions: Exhibition[] = [
   {
     imageUrl: '',
@@ -40,6 +43,7 @@ const exhibitions: Exhibition[] = [
     likes: 7,
     category: '회화',
     curator: '홍길동',
+    ownerId: 'u-1',
   },
   {
     imageUrl: '',
@@ -48,6 +52,7 @@ const exhibitions: Exhibition[] = [
     likes: 11,
     category: '건축',
     curator: '김건축',
+    ownerId: 'u-2',
   },
   {
     imageUrl: '',
@@ -55,6 +60,7 @@ const exhibitions: Exhibition[] = [
     likes: 4,
     category: '조각',
     curator: '이조각',
+    ownerId: 'u-2',
   },
   {
     imageUrl: '',
@@ -63,6 +69,7 @@ const exhibitions: Exhibition[] = [
     likes: 2,
     category: '공예',
     curator: '최공예',
+    ownerId: 'u-1',
   },
   {
     imageUrl: '',
@@ -70,18 +77,26 @@ const exhibitions: Exhibition[] = [
     likes: 9,
     category: '사진',
     curator: '정사진',
+    ownerId: 'u-1',
   },
 ];
 
 const ExhibitionDetailPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
 
-  // 1-based index
+  // 1-based → 0-based
   const idx = Number(id) - 1;
   const exhibit =
     Number.isInteger(idx) && idx >= 0 && idx < exhibitions.length
       ? exhibitions[idx]
       : undefined;
+
+  // 로그인 유저(예시)
+  const currentUserId = 'u-1';
+  const isOwner = exhibit?.ownerId === currentUserId;
+
+  const [openDelete, setOpenDelete] = useState(false);
 
   if (!exhibit) {
     return (
@@ -94,8 +109,8 @@ const ExhibitionDetailPage = () => {
     );
   }
 
-  // UI 컴포넌트가 기대하는 구조(Artwork 형태)로 맞춰 전달
-  const artworkLikeObject = {
+  // 공용 UI가 기대하는 구조로 맞춰 전달
+  const artwork = {
     imageUrl: exhibit.imageUrl,
     images: exhibit.images,
     title: exhibit.exhibitionName,
@@ -104,46 +119,59 @@ const ExhibitionDetailPage = () => {
     category: exhibit.category,
   };
 
+  const handleEdit = () => navigate(`/exhibition/${id}/edit`);
+  const handleDelete = () => setOpenDelete(true);
+  const confirmDelete = () => {
+    setOpenDelete(false);
+    navigate('/exhibition');
+  };
+
   return (
     <div className="min-h-screen bg-white">
-      {/* 상단 네비 */}
       <Header />
-
-      {/* 뒤로가기 배너 */}
       <BackNavigate
         pathname="/exhibition"
         text="EXHIBITION"
         variant="secondary"
       />
 
-      {/* 본문 */}
       <div className="max-w-300 mx-auto px-6 mt-6 pb-12">
-        {/* 상단: 좌(썸네일) / 우(제목·큐레이터) */}
+        {isOwner && (
+          <OwnerActions
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            className="mb-2"
+          />
+        )}
+
         <div className="flex gap-10">
           <div>
-            <ArtworkThumbnail artwork={artworkLikeObject} />
+            <ArtworkThumbnail artwork={artwork} />
           </div>
-          <ArtworkMeta artwork={artworkLikeObject} />
+          <ArtworkMeta artwork={artwork} />
         </div>
 
-        {/* 수평선 */}
         <hr className="my-6 border-gray-200" />
 
-        {/* 갤러리 */}
-        <ArtworkGallery artwork={artworkLikeObject} />
+        <ArtworkGallery artwork={artwork} />
 
-        {/* 설명 카드 */}
         <DescriptionCard
-          description={`이 섹션은 API 연동 후 서버에서 내려올 설명을 표시하는 영역입니다.
-현재는 예시 데이터로 렌더링됩니다.
-
-• 작품명: ${artworkLikeObject.title}
-• 작가: ${artworkLikeObject.author ?? '정보 없음'}`}
+          description={`이 영역은 API 연동 후 서버에서 내려올 설명을 보여줍니다.
+현재는 '${artwork.title}' 예시 텍스트입니다.`}
         />
 
-        {/* 태그 + 아카이브 */}
-        <ArchiveBar artwork={artworkLikeObject} />
+        <ArchiveBar artwork={artwork} />
       </div>
+
+      <ConfirmModal
+        open={openDelete}
+        title="해당 게시글을 삭제하시겠어요?"
+        cancelText="취소"
+        confirmText="삭제"
+        destructive
+        onClose={() => setOpenDelete(false)}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 };

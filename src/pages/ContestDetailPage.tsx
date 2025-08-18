@@ -1,4 +1,5 @@
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import Header from '../components/Layouts/Header';
 import BackNavigate from '../components/Layouts/BackNavigate';
 
@@ -7,8 +8,10 @@ import ArtworkMeta from '../components/Collection/ArtworkMeta';
 import ArtworkGallery from '../components/Collection/ArtworkGallery';
 import DescriptionCard from '../components/Collection/DescriptionCard';
 import ArchiveBar from '../components/Collection/ArchiveBar';
+import ConfirmModal from '../components/Modals/ConfirmModal';
+import OwnerActions from '../components/Detail/OwnerActions';
 
-/** Contest 전용 로컬 타입/데이터 (ContestPage.tsx와 동일 카테고리/목록 개념) */
+/** Contest 전용 로컬 타입/데이터 */
 const Category = [
   '전체',
   '회화',
@@ -27,36 +30,64 @@ type Contest = {
   contestName: string;
   likes: number;
   category: Category;
+  ownerId?: string;
 };
 
-// ⛳️ ContestPage.tsx의 예시 데이터와 **순서/내용 동일**하게 유지 (index 매칭)
+// ContestPage와 동일 순서/내용 유지(인덱스 매칭)
 const contests: Contest[] = [
   {
     imageUrl: '',
     contestName: '뉴미디어 아트 공모전',
     likes: 12,
     category: '미디어아트',
+    ownerId: 'u-1',
   },
-  { imageUrl: '', contestName: '청년 사진 공모전', likes: 5, category: '사진' },
-  { imageUrl: '', contestName: '도시 공간 디자인', likes: 8, category: '건축' },
+  {
+    imageUrl: '',
+    contestName: '청년 사진 공모전',
+    likes: 5,
+    category: '사진',
+    ownerId: 'u-2',
+  },
+  {
+    imageUrl: '',
+    contestName: '도시 공간 디자인',
+    likes: 8,
+    category: '건축',
+    ownerId: 'u-1',
+  },
   {
     imageUrl: '',
     contestName: '현대 회화 기획전 공모',
     likes: 3,
     category: '회화',
+    ownerId: 'u-2',
   },
-  { imageUrl: '', contestName: '공예 리빙 디자인', likes: 2, category: '공예' },
+  {
+    imageUrl: '',
+    contestName: '공예 리빙 디자인',
+    likes: 2,
+    category: '공예',
+    ownerId: 'u-1',
+  },
 ];
 
 const ContestDetailPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
 
-  // 1-based index
+  // 1-based → 0-based
   const idx = Number(id) - 1;
   const contest =
     Number.isInteger(idx) && idx >= 0 && idx < contests.length
       ? contests[idx]
       : undefined;
+
+  // 로그인 유저(예시)
+  const currentUserId = 'u-1';
+  const isOwner = contest?.ownerId === currentUserId;
+
+  const [openDelete, setOpenDelete] = useState(false);
 
   if (!contest) {
     return (
@@ -69,52 +100,65 @@ const ContestDetailPage = () => {
     );
   }
 
-  // UI 컴포넌트가 기대하는 구조(Artwork 형태)로 맞춰 전달
-  const asArtwork = {
+  // 공용 UI가 기대하는 구조로 맞춰 전달
+  const artwork = {
     imageUrl: contest.imageUrl,
-    images: undefined, // 현재 예시엔 보조 이미지 없음
+    images: undefined,
     title: contest.contestName,
-    author: undefined, // 주최자 정보 없으면 비움
+    author: undefined,
     likes: contest.likes,
     category: contest.category,
   };
 
+  const handleEdit = () => navigate(`/contest/${id}/edit`);
+  const handleDelete = () => setOpenDelete(true);
+  const confirmDelete = () => {
+    setOpenDelete(false);
+    navigate('/contest');
+  };
+
   return (
     <div className="min-h-screen bg-white">
-      {/* 상단 네비 */}
       <Header />
-
-      {/* 뒤로가기 배너 */}
       <BackNavigate pathname="/contest" text="CONTEST" variant="secondary" />
 
-      {/* 본문 */}
       <div className="max-w-300 mx-auto px-6 mt-6 pb-12">
-        {/* 상단: 좌(썸네일) / 우(제목) */}
+        {isOwner && (
+          <OwnerActions
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            className="mb-2"
+          />
+        )}
+
         <div className="flex gap-10">
           <div>
-            <ArtworkThumbnail artwork={asArtwork} />
+            <ArtworkThumbnail artwork={artwork} />
           </div>
-          <ArtworkMeta artwork={asArtwork} />
+          <ArtworkMeta artwork={artwork} />
         </div>
 
-        {/* 수평선 */}
         <hr className="my-6 border-gray-200" />
 
-        {/* 갤러리 (images 없으면 내부에서 렌더 X) */}
-        <ArtworkGallery artwork={asArtwork} />
+        <ArtworkGallery artwork={artwork} />
 
-        {/* 설명 카드 */}
         <DescriptionCard
-          description={`이 섹션은 API 연동 후 서버에서 내려올 설명을 표시하는 영역입니다.
-현재는 예시 데이터로 렌더링됩니다.
-
-• 작품명: ${asArtwork.title}
-• 작가: ${asArtwork.author ?? '정보 없음'}`}
+          description={`이 영역은 API 연동 후 서버에서 내려올 설명을 보여줍니다.
+현재는 '${artwork.title}' 예시 텍스트입니다.`}
         />
 
-        {/* 태그 + 아카이브 */}
-        <ArchiveBar artwork={asArtwork} />
+        <ArchiveBar artwork={artwork} />
       </div>
+
+      <ConfirmModal
+        open={openDelete}
+        title="해당 게시글을 삭제하시겠어요?"
+        cancelText="취소"
+        confirmText="삭제"
+        destructive
+        onClose={() => setOpenDelete(false)}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 };

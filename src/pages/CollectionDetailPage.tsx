@@ -1,5 +1,6 @@
 // src/pages/CollectionDetailPage.tsx
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import Header from '../components/Layouts/Header';
 import BackNavigate from '../components/Layouts/BackNavigate';
 
@@ -8,8 +9,10 @@ import ArtworkMeta from '../components/Collection/ArtworkMeta';
 import ArtworkGallery from '../components/Collection/ArtworkGallery';
 import DescriptionCard from '../components/Collection/DescriptionCard';
 import ArchiveBar from '../components/Collection/ArchiveBar';
+import ConfirmModal from '../components/Modals/ConfirmModal';
+import OwnerActions from '../components/Detail/OwnerActions';
 
-// ✅ CollectionPage.tsx와 동일한 카테고리/타입/데이터 정의
+/* ---------- 예시 타입/데이터 (CollectionPage와 동일) ---------- */
 const Category = [
   '전체',
   '회화',
@@ -25,14 +28,14 @@ type Category = (typeof Category)[number];
 
 type Artwork = {
   imageUrl: string;
-  images?: string[]; // 갤러리 재사용 대비(옵션)
+  images?: string[]; // 갤러리 재사용 대비
   title: string;
   author?: string;
   likes: number;
   category: Category;
+  ownerId?: string; // 소유자 판별
 };
 
-// ⬇️ CollectionPage의 예시 데이터 그대로
 const artworks: Artwork[] = [
   {
     imageUrl: '',
@@ -40,6 +43,7 @@ const artworks: Artwork[] = [
     author: '홍길동',
     likes: 10,
     category: '회화',
+    ownerId: 'u-1',
   },
   {
     imageUrl: '',
@@ -47,6 +51,7 @@ const artworks: Artwork[] = [
     author: '김작가',
     likes: 3,
     category: '사진',
+    ownerId: 'u-2',
   },
   {
     imageUrl: '',
@@ -54,6 +59,7 @@ const artworks: Artwork[] = [
     author: '이아티스트',
     likes: 8,
     category: '조각',
+    ownerId: 'u-2',
   },
   {
     imageUrl: '',
@@ -61,6 +67,7 @@ const artworks: Artwork[] = [
     author: '최공예',
     likes: 6,
     category: '공예',
+    ownerId: 'u-1',
   },
   {
     imageUrl: '',
@@ -68,18 +75,26 @@ const artworks: Artwork[] = [
     author: '정디자이너',
     likes: 5,
     category: '건축',
+    ownerId: 'u-1',
   },
 ];
 
 const CollectionDetailPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
 
-  // 1-based index
+  // 1-based → 0-based
   const idx = Number(id) - 1;
   const artwork =
     Number.isInteger(idx) && idx >= 0 && idx < artworks.length
       ? artworks[idx]
       : undefined;
+
+  // 로그인 유저(예시)
+  const currentUserId = 'u-1';
+  const isOwner = artwork?.ownerId === currentUserId;
+
+  const [openDelete, setOpenDelete] = useState(false);
 
   if (!artwork) {
     return (
@@ -92,12 +107,17 @@ const CollectionDetailPage = () => {
     );
   }
 
+  const handleEdit = () => navigate(`/collection/${id}/edit`);
+  const handleDelete = () => setOpenDelete(true);
+  const confirmDelete = () => {
+    setOpenDelete(false);
+    navigate('/collection');
+  };
+
   return (
     <div className="min-h-screen bg-white">
       {/* 상단 네비 */}
       <Header />
-
-      {/* 뒤로가기 배너 */}
       <BackNavigate
         pathname="/collection"
         text="COLLECTION"
@@ -106,7 +126,15 @@ const CollectionDetailPage = () => {
 
       {/* 본문 */}
       <div className="max-w-300 mx-auto px-6 mt-6 pb-12">
-        {/* ✅ h-12 대신 pb-12 */}
+        {/* 소유자 전용 액션 */}
+        {isOwner && (
+          <OwnerActions
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            className="mb-2"
+          />
+        )}
+
         {/* 상단: 좌(썸네일) / 우(제목·작가) */}
         <div className="flex gap-10">
           <div>
@@ -115,23 +143,31 @@ const CollectionDetailPage = () => {
           <ArtworkMeta artwork={artwork} />
         </div>
 
-        {/* 수평선 */}
+        {/* 구분선 */}
         <hr className="my-6 border-gray-200" />
 
         {/* 갤러리 (이미지 없으면 내부에서 렌더 X) */}
         <ArtworkGallery artwork={artwork} />
 
-        {/* 설명 카드 */}
+        {/* 설명 카드 (예시) */}
         <DescriptionCard
-          description={`이 섹션은 API 연동 후 서버에서 내려올 설명을 표시하는 영역입니다.
-현재는 예시 데이터로 렌더링됩니다.
-
-• 작품명: ${artwork.title}
-• 작가: ${artwork.author ?? '정보 없음'}`}
+          description={`이 영역은 API 연동 후 서버에서 내려온 설명을 보여줍니다.\n현재는 '${artwork.title}' 예시 텍스트입니다.`}
         />
+
         {/* 태그 + 아카이브 */}
         <ArchiveBar artwork={artwork} />
       </div>
+
+      {/* 삭제 확인 모달 */}
+      <ConfirmModal
+        open={openDelete}
+        title="해당 게시글을 삭제하시겠어요?"
+        cancelText="취소"
+        confirmText="삭제"
+        destructive
+        onClose={() => setOpenDelete(false)}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 };
