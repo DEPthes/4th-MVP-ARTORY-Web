@@ -6,6 +6,7 @@ import Header from "../components/Layouts/Header";
 import BannerControl from "../components/Profile/BannerControl";
 import EmptyState from "../components/EmptyState";
 import { useTagList } from "../hooks/useTag";
+import { useNavigate } from "react-router-dom";
 
 // 빈 상태 이미지
 
@@ -13,7 +14,7 @@ type Category = "전체" | string;
 
 type Exhibition = {
   imageUrl: string;
-  exhibitionName: string;
+  exhibitionName: string; //추가함
   likes: number;
   category: Category;
 };
@@ -34,6 +35,7 @@ const exhibitions: Exhibition[] = [
 ];
 
 const ExhibitionPage: React.FC = () => {
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<Category>("전체");
 
   // 태그 리스트 조회
@@ -84,8 +86,11 @@ const ExhibitionPage: React.FC = () => {
                 <ArtworkCard
                   imageUrl={e.imageUrl}
                   title={e.exhibitionName}
-                  author={undefined}
                   likes={e.likes}
+                  onClick={() => {
+                    const originalIndex = exhibitions.indexOf(e);
+                    navigate(`/exhibition/${originalIndex + 1}`);
+                  }}
                 />
               </div>
             ))}

@@ -6,6 +6,7 @@ import Header from "../components/Layouts/Header";
 import BannerControl from "../components/Profile/BannerControl";
 import EmptyState from "../components/EmptyState";
 import { useTagList } from "../hooks/useTag";
+import { useNavigate } from "react-router-dom";
 
 // 빈 상태 이미지
 
@@ -62,6 +63,8 @@ const artworks: Artwork[] = [
 const CollectionPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category>("전체");
 
+  const navigate = useNavigate();
+
   // 태그 리스트 조회
   const { data: tagResponse } = useTagList();
 
@@ -113,6 +116,12 @@ const CollectionPage: React.FC = () => {
                   title={a.title}
                   author={a.author}
                   likes={a.likes}
+                  onClick={() => {
+                    const originalIndex = artworks.findIndex(
+                      (x) => x.title === a.title && x.category === a.category
+                    );
+                    navigate(`/collection/${originalIndex + 1}`);
+                  }} // 클릭 시 상세 이동
                 />
               </div>
             ))}

@@ -17,3 +17,6 @@ export { artistNoteApi } from "./artistNote";
 
 // 태그 관련 API
 export { tagApi } from "./tag";
+
+// 상세 페이지 관련 API
+export type { DetailArtwork } from "../types/detail";

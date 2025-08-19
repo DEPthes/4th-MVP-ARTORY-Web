@@ -6,6 +6,7 @@ import Header from "../components/Layouts/Header";
 import BannerControl from "../components/Profile/BannerControl";
 import EmptyState from "../components/EmptyState";
 import { useTagList } from "../hooks/useTag";
+import { useNavigate } from "react-router-dom";
 
 // 빈 상태 이미지
 
@@ -39,6 +40,7 @@ const contests: Contest[] = [
 ];
 
 const ContestPage: React.FC = () => {
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<Category>("전체");
 
   // 태그 리스트 조회
@@ -89,8 +91,12 @@ const ContestPage: React.FC = () => {
                 <ArtworkCard
                   imageUrl={c.imageUrl}
                   title={c.contestName}
-                  author={undefined} // 공모전은 작가명 없음
+                  author={undefined}
                   likes={c.likes}
+                  onClick={() => {
+                    const originalIndex = contests.indexOf(c);
+                    navigate(`/contest/${originalIndex + 1}`);
+                  }}
                 />
               </div>
             ))}
