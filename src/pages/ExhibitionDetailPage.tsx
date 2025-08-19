@@ -86,7 +86,9 @@ const exhibitions: Exhibition[] = [
 const ExhibitionDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data: fetchedArtwork } = useExhibitionDetail({ id: String(id) });
+  const { data: fetchedArtwork, isLoading } = useExhibitionDetail({
+    id: String(id),
+  });
 
   // 1-based → 0-based
   const idx = Number(id) - 1;
@@ -109,7 +111,7 @@ const ExhibitionDetailPage = () => {
       <div className="min-h-screen bg-white">
         <Header />
         <div className="max-w-300 mx-auto px-6 py-10 text-gray-600">
-          전시를 찾을 수 없습니다.
+          {isLoading ? "로딩 중..." : "전시를 찾을 수 없습니다."}
         </div>
       </div>
     );

@@ -77,7 +77,9 @@ const contests: Contest[] = [
 const ContestDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data: fetchedArtwork } = useContestDetail({ id: String(id) });
+  const { data: fetchedArtwork, isLoading } = useContestDetail({
+    id: String(id),
+  });
 
   // 1-based → 0-based
   const idx = Number(id) - 1;
@@ -100,7 +102,7 @@ const ContestDetailPage = () => {
       <div className="min-h-screen bg-white">
         <Header />
         <div className="max-w-300 mx-auto px-6 py-10 text-gray-600">
-          공모전을 찾을 수 없습니다.
+          {isLoading ? "로딩 중..." : "공모전을 찾을 수 없습니다."}
         </div>
       </div>
     );

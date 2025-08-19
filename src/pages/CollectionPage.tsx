@@ -117,7 +117,9 @@ const CollectionPage: React.FC = () => {
                   author={a.author}
                   likes={a.likes}
                   onClick={() => {
-                    const originalIndex = artworks.indexOf(a);
+                    const originalIndex = artworks.findIndex(
+                      (x) => x.title === a.title && x.category === a.category
+                    );
                     navigate(`/collection/${originalIndex + 1}`);
                   }} // 클릭 시 상세 이동
                 />

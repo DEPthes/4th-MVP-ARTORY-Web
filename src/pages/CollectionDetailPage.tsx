@@ -83,7 +83,9 @@ const artworks: Artwork[] = [
 const CollectionDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data: fetchedArtwork } = useCollectionDetail({ id: String(id) });
+  const { data: fetchedArtwork, isLoading } = useCollectionDetail({
+    id: String(id),
+  });
 
   // 1-based → 0-based
   const idx = Number(id) - 1;
@@ -104,7 +106,7 @@ const CollectionDetailPage = () => {
       <div className="min-h-screen bg-white">
         <Header />
         <div className="max-w-300 mx-auto px-6 py-10 text-gray-600">
-          작품을 찾을 수 없습니다.
+          {isLoading ? "로딩 중..." : "작품을 찾을 수 없습니다."}
         </div>
       </div>
     );
