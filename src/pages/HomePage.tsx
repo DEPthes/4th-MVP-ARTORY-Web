@@ -3,7 +3,7 @@ import { Header } from "../components";
 import InfoCard from "../components/InfoCard";
 import { UserJob } from "../types/user";
 
-import DesignLine from "../assets/designLine.svg?react";
+import DesignLine from "../assets/images/Line.png";
 
 const HomePage = () => {
   const { isLoggedIn, isLoading } = useIsLoggedIn();
@@ -46,7 +46,11 @@ const HomePage = () => {
           청년 작가와 MZ세대를 연결해, 누구나 예술을 사고 즐기고 나누는 참여형
           예술 플랫폼입니다.
         </div>
-        <DesignLine className="w-full absolute top-125 z-- left-0" />
+        <img
+          src={DesignLine}
+          alt="DesignLine"
+          className="w-full absolute top-125 z-- left-0"
+        />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl w-full px-4 z-10">
           <InfoCard
             job={UserJob.YOUNG_ARTIST}
