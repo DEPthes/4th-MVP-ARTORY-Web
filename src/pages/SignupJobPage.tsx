@@ -1,43 +1,24 @@
 import { useState, useEffect } from "react";
 import Button from "../components/Button/Button";
-import { authService } from "../apis";
-import type { GoogleAuthResponse } from "../apis/auth";
 import UserCard from "../components/UserCard";
 import { UserJob, type UserJobType } from "../types/user";
 import { Header } from "../components";
-import { isDevelopmentMode } from "../utils/mockAuth";
 
 const SignupJobPage = () => {
   const [selectedJob, setSelectedJob] = useState<UserJobType | "">("");
   const [isLoading, setIsLoading] = useState(false);
-  const [userInfo, setUserInfo] = useState<GoogleAuthResponse["user"] | null>(
-    null
-  );
 
   useEffect(() => {
-    // 로그인된 사용자 정보 가져오기
-    const loadUserInfo = async () => {
-      // 개발 모드에서는 인증 체크 우회
-      if (isDevelopmentMode()) {
-        console.log("🎭 개발 모드: SignupJobPage 인증 체크 우회");
-        setUserInfo({
-          id: "dev-user",
-          email: "dev@example.com",
-          name: "개발자",
-        });
-        return;
-      }
+    // 임시 Google ID 확인 (회원가입 과정 중)
+    const tempGoogleID = localStorage.getItem("tempGoogleID");
+    if (!tempGoogleID) {
+      // 회원가입 과정이 아닌 경우 로그인 페이지로 리다이렉트
+      console.log("❌ 임시 Google ID 없음 - 로그인 페이지로 이동");
+      window.location.href = "/login";
+      return;
+    }
 
-      const user = await authService.getCurrentUser();
-      if (!user) {
-        // 로그인되지 않은 경우 로그인 페이지로 리다이렉트
-        window.location.href = "/login";
-        return;
-      }
-      setUserInfo(user);
-    };
-
-    loadUserInfo();
+    console.log("✅ 직업 선택 페이지 진입, 임시 Google ID:", tempGoogleID);
   }, []);
 
   const handleJobSelect = (job: UserJobType) => {
@@ -65,14 +46,6 @@ const SignupJobPage = () => {
       setIsLoading(false);
     }
   };
-
-  if (!userInfo) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-      </div>
-    );
-  }
 
   // UserJob의 모든 값들을 배열로 변환
   const jobOptions = Object.values(UserJob) as UserJobType[];

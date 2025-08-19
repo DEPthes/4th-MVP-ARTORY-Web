@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import React, { useState } from "react";
 import EntryRow from "./EntryRow";
 
 const meta: Meta<typeof EntryRow> = {

@@ -1,62 +1,21 @@
-import { useState, useEffect } from "react";
-import Header from "../components/Layouts/Header";
-import { authService } from "../apis";
+import { useIsLoggedIn } from "../hooks/useUser";
+import { Header } from "../components";
 import InfoCard from "../components/InfoCard";
 import { UserJob } from "../types/user";
-import { isDevelopmentMode } from "../utils/mockAuth";
+
+import DesignLine from "../assets/designLine.svg?react";
 
 const HomePage = () => {
-  const [isLoading, setIsLoading] = useState(true);
+  const { isLoggedIn, isLoading } = useIsLoggedIn();
 
-  useEffect(() => {
-    const checkUserStatus = async () => {
-      try {
-        // 개발 모드에서는 인증 체크 우회
-        if (isDevelopmentMode()) {
-          console.log("🎭 개발 모드: 인증 체크 우회");
-          setIsLoading(false);
-          return;
-        }
-
-        // 로그인 상태 확인
-        if (!authService.isLoggedIn()) {
-          window.location.href = "/login";
-          return;
-        }
-
-        // 사용자 정보 가져오기
-        const user = await authService.getCurrentUser();
-        if (!user) {
-          window.location.href = "/login";
-          return;
-        }
-
-        // 프로필 완료 여부 확인
-        if (!user.job) {
-          // 직업이 설정되지 않은 경우 직업 선택 페이지로
-          window.location.href = "/signup/job";
-          return;
-        }
-
-        // 추가 프로필 정보 확인 (확장된 프로필이 구현된 경우)
-        if (!user.nickname || !user.bio) {
-          // 기본 프로필 정보가 없는 경우 프로필 작성 페이지로
-          localStorage.setItem("selectedJob", user.job);
-          window.location.href = "/signup/profile";
-          return;
-        }
-      } catch (error) {
-        console.error("User status check error:", error);
-        window.location.href = "/login";
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkUserStatus();
-  }, []);
+  console.log("🏠 HomePage - isLoggedIn:", isLoggedIn, "isLoading:", isLoading);
+  console.log(
+    "🏠 HomePage - localStorage googleID:",
+    localStorage.getItem("googleID")
+  );
 
   if (isLoading) {
+    console.log("🏠 HomePage - 로딩 중...");
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
@@ -64,6 +23,13 @@ const HomePage = () => {
     );
   }
 
+  if (!isLoggedIn) {
+    console.log("🏠 HomePage - 로그인되지 않음, 로그인 페이지로 이동");
+    window.location.href = "/login";
+    return null;
+  }
+
+  console.log("🏠 HomePage - 정상 렌더링");
   return (
     <div className="min-h-screen bg-white">
       <Header />
@@ -80,7 +46,8 @@ const HomePage = () => {
           청년 작가와 MZ세대를 연결해, 누구나 예술을 사고 즐기고 나누는 참여형
           예술 플랫폼입니다.
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl w-full px-4">
+        <DesignLine className="w-full absolute top-125 z-- left-0" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl w-full px-4 z-10">
           <InfoCard
             job={UserJob.YOUNG_ARTIST}
             description1="작가 포트폴리오"
@@ -88,13 +55,13 @@ const HomePage = () => {
           />
           <InfoCard
             job={UserJob.ART_COLLECTOR}
-            description1="청년 작가 탐색"
-            description2="작품 아카이빙"
+            description1="작품 구매"
+            description2="소장품 관리"
           />
           <InfoCard
             job={UserJob.GALLERY}
-            description1="청년 작가 발굴"
-            description2="전시 및 공모전 홍보"
+            description1="전시 기획"
+            description2="아티스트 발굴"
           />
         </div>
         <div className="flex flex-col items-center mt-30">

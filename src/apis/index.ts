@@ -1,12 +1,22 @@
 // API 클라이언트
 export { default as apiClient } from "./client";
 
-// 인증 관련 API
+// 사용자 관련 API (TanStack Query)
 export {
-  default as authService,
-  type GoogleAuthResponse,
-  type LoginResponse,
-} from "./auth";
+  userApi,
+  type User,
+  type LoginResponse as UserLoginResponse,
+  type ApiResponse,
+  type ArtistRegistrationData,
+  type CollectorRegistrationData,
+  type GalleryRegistrationData,
+} from "./user";
 
-// Detail domain stubs (to be implemented with real endpoints)
+// 작가 노트 관련 API
+export { artistNoteApi } from "./artistNote";
+
+// 태그 관련 API
+export { tagApi } from "./tag";
+
+// 상세 페이지 관련 API
 export type { DetailArtwork } from "../types/detail";

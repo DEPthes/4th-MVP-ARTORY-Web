@@ -1,74 +1,37 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import Button from "../components/Button/Button";
-import { openGoogleAuthPopup } from "../utils/googleAuth";
-import { authService } from "../apis";
+import { getGoogleAuthUrl } from "../utils/googleAuth";
+import { useIsLoggedIn } from "../hooks/useUser";
 import { Header } from "../components";
 import loginBackground from "../assets/images/BackGround.png";
 import googleLogo from "../assets/google.svg";
-import { isDevelopmentMode, mockAuth } from "../utils/mockAuth";
 
 const LoginPage = () => {
-  const [isLoading, setIsLoading] = useState(false);
+  const { isLoggedIn } = useIsLoggedIn();
 
-  const handleGoogleLogin = async () => {
-    setIsLoading(true);
-
-    try {
-      // 구글 OAuth 팝업 열기
-      const accessToken = await openGoogleAuthPopup();
-
-      // 백엔드 서버로 토큰 전송
-      const result = await authService.googleLogin(accessToken);
-
-      if (result.success && result.data) {
-        // 최초 가입자인지 확인
-        if (result.data.isNewUser) {
-          // 최초 가입자: 직업설정 페이지로 이동
-          window.location.href = "/signup/job";
-        } else {
-          // 기존 사용자: 홈페이지로 이동
-          window.location.href = "/";
-        }
-      } else {
-        alert(result.message || "로그인에 실패했습니다.");
-      }
-    } catch (error) {
-      console.error("Google login error:", error);
-      alert(error instanceof Error ? error.message : "로그인에 실패했습니다.");
-    } finally {
-      setIsLoading(false);
+  // 이미 로그인된 상태면 홈페이지로 리다이렉트
+  useEffect(() => {
+    if (isLoggedIn) {
+      console.log("🏠 이미 로그인된 상태 - 홈페이지로 이동");
+      window.location.href = "/";
     }
-  };
+  }, [isLoggedIn]);
 
-  // Mock 로그인 (신규 사용자)
-  const handleMockLoginNew = async () => {
-    setIsLoading(true);
+  const handleGoogleLogin = () => {
     try {
-      const result = await mockAuth.mockGoogleLogin(true);
-      if (result.success && result.data) {
-        window.location.href = "/signup/job";
-      }
-    } catch (error) {
-      console.error("Mock login error:", error);
-      alert("Mock 로그인에 실패했습니다.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      console.log("🔑 Google 로그인 시작 (리다이렉트 방식)");
+      console.log(
+        "🌐 현재 redirect URI:",
+        `${window.location.origin}/auth/google/callback`
+      );
 
-  // Mock 로그인 (기존 사용자)
-  const handleMockLoginExisting = async () => {
-    setIsLoading(true);
-    try {
-      const result = await mockAuth.mockGoogleLogin(false);
-      if (result.success && result.data) {
-        window.location.href = "/";
-      }
+      // 구글 OAuth URL로 리다이렉트
+      const authUrl = getGoogleAuthUrl();
+      console.log("🔗 OAuth URL로 리다이렉트:", authUrl);
+      window.location.href = authUrl;
     } catch (error) {
-      console.error("Mock login error:", error);
-      alert("Mock 로그인에 실패했습니다.");
-    } finally {
-      setIsLoading(false);
+      console.error("💥 Google login error:", error);
+      alert("로그인 URL 생성에 실패했습니다.");
     }
   };
 
@@ -91,47 +54,18 @@ const LoginPage = () => {
         <div className="text-zinc-900 font-semibold text-xl mb-10">
           로그인하고 아토리를 시작해보세요!
         </div>
-        <div className="rounded-lg z-10 w-full max-w-md space-y-4">
+        <div className="rounded-lg z-10 w-full max-w-md">
           <Button
             className="w-full bg-white border p-6 border-stone-300 hover:bg-gray-50 flex items-center justify-center gap-4"
             onClick={handleGoogleLogin}
-            loading={isLoading}
-            disabled={isLoading}
+            loading={false}
+            disabled={false}
           >
             <img src={googleLogo} alt="Google Logo" className="size-8" />
             <span className="font-semibold text-zinc-900 text-xl">
               Google 계정으로 로그인
             </span>
           </Button>
-
-          {/* 개발 모드일 때만 Mock 버튼들 표시 */}
-          {isDevelopmentMode() && (
-            <>
-              <div className="border-t border-gray-200 my-4 pt-4">
-                <p className="text-center text-sm text-gray-500 mb-3">
-                  🎭 개발 모드 - Mock 로그인
-                </p>
-                <div className="space-y-2">
-                  <Button
-                    className="w-full bg-blue-500 text-white p-3 hover:bg-blue-600"
-                    onClick={handleMockLoginNew}
-                    loading={isLoading}
-                    disabled={isLoading}
-                  >
-                    Mock 로그인 (신규 사용자)
-                  </Button>
-                  <Button
-                    className="w-full bg-green-500 text-white p-3 hover:bg-green-600"
-                    onClick={handleMockLoginExisting}
-                    loading={isLoading}
-                    disabled={isLoading}
-                  >
-                    Mock 로그인 (기존 사용자)
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
         </div>
       </div>
       <img

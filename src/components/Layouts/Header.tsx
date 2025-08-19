@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { cn } from "../../utils/classname";
 import { Button } from "../Button";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useLogout, useSidebarProfile } from "../../hooks/useUser";
 
 interface HeaderProps {
   className?: string;
@@ -11,6 +12,18 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
+  const logoutMutation = useLogout();
+
+  // Google ID 가져오기
+  const googleId = localStorage.getItem("googleID");
+
+  // 사이드바 프로필 정보 조회 (최초 한번만 호출, 캐싱으로 재사용)
+  const {
+    data: sidebarProfile,
+    isLoading: isProfileLoading,
+    error: profileError,
+  } = useSidebarProfile(googleId);
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
@@ -24,15 +37,29 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
     }
   };
 
-  const handleLogout = () => {
-    // 로그아웃 로직 구현
-    console.log("로그아웃");
-    // 예: localStorage.removeItem('token');
-    // navigate('/login');
+  const handleLogout = async () => {
+    try {
+      console.log("🚪 로그아웃 시작");
+
+      // TanStack Query 로그아웃 mutation 실행
+      await logoutMutation.mutateAsync();
+
+      console.log("✅ 로그아웃 완료 - 로그인 페이지로 이동");
+      navigate("/login");
+    } catch (error) {
+      console.error("💥 로그아웃 에러:", error);
+      // 에러가 발생해도 로컬 스토리지 정리는 되었으므로 로그인 페이지로 이동
+      navigate("/login");
+    }
   };
 
   const closeSidebar = () => {
     setIsMenuOpen(false);
+  };
+
+  // 현재 경로에 따른 active 상태 확인
+  const isActiveMenu = (path: string) => {
+    return location.pathname === path;
   };
 
   return (
@@ -60,20 +87,20 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
               <path
                 d="M1.66602 1H28.3327"
                 stroke="#D32F2F"
-                stroke-width="2"
-                stroke-linecap="square"
+                strokeWidth="2"
+                strokeLinecap="square"
               />
               <path
                 d="M1.66602 9H28.3327"
                 stroke="#1D1E20"
-                stroke-width="2"
-                stroke-linecap="square"
+                strokeWidth="2"
+                strokeLinecap="square"
               />
               <path
                 d="M1.66602 17H28.3327"
                 stroke="#1D1E20"
-                stroke-width="2"
-                stroke-linecap="square"
+                strokeWidth="2"
+                strokeLinecap="square"
               />
             </svg>
           </button>
@@ -83,25 +110,45 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
         <nav className="flex items-center gap-10 lg:gap-20 text-lg font-semibold">
           <button
             onClick={() => navigate("/note")}
-            className="cursor-pointer px-3 py-2 text-zinc-900 hover:text-red-500 transition-colors duration-200"
+            className={cn(
+              "cursor-pointer px-3 py-2 transition-colors duration-200",
+              isActiveMenu("/note")
+                ? "text-red-500"
+                : "text-zinc-900 hover:text-red-500"
+            )}
           >
             NOTE
           </button>
           <button
             onClick={() => navigate("/collection")}
-            className="cursor-pointer px-3 py-2 text-zinc-900 hover:text-red-500 transition-colors duration-200"
+            className={cn(
+              "cursor-pointer px-3 py-2 transition-colors duration-200",
+              isActiveMenu("/collection")
+                ? "text-red-500"
+                : "text-zinc-900 hover:text-red-500"
+            )}
           >
             COLLECTION
           </button>
           <button
             onClick={() => navigate("/exhibition")}
-            className="cursor-pointer px-3 py-2 text-zinc-900 hover:text-red-500 transition-colors duration-200"
+            className={cn(
+              "cursor-pointer px-3 py-2 transition-colors duration-200",
+              isActiveMenu("/exhibition")
+                ? "text-red-500"
+                : "text-zinc-900 hover:text-red-500"
+            )}
           >
             EXHIBITION
           </button>
           <button
             onClick={() => navigate("/contest")}
-            className="cursor-pointer px-3 py-2 text-zinc-900 hover:text-red-500 transition-colors duration-200"
+            className={cn(
+              "cursor-pointer px-3 py-2 transition-colors duration-200",
+              isActiveMenu("/contest")
+                ? "text-red-500"
+                : "text-zinc-900 hover:text-red-500"
+            )}
           >
             CONTEST
           </button>
@@ -152,7 +199,7 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
               <path
                 d="M13.999 5.66699C16.3921 5.66699 18.3328 7.60692 18.333 10C18.333 12.3932 16.3923 14.334 13.999 14.334C11.606 14.3338 9.66602 12.3931 9.66602 10C9.66619 7.60703 11.6061 5.66718 13.999 5.66699Z"
                 stroke="#D32F2F"
-                stroke-width="2"
+                strokeWidth="2"
               />
               <path
                 d="M14.5117 16.6768C19.0151 16.8384 22.7297 19.128 23.7295 23.1133C23.1903 23.6889 22.6008 24.2166 21.9678 24.6895C21.8147 22.8479 21.0065 21.4608 19.8037 20.4795C18.4217 19.3522 16.3979 18.668 13.9971 18.668C11.5964 18.668 9.57236 19.3523 8.19043 20.4795C6.98778 21.4608 6.17838 22.848 6.02539 24.6895C5.39277 24.2168 4.80447 23.6885 4.26562 23.1133C5.30323 18.9774 9.26454 16.6681 13.9971 16.668L14.5117 16.6768Z"
@@ -163,7 +210,7 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
                 cy="14.0003"
                 r="12.3333"
                 stroke="#1D1E20"
-                stroke-width="2"
+                strokeWidth="2"
               />
             </svg>
           </button>
@@ -204,14 +251,14 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
                   <path
                     d="M1.98145 19.604L19.6039 1.9815"
                     stroke="#D32F2F"
-                    stroke-width="2"
-                    stroke-linecap="square"
+                    strokeWidth="2"
+                    strokeLinecap="square"
                   />
                   <path
                     d="M2.39551 1.98145L20.018 19.6039"
                     stroke="#1D1E20"
-                    stroke-width="2"
-                    stroke-linecap="square"
+                    strokeWidth="2"
+                    strokeLinecap="square"
                   />
                 </svg>
               </div>
@@ -224,10 +271,66 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
           <div className="flex flex-col items-center">
             {/* 프로필 이미지 */}
             <div className="size-45 rounded-full mb-8.5 bg-zinc-300 flex items-center justify-center overflow-hidden">
-              <img alt="프로필 이미지" className="object-cover" />
+              {sidebarProfile?.profileImageURL ? (
+                <img
+                  src={sidebarProfile.profileImageURL}
+                  alt="프로필 이미지"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-zinc-300 flex items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="32"
+                    height="32"
+                    viewBox="0 0 32 32"
+                    fill="none"
+                  >
+                    <path
+                      d="M16 8C18.2091 8 20 9.79086 20 12C20 14.2091 18.2091 16 16 16C13.7909 16 12 14.2091 12 12C12 9.79086 13.7909 8 16 8Z"
+                      fill="#9CA3AF"
+                    />
+                    <path
+                      d="M16 18C21.5228 18 26 22.4772 26 28H6C6 22.4772 10.4772 18 16 18Z"
+                      fill="#9CA3AF"
+                    />
+                  </svg>
+                </div>
+              )}
             </div>
-            <p className="text-xl text-zinc-500 mb-6">작가</p>
-            <p className="text-2xl font-semibold text-zinc-900">닉네임</p>
+
+            {/* 로딩 상태 */}
+            {isProfileLoading ? (
+              <>
+                <div className="w-16 h-6 bg-zinc-300 rounded mb-6 animate-pulse"></div>
+                <div className="w-24 h-8 bg-zinc-300 rounded animate-pulse"></div>
+              </>
+            ) : profileError ? (
+              <>
+                <p className="text-xl text-red-500 mb-6">오류</p>
+                <p className="text-2xl font-semibold text-zinc-900">
+                  프로필 로드 실패
+                </p>
+              </>
+            ) : sidebarProfile ? (
+              <>
+                <p className="text-xl text-zinc-500 mb-6">
+                  {sidebarProfile.userType === "ARTIST" && "작가"}
+                  {sidebarProfile.userType === "GALLERY" && "갤러리"}
+                  {sidebarProfile.userType === "COLLECTOR" && "컬렉터"}
+                </p>
+                <p className="text-2xl font-semibold text-zinc-900">
+                  {sidebarProfile.username}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-xl text-zinc-500 mb-6">-</p>
+                <p className="text-2xl font-semibold text-zinc-900">
+                  프로필을 불러오는 중...
+                </p>
+              </>
+            )}
           </div>
         </div>
 

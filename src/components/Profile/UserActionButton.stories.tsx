@@ -9,7 +9,7 @@ const meta: Meta<typeof UserActionButton> = {
   },
   tags: ["autodocs"],
   argTypes: {
-    initialType: {
+    type: {
       control: "select",
       options: ["follow", "following", "edit"],
     },
@@ -22,18 +22,18 @@ type Story = StoryObj<typeof meta>;
 
 export const FollowButton: Story = {
   args: {
-    initialType: "follow",
+    type: "follow",
   },
 };
 
 export const FollowingButton: Story = {
   args: {
-    initialType: "following",
+    type: "following",
   },
 };
 
 export const EditProfileButton: Story = {
   args: {
-    initialType: "edit",
+    type: "edit",
   },
 };
