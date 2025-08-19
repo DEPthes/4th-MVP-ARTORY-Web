@@ -6,6 +6,7 @@ import Header from "../components/Layouts/Header";
 import BannerControl from "../components/Profile/BannerControl";
 import EmptyState from "../components/EmptyState";
 import { useTagList } from "../hooks/useTag";
+import { useNavigate } from "react-router-dom";
 
 // 빈 상태 이미지
 
@@ -20,20 +21,21 @@ type Exhibition = {
 
 // ⬇️ 전시 예시 데이터 (4~5개)
 const exhibitions: Exhibition[] = [
-  { imageUrl: '', exhibitionName: '봄, 색의 변주', likes: 7, category: '회화' },
+  { imageUrl: "", exhibitionName: "봄, 색의 변주", likes: 7, category: "회화" },
   {
-    imageUrl: '',
-    exhibitionName: '빛과 공간의 대화',
+    imageUrl: "",
+    exhibitionName: "빛과 공간의 대화",
     likes: 11,
-    category: '건축',
+    category: "건축",
   },
-  { imageUrl: '', exhibitionName: '시간의 조각', likes: 4, category: '조각' },
-  { imageUrl: '', exhibitionName: '사소한 물성', likes: 2, category: '공예' },
-  { imageUrl: '', exhibitionName: '프레임 너머', likes: 9, category: '사진' },
+  { imageUrl: "", exhibitionName: "시간의 조각", likes: 4, category: "조각" },
+  { imageUrl: "", exhibitionName: "사소한 물성", likes: 2, category: "공예" },
+  { imageUrl: "", exhibitionName: "프레임 너머", likes: 9, category: "사진" },
   // 빈 상태 테스트: const exhibitions: Exhibition[] = [];
 ];
 
 const ExhibitionPage: React.FC = () => {
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<Category>("전체");
 
   // 태그 리스트 조회
@@ -48,7 +50,7 @@ const ExhibitionPage: React.FC = () => {
   }, [tagResponse]);
 
   const filtered = useMemo(() => {
-    return selectedCategory === '전체'
+    return selectedCategory === "전체"
       ? exhibitions
       : exhibitions.filter((e) => e.category === selectedCategory);
   }, [selectedCategory]);

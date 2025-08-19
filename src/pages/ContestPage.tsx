@@ -6,6 +6,7 @@ import Header from "../components/Layouts/Header";
 import BannerControl from "../components/Profile/BannerControl";
 import EmptyState from "../components/EmptyState";
 import { useTagList } from "../hooks/useTag";
+import { useNavigate } from "react-router-dom";
 
 // 빈 상태 이미지
 
@@ -21,24 +22,25 @@ type Contest = {
 // ⬇️ 공모전 예시 데이터 (4~5개)
 const contests: Contest[] = [
   {
-    imageUrl: '',
-    contestName: '뉴미디어 아트 공모전',
+    imageUrl: "",
+    contestName: "뉴미디어 아트 공모전",
     likes: 12,
-    category: '미디어아트',
+    category: "미디어아트",
   },
-  { imageUrl: '', contestName: '청년 사진 공모전', likes: 5, category: '사진' },
-  { imageUrl: '', contestName: '도시 공간 디자인', likes: 8, category: '건축' },
+  { imageUrl: "", contestName: "청년 사진 공모전", likes: 5, category: "사진" },
+  { imageUrl: "", contestName: "도시 공간 디자인", likes: 8, category: "건축" },
   {
-    imageUrl: '',
-    contestName: '현대 회화 기획전 공모',
+    imageUrl: "",
+    contestName: "현대 회화 기획전 공모",
     likes: 3,
-    category: '회화',
+    category: "회화",
   },
-  { imageUrl: '', contestName: '공예 리빙 디자인', likes: 2, category: '공예' },
+  { imageUrl: "", contestName: "공예 리빙 디자인", likes: 2, category: "공예" },
   // 빈 상태 테스트: const contests: Contest[] = [];
 ];
 
 const ContestPage: React.FC = () => {
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<Category>("전체");
 
   // 태그 리스트 조회
@@ -53,7 +55,7 @@ const ContestPage: React.FC = () => {
   }, [tagResponse]);
 
   const filteredContests = useMemo(() => {
-    return selectedCategory === '전체'
+    return selectedCategory === "전체"
       ? contests
       : contests.filter((c) => c.category === selectedCategory);
   }, [selectedCategory]);

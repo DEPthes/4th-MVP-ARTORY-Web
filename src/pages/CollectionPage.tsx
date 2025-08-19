@@ -6,8 +6,8 @@ import Header from "../components/Layouts/Header";
 import BannerControl from "../components/Profile/BannerControl";
 import EmptyState from "../components/EmptyState";
 import { useTagList } from "../hooks/useTag";
+import { useNavigate } from "react-router-dom";
 
-import { useNavigate } from 'react-router-dom';
 // 빈 상태 이미지
 
 type Category = "전체" | string;
@@ -23,45 +23,47 @@ type Artwork = {
 // ⬇️ 작품 예시 데이터 (4~5개)
 const artworks: Artwork[] = [
   {
-    imageUrl: '',
-    title: '봄의 정원',
-    author: '홍길동',
+    imageUrl: "",
+    title: "봄의 정원",
+    author: "홍길동",
     likes: 10,
-    category: '회화',
+    category: "회화",
   },
   {
-    imageUrl: '',
-    title: '빛의 단면',
-    author: '김작가',
+    imageUrl: "",
+    title: "빛의 단면",
+    author: "김작가",
     likes: 3,
-    category: '사진',
+    category: "사진",
   },
   {
-    imageUrl: '',
-    title: '공간의 기억',
-    author: '이아티스트',
+    imageUrl: "",
+    title: "공간의 기억",
+    author: "이아티스트",
     likes: 8,
-    category: '조각',
+    category: "조각",
   },
   {
-    imageUrl: '',
-    title: '목질의 온도',
-    author: '최공예',
+    imageUrl: "",
+    title: "목질의 온도",
+    author: "최공예",
     likes: 6,
-    category: '공예',
+    category: "공예",
   },
   {
-    imageUrl: '',
-    title: '도시의 결',
-    author: '정디자이너',
+    imageUrl: "",
+    title: "도시의 결",
+    author: "정디자이너",
     likes: 5,
-    category: '건축',
+    category: "건축",
   },
   // 빈 상태 테스트: const artworks: Artwork[] = [];
 ];
 
 const CollectionPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category>("전체");
+
+  const navigate = useNavigate();
 
   // 태그 리스트 조회
   const { data: tagResponse } = useTagList();
@@ -75,7 +77,7 @@ const CollectionPage: React.FC = () => {
   }, [tagResponse]);
 
   const filteredArtworks = useMemo(() => {
-    return selectedCategory === '전체'
+    return selectedCategory === "전체"
       ? artworks
       : artworks.filter((a) => a.category === selectedCategory);
   }, [selectedCategory]);
