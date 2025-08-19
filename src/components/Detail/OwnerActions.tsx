@@ -7,18 +7,18 @@ type OwnerActionsProps = {
 
 const OwnerActions = ({ onEdit, onDelete, className }: OwnerActionsProps) => {
   return (
-    <div className={`flex justify-end gap-4 ${className ?? ''}`}>
+    <div className={`flex justify-end gap-4 ${className ?? ""}`}>
       <button
         type="button"
         onClick={onEdit}
-        className="text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-full px-3 py-1.5 hover:cursor-pointer"
+        className="text-xl text-zinc-900 hover:bg-gray-50 rounded-full px-3 py-1.5 cursor-pointer"
       >
         수정
       </button>
       <button
         type="button"
         onClick={onDelete}
-        className="text-sm text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-full px-3 py-1.5 hover:cursor-pointer"
+        className="text-xl text-red-600 hover:bg-red-50 rounded-full px-3 py-1.5 cursor-pointer"
       >
         삭제
       </button>

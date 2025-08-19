@@ -1,5 +1,5 @@
 // src/components/Collection/DescriptionCard.tsx
-import React from 'react';
+import React from "react";
 
 type Props = {
   description: string;
@@ -7,8 +7,8 @@ type Props = {
 
 const DescriptionCard: React.FC<Props> = ({ description }) => {
   return (
-    <div className="min-h-130 px-10 py-9  bg-gray-100 flex flex-col gap-2 mt-6">
-      <p className="mx-auto max-w-160 text-center text-xs text-gray-600 leading-6 whitespace-pre-line">
+    <div className="min-h-130 px-10 py-9 bg-gray-100 flex flex-col gap-2 mt-6">
+      <p className="mx-auto text-center text-zinc-900 font-light whitespace-pre-line">
         {description}
       </p>
       <div className="mt-4 h-75  bg-gray-100" />

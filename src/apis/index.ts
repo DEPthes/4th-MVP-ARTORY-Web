@@ -7,3 +7,6 @@ export {
   type GoogleAuthResponse,
   type LoginResponse,
 } from "./auth";
+
+// Detail domain stubs (to be implemented with real endpoints)
+export type { DetailArtwork } from "../types/detail";

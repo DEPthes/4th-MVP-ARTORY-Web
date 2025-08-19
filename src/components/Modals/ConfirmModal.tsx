@@ -1,4 +1,4 @@
-import { useEffect, useId } from 'react';
+import { useEffect, useId } from "react";
 
 type Props = {
   open: boolean;
@@ -14,8 +14,8 @@ type Props = {
 const ConfirmModal = ({
   open,
   title,
-  cancelText = '취소',
-  confirmText = '삭제',
+  cancelText = "취소",
+  confirmText = "삭제",
   destructive = true,
   onClose,
   onConfirm,
@@ -26,9 +26,9 @@ const ConfirmModal = ({
   // ESC 닫기
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
   if (!open) return null;
@@ -44,11 +44,11 @@ const ConfirmModal = ({
       <div
         className={[
           // 카드
-          'w-full max-w-md mx-4  bg-white shadow-xl border border-gray-200',
+          "w-full max-w-md mx-4  bg-white shadow-xl border border-gray-200",
           // 살짝 등장 애니메이션
-          'transition-transform duration-150 ease-out motion-safe:scale-100 motion-reduce:transition-none',
-          className || '',
-        ].join(' ')}
+          "transition-transform duration-150 ease-out motion-safe:scale-100 motion-reduce:transition-none",
+          className || "",
+        ].join(" ")}
         onClick={(e) => e.stopPropagation()}
       >
         {/* 상단: 제목 */}
@@ -59,7 +59,7 @@ const ConfirmModal = ({
         </div>
 
         {/* 구분선 */}
-        <div className="border-t" />
+        <div className="border-t border-neutral-200" />
 
         {/* 하단 2분할 버튼 (세로선은 divide-x로 처리) */}
         <div className="flex divide-x divide-gray-200">
@@ -75,8 +75,8 @@ const ConfirmModal = ({
             onClick={onConfirm}
             className={`flex-1 py-5 text-lg hover:bg-gray-50 hover:cursor-pointer focus:outline-none focus:ring-2 ${
               destructive
-                ? 'text-rose-600 focus:ring-rose-200'
-                : 'text-blue-600 focus:ring-blue-200'
+                ? "text-rose-600 focus:ring-rose-200"
+                : "text-blue-600 focus:ring-blue-200"
             }`}
           >
             {confirmText}

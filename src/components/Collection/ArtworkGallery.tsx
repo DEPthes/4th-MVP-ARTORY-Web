@@ -1,21 +1,14 @@
 // src/components/Collection/ArtworkGallery.tsx
-type Artwork = {
-  imageUrl: string;
-  images?: string[];
-  title: string;
-  author?: string;
-  likes: number;
-  category: string;
-};
+import { DetailArtwork } from "../../types/detail";
 
-type Props = { artwork: Artwork };
+type Props = { artwork: DetailArtwork };
 
 const ArtworkGallery = ({ artwork }: Props) => {
   const hasWide = Array.isArray(artwork.images) && artwork.images.length >= 2;
   const hasTall = Array.isArray(artwork.images) && artwork.images.length >= 3;
 
-  const wideSrc = hasWide ? artwork.images![1]?.trim() || '' : '';
-  const tallSrc = hasTall ? artwork.images![2]?.trim() || '' : '';
+  const wideSrc = hasWide ? artwork.images![1]?.trim() || "" : "";
+  const tallSrc = hasTall ? artwork.images![2]?.trim() || "" : "";
 
   if (!hasWide && !hasTall) return null;
 

@@ -1,20 +1,13 @@
 // src/components/Collection/ArtworkThumbnail.tsx
-type Artwork = {
-  imageUrl: string;
-  images?: string[];
-  title: string;
-  author?: string;
-  likes: number;
-  category: string;
-};
+import type { DetailArtwork } from "../../types/detail";
 
-type Props = { artwork: Artwork };
+type Props = { artwork: DetailArtwork };
 
 const ArtworkThumbnail = ({ artwork }: Props) => {
   const thumbSrc =
     (artwork.images && artwork.images[0]?.trim()) ||
     artwork.imageUrl?.trim() ||
-    '';
+    "";
 
   return (
     <div className="bg-gray-200 w-100 h-128 overflow-hidden">
