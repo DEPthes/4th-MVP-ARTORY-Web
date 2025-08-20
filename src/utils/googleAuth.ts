@@ -64,98 +64,18 @@ export const validateState = (receivedState: string | null): boolean => {
   return isValid;
 };
 
-// Google OAuth 팝업 열기 (표준 방식)
-export const openGoogleAuthPopup = (): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    // 팝업 차단 확인
-    const popup = window.open(
-      "",
-      "googleAuth",
-      "width=500,height=600,scrollbars=yes,resizable=yes,left=" +
-        (window.screen.width / 2 - 250) +
-        ",top=" +
-        (window.screen.height / 2 - 300)
-    );
-
-    if (!popup) {
-      reject(new Error("팝업이 차단되었습니다. 팝업 차단을 해제해주세요."));
-      return;
-    }
-
-    // 팝업에 OAuth URL 로드
-    popup.location.href = getGoogleAuthUrl();
-
-    let isResolved = false;
-
-    // 타임아웃 설정 (10분)
-    const timeout = setTimeout(() => {
-      if (!isResolved) {
-        isResolved = true;
-        cleanup();
-        reject(new Error("인증 시간이 초과되었습니다."));
-      }
-    }, 600000);
-
-    const cleanup = () => {
-      clearTimeout(timeout);
-      window.removeEventListener("message", handleMessage);
-      try {
-        if (!popup.closed) {
-          popup.close();
-        }
-      } catch {
-        // 팝업이 이미 닫혔을 수 있음
-      }
-    };
-
-    // 팝업에서 메시지 수신
-    const handleMessage = (event: MessageEvent) => {
-      // 보안: origin 검증
-      if (event.origin !== window.location.origin) return;
-      if (isResolved) return;
-
-      if (event.data.type === "GOOGLE_AUTH_SUCCESS") {
-        isResolved = true;
-        cleanup();
-        resolve(event.data.code);
-      } else if (event.data.type === "GOOGLE_AUTH_ERROR") {
-        isResolved = true;
-        cleanup();
-        reject(new Error(event.data.error || "인증에 실패했습니다."));
-      }
-    };
-
-    window.addEventListener("message", handleMessage);
-
-    // 팝업 상태 모니터링
-    const checkPopup = () => {
-      if (isResolved) return;
-
-      try {
-        if (popup.closed) {
-          isResolved = true;
-          cleanup();
-          reject(new Error("인증이 취소되었습니다."));
-          return;
-        }
-      } catch {
-        // COOP 정책 에러 무시
-      }
-
-      setTimeout(checkPopup, 1000);
-    };
-
-    setTimeout(checkPopup, 1000);
-  });
+// 구글 로그인 시작 (리다이렉트 방식)
+export const startGoogleLogin = (): void => {
+  const authUrl = getGoogleAuthUrl();
+  console.log("🚀 구글 로그인 시작:", authUrl);
+  window.location.href = authUrl;
 };
 
-// Google OAuth 콜백 페이지용 메시지 전송
+// Google OAuth 콜백 페이지용 메시지 전송 (리다이렉트 방식에서는 불필요)
 export const sendAuthMessage = (
   type: "GOOGLE_AUTH_SUCCESS" | "GOOGLE_AUTH_ERROR",
   data?: { code?: string; error?: string }
 ) => {
-  if (window.opener) {
-    window.opener.postMessage({ type, ...data }, window.location.origin);
-    window.close();
-  }
+  // 리다이렉트 방식에서는 사용하지 않음
+  console.log("📤 Auth 메시지:", type, data);
 };
