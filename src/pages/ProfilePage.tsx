@@ -9,6 +9,7 @@ import EntryList from "../components/NoteField/EntryList";
 import type { Entry } from "../components/NoteField/EntryList";
 import ArtworkCard from "../components/ArtworkCard";
 import TagFilterBar from "../components/Profile/TagFilterBar";
+import ProfileFieldEdit from "../components/Profile/ProfileFieldEdit";
 import { useParams } from "react-router-dom";
 
 const artistTabs = [
@@ -143,10 +144,28 @@ const ProfilePage: React.FC = () => {
     role: "작가",
     introduction: "",
     contact: "",
+    birthdate: "2003.10.17",
+    education: "명지대학교 졸업",
   });
 
   // 내 프로필인지 확인
   const [isMyProfile, setIsMyProfile] = useState(false);
+
+  // 프로필 편집 모드 상태 추가
+  const [isProfileEditing, setIsProfileEditing] = useState(false);
+
+  // 팔로우 상태 관리 - ProfileCard 내부 버튼 사용으로 상태 제거
+
+  // 편집 중인 프로필 정보 (임시 상태)
+  const [editingProfileInfo, setEditingProfileInfo] = useState({
+    name: "",
+    email: "",
+    role: "",
+    introduction: "",
+    contact: "",
+    birthdate: "",
+    education: "",
+  });
 
   useEffect(() => {
     const googleID = localStorage.getItem("googleID");
@@ -155,10 +174,12 @@ const ProfilePage: React.FC = () => {
     // 내 프로필인지 확인 (userId가 'me'이거나 현재 사용자 ID와 같은 경우)
     const checkIsMyProfile = userId === "me" || userId === googleID;
     setIsMyProfile(checkIsMyProfile);
+    // 마이 페이지(`/profile/me`)에서는 기본 진입 시 프로필 편집 모드로 시작
+    setIsProfileEditing(userId === "me");
 
     if (checkIsMyProfile) {
       // 내 프로필인 경우 localStorage에서 정보 가져오기
-      setCurrentUserInfo({
+      const profileInfo = {
         name: "박기현", // 회원가입 시 입력했던 이름
         email: "test@test.com", // 회원가입 시 입력했던 이메일
         role:
@@ -169,7 +190,26 @@ const ProfilePage: React.FC = () => {
             : "갤러리",
         introduction: "테스트 소개글", // 회원가입 시 입력했던 소개
         contact: "01090828490", // 회원가입 시 입력했던 연락처
-      });
+        birthdate: "2003.10.17",
+        education: "명지대학교 졸업",
+      };
+
+      setCurrentUserInfo(profileInfo);
+      setEditingProfileInfo(profileInfo);
+    } else {
+      // 다른 사용자 프로필인 경우 (실제로는 API에서 가져와야 함)
+      const otherUserInfo = {
+        name: "김작가",
+        email: "artist@example.com",
+        role: "작가",
+        introduction: "다른 작가의 소개글입니다.",
+        contact: "010-1234-5678",
+        birthdate: "1990.05.15",
+        education: "홍익대학교 졸업",
+      };
+
+      setCurrentUserInfo(otherUserInfo);
+      setEditingProfileInfo(otherUserInfo);
     }
   }, [userId]);
 
@@ -313,6 +353,28 @@ const ProfilePage: React.FC = () => {
     setIsEditing(false);
   };
 
+  // 프로필 편집 관련 핸들러들
+  const handleProfileEditClick = () => setIsProfileEditing(true);
+
+  const handleProfileEditCancel = () => {
+    setEditingProfileInfo(currentUserInfo);
+    setIsProfileEditing(false);
+  };
+
+  const handleProfileEditSave = () => {
+    setCurrentUserInfo(editingProfileInfo);
+    setIsProfileEditing(false);
+    // TODO: API 호출하여 서버에 저장
+    console.log("프로필 정보 저장:", editingProfileInfo);
+  };
+
+  const handleProfileFieldChange = (field: string, value: string) => {
+    setEditingProfileInfo((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
   return (
     <>
       <Header />
@@ -322,24 +384,17 @@ const ProfilePage: React.FC = () => {
           <div className="-mt-24 z-10 pl-60 xl:pl-40 md:pl-20 sm:pl-5">
             <div className="sticky top-24">
               <ProfileCard
-                role={
-                  userRole === "artist"
-                    ? "작가"
-                    : userRole === "gallery"
-                    ? "갤러리"
-                    : userRole === "collector"
-                    ? "아트 컬렉터"
-                    : "" // 기본값
-                }
+                role={currentUserInfo.role}
                 nickName={currentUserInfo.name}
                 followers={123}
                 following={45}
                 introduction={currentUserInfo.introduction}
-                birthdate="2003.10.17"
-                education="명지대학교 졸업"
+                birthdate={currentUserInfo.birthdate}
+                education={currentUserInfo.education}
                 phoneNumber={currentUserInfo.contact}
                 email={currentUserInfo.email}
                 isMyProfile={isMyProfile}
+                onEditClick={handleProfileEditClick}
               />
             </div>
           </div>
@@ -363,6 +418,128 @@ const ProfilePage: React.FC = () => {
               counts={dynamicCounts}
             />
             <div className="flex flex-col px-10 py-4 min-h-132.5 bg-[#F4F5F6]">
+              {/* 프로필 편집 모드일 때 편집 가능한 필드들 */}
+              {isProfileEditing && isMyProfile && (
+                <div className="mb-6 p-6 bg-white rounded-lg">
+                  <h3 className="text-lg font-semibold mb-4 text-[#1D1E20]">
+                    프로필 편집
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        이름
+                      </label>
+                      <input
+                        type="text"
+                        value={editingProfileInfo.name}
+                        onChange={(e) =>
+                          handleProfileFieldChange("name", e.target.value)
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        이메일
+                      </label>
+                      <input
+                        type="email"
+                        value={editingProfileInfo.email}
+                        onChange={(e) =>
+                          handleProfileFieldChange("email", e.target.value)
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        역할
+                      </label>
+                      <select
+                        value={editingProfileInfo.role}
+                        onChange={(e) =>
+                          handleProfileFieldChange("role", e.target.value)
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                      >
+                        <option value="작가">작가</option>
+                        <option value="갤러리">갤러리</option>
+                        <option value="아트 컬렉터">아트 컬렉터</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        연락처
+                      </label>
+                      <input
+                        type="text"
+                        value={editingProfileInfo.contact}
+                        onChange={(e) =>
+                          handleProfileFieldChange("contact", e.target.value)
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        생년월일
+                      </label>
+                      <input
+                        type="text"
+                        value={editingProfileInfo.birthdate}
+                        onChange={(e) =>
+                          handleProfileFieldChange("birthdate", e.target.value)
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                        placeholder="YYYY.MM.DD"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        학력
+                      </label>
+                      <input
+                        type="text"
+                        value={editingProfileInfo.education}
+                        onChange={(e) =>
+                          handleProfileFieldChange("education", e.target.value)
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        소개
+                      </label>
+                      <textarea
+                        value={editingProfileInfo.introduction}
+                        onChange={(e) =>
+                          handleProfileFieldChange(
+                            "introduction",
+                            e.target.value
+                          )
+                        }
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                    <ProfileFieldEdit
+                      variant="complete"
+                      onClick={handleProfileEditSave}
+                      className="flex-1"
+                    />
+                    <button
+                      onClick={handleProfileEditCancel}
+                      className="flex-1 h-10.5 px-4 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    >
+                      취소
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {selectedTabId === "artistNote" && (
                 <>
                   <div className="w-full h-13.5 py-4 font-semibold text-[#1D1E20]">

@@ -188,7 +188,11 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
           </div>
 
           {/* 프로필 아이콘 */}
-          <button className="focus:outline-none" aria-label="프로필 메뉴">
+          <button
+            className="focus:outline-none cursor-pointer"
+            aria-label="프로필 메뉴"
+            onClick={() => navigate("/profile/me")}
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="28"
@@ -324,12 +328,18 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
                 </p>
               </>
             ) : (
-              <>
-                <p className="text-xl text-zinc-500 mb-6">-</p>
-                <p className="text-2xl font-semibold text-zinc-900">
-                  프로필을 불러오는 중...
-                </p>
-              </>
+              <div className="flex flex-col items-center">
+                <p className="text-xl text-zinc-500 mb-6"></p>
+                <button
+                  onClick={() => {
+                    navigate("/login");
+                    closeSidebar();
+                  }}
+                  className="text-2xl font-semibold text-zinc-900 cursor-pointer"
+                >
+                  로그인 하기
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -349,7 +359,7 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
 
             <button
               onClick={() => {
-                navigate("/profile");
+                navigate("/profile/me");
                 closeSidebar();
               }}
               className="w-full flex justify-center font-semibold cursor-pointer items-center px-4 py-3 text-zinc-900 hover:bg-gray-100 rounded-lg transition-colors duration-200"

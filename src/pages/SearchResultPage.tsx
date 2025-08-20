@@ -1,67 +1,32 @@
 import { useState, useEffect, useMemo } from "react";
+import type { AxiosError } from "axios";
 import { useSearchParams } from "react-router-dom";
 import { Button, Header } from "../components";
 import TabMenu from "../components/Profile/TabMenu";
 import ArtworkCard from "../components/ArtworkCard";
 import Chip from "../components/Chip";
 import { useTagList } from "../hooks/useTag";
+import { useSearchPosts } from "../hooks/useSearch";
+import type { SearchItem, PostType } from "../apis/search";
 
 // 탭별 카테고리 정의 (동적으로 생성됨)
 
 type TabId = "artworkCollection" | "exhibition" | "contest";
 type Category = string;
 
-// 타입 정의
+// 타입 정의 (백엔드 응답에 맞게 수정)
 interface ArtworkItem {
-  id: string;
+  postId: string;
+  postType: "ART" | "EXHIBITION" | "CONTEST";
   title: string;
-  author: string;
-  imageUrl: string;
-  likes: number;
-  category: string;
+  imageUrls: string[];
+  userName: string;
+  archived: number;
+  isMine: boolean;
+  isArchived: boolean;
 }
 
-interface ExhibitionItem {
-  id: string;
-  title: string;
-  category: string;
-}
-
-interface ContestItem {
-  id: string;
-  title: string;
-  category: string;
-}
-
-type DataItem = ArtworkItem | ExhibitionItem | ContestItem;
-
-// Mock 데이터 (실제로는 API에서 가져올 데이터)
-const mockArtworkData: ArtworkItem[] = [
-  {
-    id: "1",
-    title: "작품1",
-    author: "작가1",
-    imageUrl: "test",
-    likes: 20,
-    category: "회화",
-  },
-  {
-    id: "2",
-    title: "작품2",
-    author: "작가2",
-    imageUrl: "test",
-    likes: 15,
-    category: "조각",
-  },
-  {
-    id: "3",
-    title: "작품3",
-    author: "작가3",
-    imageUrl: "test",
-    likes: 30,
-    category: "사진",
-  },
-];
+// API 결과를 보관할 상태는 Tanstack Query로 대체
 
 const SearchResultPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -73,6 +38,27 @@ const SearchResultPage = () => {
 
   // 태그 리스트 조회
   const { data: tagResponse } = useTagList();
+
+  // 검색 결과 조회 훅
+  const {
+    data: searchResults = [],
+    isFetching,
+    isError,
+    error,
+  } = useSearchPosts({
+    text: submittedSearchText,
+    postType:
+      selectedTabId === "artworkCollection"
+        ? ("ART" as PostType)
+        : selectedTabId === "exhibition"
+        ? ("EXHIBITION" as PostType)
+        : ("CONTEST" as PostType),
+    tagName: selectedCategory === "전체" ? "ALL" : selectedCategory,
+    page: 0,
+    size: 30,
+  });
+
+  // 검색 API 실패(예: 401) 시에도 페이지는 유지되며 빈 결과로 처리
 
   // 동적으로 가져온 태그를 포함한 카테고리 목록 생성
   const categories = useMemo(() => {
@@ -101,8 +87,6 @@ const SearchResultPage = () => {
     if (query) {
       setSearchText(query);
       setSubmittedSearchText(query); // 검색 실행된 것으로 처리
-      // 여기서 실제 검색 API 호출하면 됩니다
-      console.log("검색어:", query);
     }
   }, [searchParams]);
 
@@ -126,36 +110,48 @@ const SearchResultPage = () => {
   // 현재 탭의 카테고리 목록
   const currentCategories = categories[selectedTabId];
 
-  // 선택된 탭과 카테고리에 따라 데이터 필터링
-  const getFilteredData = (): DataItem[] => {
-    let data: DataItem[] = [];
-
-    // 탭별로 다른 데이터 반환 (실제로는 API에서 가져옴)
-    switch (selectedTabId) {
-      case "artworkCollection":
-        data = mockArtworkData;
-        break;
-      case "exhibition":
-        data = []; // 전시 데이터 (현재 빈 배열)
-        break;
-      case "contest":
-        data = []; // 공모전 데이터 (현재 빈 배열)
-        break;
-      default:
-        data = [];
-    }
-
-    // 카테고리별 필터링
-    if (selectedCategory === "전체") {
-      return data;
-    }
-
-    return data.filter((item) => item.category === selectedCategory);
-  };
-
-  const filteredData = getFilteredData();
+  // 서버에서 이미 탭/태그로 필터링된 결과를 받는다고 가정
+  const filteredData: SearchItem[] = Array.isArray(searchResults)
+    ? searchResults
+    : [];
 
   const renderContent = () => {
+    if (isFetching) {
+      return (
+        <div className="col-span-3 text-center mt-24 text-gray-500 text-lg">
+          로딩 중...
+        </div>
+      );
+    }
+
+    if (isError) {
+      const axiosError = error as AxiosError;
+      const status = axiosError.response?.status;
+      if (status === 401) {
+        return (
+          <div className="col-span-3 text-center mt-24 text-gray-500 text-lg">
+            검색 결과를 보려면 로그인이 필요합니다.
+            <div className="mt-6 flex justify-center">
+              <Button
+                variant="primary"
+                size="base"
+                className="px-4 py-2.5 rounded-md text-lg font-normal"
+                onClick={() => (window.location.href = "/login")}
+              >
+                로그인 하러 가기
+              </Button>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="col-span-3 text-center mt-24 text-gray-500 text-lg">
+          오류가 발생했습니다. 잠시 후 다시 시도해주세요.
+        </div>
+      );
+    }
+
     if (filteredData.length === 0) {
       return (
         <div className="col-span-3 text-center mt-24 text-gray-500 text-lg">
@@ -169,24 +165,46 @@ const SearchResultPage = () => {
     // 탭별로 다른 컴포넌트 렌더링
     switch (selectedTabId) {
       case "artworkCollection":
-        return filteredData.map((item) => {
+        return (filteredData || []).map((item) => {
           const artworkItem = item as ArtworkItem;
           return (
             <ArtworkCard
-              key={artworkItem.id}
+              key={artworkItem.postId}
               title={artworkItem.title}
-              author={artworkItem.author}
-              imageUrl={artworkItem.imageUrl}
-              likes={artworkItem.likes}
+              author={artworkItem.userName}
+              imageUrl={artworkItem.imageUrls?.[0] || ""}
+              likes={0} // 백엔드에서 likes 정보가 없으므로 기본값
             />
           );
         });
       case "exhibition":
-        // 전시 카드 컴포넌트 (향후 구현)
-        return <div>전시 컴포넌트 (향후 구현)</div>;
+        return (filteredData || []).map((item) => {
+          const exhibitionItem = item as ArtworkItem;
+          return (
+            <ArtworkCard
+              key={exhibitionItem.postId}
+              title={exhibitionItem.title}
+              author={exhibitionItem.userName}
+              imageUrl={exhibitionItem.imageUrls?.[0] || ""}
+              likes={0} // 백엔드에서 likes 정보가 없으므로 기본값
+              variant="secondary"
+            />
+          );
+        });
       case "contest":
-        // 공모전 카드 컴포넌트 (향후 구현)
-        return <div>공모전 컴포넌트 (향후 구현)</div>;
+        return (filteredData || []).map((item) => {
+          const contestItem = item as ArtworkItem;
+          return (
+            <ArtworkCard
+              key={contestItem.postId}
+              title={contestItem.title}
+              author={contestItem.userName}
+              imageUrl={contestItem.imageUrls?.[0] || ""}
+              likes={0} // 백엔드에서 likes 정보가 없으므로 기본값
+              variant="secondary"
+            />
+          );
+        });
       default:
         return null;
     }
