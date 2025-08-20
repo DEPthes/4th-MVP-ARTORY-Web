@@ -1,7 +1,7 @@
 // src/hooks/useDetail.ts
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "../apis";
-import { DetailArtwork } from "../types/detail";
+import type { DetailArtwork } from "../types/detail";
 import {
   mapCollectionToDetail,
   mapExhibitionToDetail,

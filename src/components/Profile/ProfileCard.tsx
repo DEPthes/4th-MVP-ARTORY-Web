@@ -20,6 +20,7 @@ interface ProfileCardProps {
   onImageChange?: (file: File) => void;
   onClick?: () => void;
   isMyProfile: boolean;
+  onEditClick?: () => void;
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({
@@ -38,6 +39,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   onImageChange,
   onClick,
   isMyProfile,
+  onEditClick,
 }) => {
   const [imageError, setImageError] = useState(false);
   const [localImage, setLocalImage] = useState<string | null>(null);
@@ -208,9 +210,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           <UserActionButton
             type="edit"
             className="w-full"
-            onClick={() => {
-              console.log("프로필 편집 클릭");
-            }}
+            onClick={onEditClick}
           />
         ) : (
           <UserActionButton

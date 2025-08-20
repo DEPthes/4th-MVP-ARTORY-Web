@@ -1,5 +1,5 @@
 // src/utils/detailMappers.ts
-import { DetailArtwork } from "../types/detail";
+import type { DetailArtwork } from "../types/detail";
 
 // Adapters to map various domain entities to DetailArtwork used by shared UI
 
