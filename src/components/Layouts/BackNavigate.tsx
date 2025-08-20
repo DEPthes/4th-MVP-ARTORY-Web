@@ -2,10 +2,11 @@ import { useNavigate } from "react-router-dom";
 import { cn } from "../../utils/classname";
 
 export interface BackNavigateProps {
-  pathname: string;
+  pathname?: string;
   text: string;
   variant?: "primary" | "secondary";
   className?: string;
+  back?: boolean;
 }
 
 const BackNavigate: React.FC<BackNavigateProps> = ({
@@ -13,6 +14,7 @@ const BackNavigate: React.FC<BackNavigateProps> = ({
   text,
   variant = "primary",
   className,
+  back = false,
 }) => {
   const navigate = useNavigate();
 
@@ -32,7 +34,9 @@ const BackNavigate: React.FC<BackNavigateProps> = ({
     >
       <button
         className="flex items-center gap-2 font-semibold text-xl cursor-pointer"
-        onClick={() => navigate(pathname)}
+        onClick={() =>
+          back ? navigate(-1) : pathname ? navigate(pathname) : navigate(-1)
+        }
       >
         <svg
           width="20"

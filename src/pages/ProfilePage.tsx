@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Header } from "../components";
 import BannerControl from "../components/Profile/BannerControl";
 import ProfileCard from "../components/Profile/ProfileCard";
@@ -11,6 +12,14 @@ import ArtworkCard from "../components/ArtworkCard";
 import TagFilterBar from "../components/Profile/TagFilterBar";
 import ProfileFieldEdit from "../components/Profile/ProfileFieldEdit";
 import { useParams } from "react-router-dom";
+
+type EditorType = "work" | "exhibition" | "contest";
+
+const tabLabelToType: Partial<Record<string, EditorType>> = {
+  작업: "work",
+  전시: "exhibition",
+  공모전: "contest",
+};
 
 const artistTabs = [
   { id: "artistNote", label: "작가노트" },
@@ -136,6 +145,8 @@ const noContentMessages = {
 
 const ProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // 현재 로그인한 사용자 정보
   const [currentUserInfo, setCurrentUserInfo] = useState({
@@ -169,10 +180,11 @@ const ProfilePage: React.FC = () => {
 
   useEffect(() => {
     const googleID = localStorage.getItem("googleID");
+    const isMeRoute = location.pathname.startsWith("/profile/me");
     const selectedJob = localStorage.getItem("selectedJob");
 
     // 내 프로필인지 확인 (userId가 'me'이거나 현재 사용자 ID와 같은 경우)
-    const checkIsMyProfile = userId === "me" || userId === googleID;
+    const checkIsMyProfile = isMeRoute || (!!userId && userId === googleID);
     setIsMyProfile(checkIsMyProfile);
     // 마이 페이지(`/profile/me`)에서는 기본 진입 시 프로필 편집 모드로 시작
     setIsProfileEditing(userId === "me");
@@ -231,6 +243,11 @@ const ProfilePage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
+  const currentTabLabel = useMemo(
+    () => currentTabs.find((t) => t.id === selectedTabId)?.label || "",
+    [currentTabs, selectedTabId]
+  );
+
   // 현재 탭의 작품 리스트(필터 태그 적용 전)
   let data =
     artworkDataMock[selectedTabId as keyof typeof artworkDataMock] || [];
@@ -260,9 +277,20 @@ const ProfilePage: React.FC = () => {
   };
 
   // 편집, 등록 버튼 핸들러 (임시)
-  const handleEditClick = () => setIsEditing(true);
+  const handleEditClick = () => {
+    setIsEditing(true);
+  };
 
-  const handleRegisterClick = () => alert("등록 페이지로 이동");
+  const handleRegisterClick = useCallback(() => {
+    const type = tabLabelToType[currentTabLabel];
+    if (!type) {
+      console.warn("등록 대상 탭이 아님:", currentTabLabel);
+      return;
+    }
+    navigate(`/editor/${type}/new`, {
+      state: { from: location.pathname }, // 돌아올 곳 저장(선택)
+    });
+  }, [currentTabLabel, navigate, location.pathname]);
 
   // 작가노트 각 섹션별 상태
   const [temporaryEntries, setTemporaryEntries] = useState<{
@@ -407,9 +435,7 @@ const ProfilePage: React.FC = () => {
             />
             <UserTabInfo
               nickname={currentUserInfo.name}
-              currentTabLabel={
-                artistTabs.find((t) => t.id === selectedTabId)?.label || ""
-              }
+              currentTabLabel={currentTabLabel}
               isMyProfile={isMyProfile}
               isEditing={isEditing}
               onEditClick={handleEditClick}
