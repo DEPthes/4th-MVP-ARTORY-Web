@@ -27,7 +27,7 @@ const Chip: React.FC<ChipProps> = ({
       className={cn(
         "inline-flex items-center py-2.5 px-5 rounded-full transition-colors select-none",
         isActive
-          ? "bg-red-600 text-white"
+          ? "bg-[#D32F2F] text-white"
           : "bg-gray-100 text-zinc-900 hover:bg-gray-200",
         interactive ? "cursor-pointer" : "cursor-default",
         className
