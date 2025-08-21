@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   useInfiniteQuery,
   useMutation,
@@ -35,9 +35,28 @@ import {
   getArtistNote,
   updateArtistNote,
 } from "../apis/artistNote";
+import { fetchProfilePosts, type ProfilePostsParams } from "../apis/userPosts";
+import {
+  tabIdToPostType,
+  normalizeTagName,
+  type TabId,
+  type PostType,
+} from "../utils/postType";
+import type { ProfilePostsPage, ProfilePost } from "../types/post-list";
+import { getUserTags } from "../apis/userTags";
 
 // Hooks
 import { useSidebarProfile } from "../hooks/useUser";
+
+type EditorTypeSlug = "work" | "exhibition" | "contest";
+const tabIdToEditorType = (tabId: string): EditorTypeSlug | null => {
+  const map: Record<string, EditorTypeSlug> = {
+    works: "work",
+    exhibition: "exhibition",
+    contest: "contest",
+  };
+  return map[tabId] ?? null; // artistNote, archive 등은 null
+};
 
 // 상수
 const artistTabs = [
@@ -134,6 +153,20 @@ const ProfilePage: React.FC = () => {
   const [selectedTabId, setSelectedTabId] = useState("artistNote");
   const [isEditing, setIsEditing] = useState(false);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+
+  // 타입별 태그 캐시/선택값(탭 전환해도 기억)
+  const [tagsByType, setTagsByType] = useState<Record<PostType, string[]>>({
+    ART: [],
+    EXHIBITION: [],
+    CONTEST: [],
+  });
+  const [selectedTagByType, setSelectedTagByType] = useState<
+    Record<PostType, string | null>
+  >({
+    ART: null,
+    EXHIBITION: null,
+    CONTEST: null,
+  });
 
   // 작가노트 데이터를 위한 상태 타입 정의
   type EntryWithArtistNote = Entry & {
@@ -371,6 +404,13 @@ const ProfilePage: React.FC = () => {
       : artistTabs;
   const isMyProfile = userProfile?.isMe ?? false;
 
+  // 게시글/태그 조회용 대상 userID 숫자 보정
+  const targetUserId = useMemo<number | undefined>(() => {
+    if (typeof viewedSidebar?.id === "number") return viewedSidebar.id;
+    if (typeof userProfile?.artistID === "number") return userProfile.artistID;
+    return undefined;
+  }, [viewedSidebar?.id, userProfile?.artistID]);
+
   const getPostType = (tabId: string): string | null => {
     const map: Record<string, string> = {
       works: "ART",
@@ -380,7 +420,13 @@ const ProfilePage: React.FC = () => {
     };
     return map[tabId] || null;
   };
-  const postType = getPostType(selectedTabId);
+  const postType = getPostType(selectedTabId) as PostType | null;
+
+  // 현재 타입의 서버 태그/선택 태그 파생
+  const serverTags = postType ? tagsByType[postType] ?? [] : [];
+  const currentSelectedTag = postType
+    ? selectedTagByType[postType] ?? null
+    : null;
 
   useEffect(() => {
     if (!viewerGoogleID) navigate("/login");
@@ -392,44 +438,95 @@ const ProfilePage: React.FC = () => {
     }
   }, [userProfile, currentTabs, selectedTabId]);
 
+  useEffect(() => {
+    if (!targetUserId || !postType) return;
+    if ((tagsByType[postType] ?? []).length > 0) return;
+    let mounted = true;
+    (async () => {
+      try {
+        const names = await getUserTags({
+          userID: targetUserId,
+          postType,
+        });
+        if (mounted) {
+          setTagsByType((s) => ({ ...s, [postType]: names }));
+        }
+      } catch (e) {
+        console.error("태그 조회 실패", e);
+        if (mounted) {
+          setTagsByType((s) => ({ ...s, [postType]: [] }));
+        }
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [targetUserId, postType, tagsByType]);
+
   // --- 4. 탭 콘텐츠 데이터 조회 ---
+  const pageSize = 10;
   const {
     data: postsData,
     fetchNextPage,
     hasNextPage,
     isLoading: isPostsLoading,
     isFetchingNextPage,
-  } = useInfiniteQuery<PaginatedPostsResponse, Error>({
-    queryKey: ["userPosts", userProfile?.artistID, postType, selectedTag],
-    queryFn: ({ pageParam = 0 }) =>
-      getUserPosts({
-        pageParam: pageParam as number,
-        viewerGoogleID: viewerGoogleID!,
-        userID: userProfile!.artistID,
+  } = useInfiniteQuery<ProfilePostsPage, Error>({
+    queryKey: [
+      "userPosts",
+      targetUserId ?? 0,
+      postType ?? "NONE",
+      normalizeTagName(currentSelectedTag ?? selectedTag),
+      pageSize,
+    ],
+    queryFn: ({ pageParam = 0 }) => {
+      const params = {
+        page: Number(pageParam),
+        size: pageSize,
+        googleID: viewerGoogleID!,
+        userID: targetUserId!,
         postType: postType!,
-        tagName: selectedTag,
-      }),
+        tagName: normalizeTagName(currentSelectedTag ?? selectedTag),
+      } satisfies ProfilePostsParams;
+      return fetchProfilePosts(params);
+    },
     getNextPageParam: (lastPage) =>
-      lastPage.last ? undefined : lastPage.pageable.pageNumber + 1,
+      lastPage.last ? undefined : (lastPage.pageable?.pageNumber ?? 0) + 1,
     initialPageParam: 0,
-    enabled: !!userProfile?.artistID && !!postType,
+    enabled: !!viewerGoogleID && !!targetUserId && !!postType,
   });
-  const allPosts: Post[] =
-    postsData?.pages.flatMap((page) => page.content) ?? [];
-  const currentTags = Array.from(
-    new Set(
-      allPosts.flatMap(
-        (post) => (post as Post & { tags?: string[] }).tags || []
-      )
-    )
-  );
+
+  // 현재 로드된 데이터로 카드/태그 도출
+  const allPosts: ProfilePost[] =
+    postsData?.pages.flatMap((page) => (page?.content ?? []).filter(Boolean)) ??
+    [];
+
+  const currentTags = useMemo(() => {
+    if (!allPosts.length) return [];
+    const set = new Set<string>();
+    for (const p of allPosts) {
+      const t = (p as any)?.tags;
+      if (Array.isArray(t)) {
+        for (const name of t) {
+          if (typeof name === "string" && name.trim()) set.add(name.trim());
+        }
+      }
+    }
+    return Array.from(set);
+  }, [allPosts]);
 
   // --- 5. 이벤트 핸들러 ---
   const handleTabChange = (tabId: string) => {
     setSelectedTabId(tabId);
-    setSelectedTag(null);
     setIsEditing(false);
+    const nextType = getPostType(tabId) as PostType | null;
+    if (nextType) {
+      setSelectedTag(selectedTagByType[nextType] ?? null);
+    } else {
+      setSelectedTag(null);
+    }
   };
+
   const handleProfileImageChange = (file: File) => {
     console.log("업로드할 이미지 파일:", file);
 
@@ -448,7 +545,23 @@ const ProfilePage: React.FC = () => {
     }
   };
   const handleEditClick = () => setIsEditing(true);
-  const handleRegisterClick = () => alert("등록 페이지로 이동");
+
+  const handleRegisterClick = () => {
+    const editorType = tabIdToEditorType(selectedTabId);
+    if (!editorType) {
+      console.warn("등록 대상이 아닌 탭:", selectedTabId);
+      return;
+    }
+    navigate(`/editor/${editorType}/new`);
+  };
+
+  const handleTagSelect = (tag: string | null) => {
+    setSelectedTag(tag);
+    if (postType) {
+      setSelectedTagByType((s) => ({ ...s, [postType]: tag }));
+    }
+  };
+  const currentTotal = postsData?.pages?.[0]?.totalElements ?? 0;
 
   // --- 6. 작가노트 로직 ---
   const invalidateArtistNoteQuery = () => {
@@ -598,7 +711,7 @@ const ProfilePage: React.FC = () => {
                   }
                   counts={{
                     [currentTabs.find((t) => t.id === selectedTabId)?.label ||
-                    ""]: postsData?.pages[0]?.totalElements ?? 0,
+                    ""]: currentTotal,
                   }}
                 />
                 <div className="flex flex-col px-10 py-4 min-h-132.5 bg-[#F4F5F6]">
@@ -689,9 +802,9 @@ const ProfilePage: React.FC = () => {
                   ) : (
                     <>
                       <TagFilterBar
-                        tags={currentTags}
-                        selectedTag={selectedTag}
-                        onTagSelect={setSelectedTag}
+                        tags={serverTags}
+                        selectedTag={currentSelectedTag ?? selectedTag}
+                        onTagSelect={handleTagSelect}
                       />
                       {isPostsLoading ? (
                         <div className="text-center py-10">
@@ -703,10 +816,10 @@ const ProfilePage: React.FC = () => {
                             {allPosts.map((post) => (
                               <ArtworkCard
                                 key={post.postId}
-                                imageUrl={post.imageUrls[0]}
-                                title={post.title}
-                                author={post.userName}
-                                likes={post.archived}
+                                imageUrl={post.imageUrls?.[0] ?? ""}
+                                title={post.title ?? ""}
+                                author={post.userName ?? ""}
+                                likes={post.archived ?? 0}
                                 variant="primary"
                                 onClick={() =>
                                   navigate(`/posts/${post.postId}`)
