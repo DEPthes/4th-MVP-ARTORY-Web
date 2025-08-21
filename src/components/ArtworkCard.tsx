@@ -7,6 +7,8 @@ export interface ArtworkCardProps {
   title: string;
   author?: string;
   likes?: number;
+  liked?: boolean;
+  onToggleLike?: () => void;
   onClick?: () => void;
   className?: string;
   variant?: "primary" | "secondary";
@@ -22,6 +24,8 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({
   title,
   author,
   likes = 0,
+  liked,
+  onToggleLike,
   onClick,
   className,
   variant = "secondary",
@@ -29,8 +33,11 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({
   const [isLiked, setIsLiked] = useState(false);
 
   const handleLikeClick = () => {
-    console.log("좋아요 클릭");
-    setIsLiked(!isLiked);
+    if (onToggleLike) {
+      onToggleLike();
+      return;
+    }
+    setIsLiked((prev) => !prev);
   };
 
   return (
@@ -76,7 +83,7 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({
         <LikeIcon
           className={cn(
             "w-3 h-3 sm:w-4 sm:h-4 transition-colors",
-            isLiked ? "text-red-500 fill-red-500" : "text-red-500"
+            liked ?? isLiked ? "text-red-500 fill-red-500" : "text-red-500"
           )}
         />
         <span className="text-xs sm:text-sm md:text-base text-zinc-900">

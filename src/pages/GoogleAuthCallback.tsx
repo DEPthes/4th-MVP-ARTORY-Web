@@ -82,13 +82,22 @@ const GoogleAuthCallback = () => {
 
           window.location.href = "/signup/job";
         } else {
-          // 기존 사용자: 홈페이지로 이동
+          // 기존 사용자: 저장된 URL 또는 홈페이지로 이동
           console.log("🏠 기존 사용자 (isMember: true) - 홈페이지로 이동");
 
           // Google ID 저장 (로그인 상태 유지용)
           localStorage.setItem("googleID", result.googleID);
 
-          window.location.href = "/";
+          // 로그인 전에 저장된 URL이 있으면 그곳으로, 없으면 홈으로
+          const redirectUrl = localStorage.getItem("redirectAfterLogin");
+          if (redirectUrl) {
+            console.log("🔄 저장된 URL로 리다이렉트:", redirectUrl);
+            localStorage.removeItem("redirectAfterLogin");
+            window.location.href = redirectUrl;
+          } else {
+            console.log("🏠 홈페이지로 이동");
+            window.location.href = "/";
+          }
         }
       } catch (error) {
         console.error("💥 OAuth 콜백 처리 중 에러:", error);
