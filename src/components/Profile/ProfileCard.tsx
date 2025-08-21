@@ -1,7 +1,7 @@
 import { cn } from "../../utils/classname";
 import UserActionButton from "../Profile/UserActionButton";
 import BaseProfileImage from "../../assets/images/BaseProfileImage.png";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import EditIcon from "../../assets/editIcon.svg";
 
 interface ProfileCardProps {
@@ -21,6 +21,7 @@ interface ProfileCardProps {
   onClick?: () => void;
   isMyProfile: boolean;
   onEditClick?: () => void;
+  initialIsFollowed?: boolean;
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({
@@ -40,6 +41,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   onClick,
   isMyProfile,
   onEditClick,
+  initialIsFollowed,
 }) => {
   const [imageError, setImageError] = useState(false);
   const [localImage, setLocalImage] = useState<string | null>(null);
@@ -85,8 +87,14 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     fileInputRef.current?.click();
   };
 
-  // 팔로우 상태 예시 (실제론 API 연동 필요)
-  const [isFollowing, setIsFollowing] = useState(false);
+  // 팔로우 상태 (API 초기값 반영 및 이후 토글)
+  const [isFollowing, setIsFollowing] = useState<boolean>(
+    initialIsFollowed ?? false
+  );
+
+  useEffect(() => {
+    setIsFollowing(initialIsFollowed ?? false);
+  }, [initialIsFollowed]);
 
   // 팔로우/팔로잉 토글 함수
   const toggleFollow = () => {

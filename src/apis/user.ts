@@ -75,7 +75,7 @@ export interface GalleryRegistrationData {
 
 // 사이드바 프로필 응답 타입
 export interface SidebarProfileResponse {
-  id: number;
+  id: number; // 실제 사용자 ID
   username: string;
   profileImageURL: string;
   userType: "ARTIST" | "GALLERY" | "COLLECTOR";
@@ -283,4 +283,137 @@ export const userApi = {
 
     return response.data.data;
   },
+};
+
+// =================================================================
+// 1. API 응답 데이터 타입 정의 (Interfaces)
+// =================================================================
+
+/** 프로필 정보 API (/api/user/profile) 응답 데이터 타입 */
+export interface UserProfile {
+  name: string;
+  userType: "ARTIST" | "GALLERY" | "COLLECTOR";
+  profileImageUrl: string | null;
+  coverImageUrl: string | null;
+  followersCount: number;
+  followingCount: number;
+  description: string;
+  birth: string;
+  educationBackground: string;
+  contact: string;
+  email: string;
+  isMe: boolean;
+  isFollowed: boolean;
+  disclosureStatus: boolean;
+  artistID: number;
+  // 백엔드에서 counts 객체를 보내준다고 가정
+  counts?: {
+    works?: number;
+    exhibition?: number;
+    contest?: number;
+    archive?: number;
+  };
+}
+
+/** 단일 게시물 데이터 타입 */
+export interface Post {
+  postId: string;
+  postType: "ART" | "EXHIBITION" | "CONTEST";
+  title: string;
+  imageUrls: string[];
+  userName: string;
+  archived: number; // '좋아요' 또는 '아카이브' 수
+  isMine: boolean;
+  isArchived: boolean;
+}
+
+/** 페이지네이션 정보가 포함된 게시물 목록 API 응답 데이터 타입 */
+export interface PaginatedPostsResponse {
+  totalPages: number;
+  totalElements: number;
+  first: boolean;
+  last: boolean;
+  size: number;
+  number: number; // 현재 페이지 번호
+  numberOfElements: number;
+  content: Post[];
+  pageable: {
+    pageNumber: number;
+    pageSize: number;
+    offset: number;
+    paged: boolean;
+    unpaged: boolean;
+  };
+  empty: boolean;
+}
+
+// =================================================================
+// 2. API 요청 함수 정의
+// =================================================================
+
+/**
+ * 특정 유저의 프로필 정보를 조회합니다.
+ * @param viewerGoogleID - 현재 접속한 유저(보는 사람)의 googleID
+ * @param userId - 프로필 주인의 ID
+ * @returns {Promise<UserProfile>} 유저 프로필 정보
+ */
+export const getUserProfile = async (
+  viewerGoogleID: string,
+  userId: string
+): Promise<UserProfile> => {
+  // 실제 API 응답은 { code, status, message, data: UserProfile } 형태이므로,
+  // axios 응답 타입의 data 프로퍼티를 해당 구조로 지정해줍니다.
+  const response = await axios.get<{ data: UserProfile }>("/api/user/profile", {
+    params: {
+      googleID: viewerGoogleID,
+      userId: userId,
+    },
+  });
+  return response.data.data;
+};
+
+/** getUserPosts 함수에 전달될 파라미터 객체의 타입 */
+interface GetUserPostsParams {
+  pageParam?: number; // useInfiniteQuery가 자동으로 관리
+  viewerGoogleID: string;
+  userID: number;
+  postType: string;
+  tagName?: string | null;
+  size?: number;
+}
+
+/**
+ * 특정 유저의 게시물 목록을 페이지네이션으로 조회합니다.
+ * @param params - 조회에 필요한 파라미터 객체
+ * @returns {Promise<PaginatedPostsResponse>} 페이지네이션된 게시물 목록
+ */
+export const getUserPosts = async ({
+  pageParam = 0,
+  viewerGoogleID,
+  userID,
+  postType,
+  tagName = null,
+  size = 9,
+}: GetUserPostsParams): Promise<PaginatedPostsResponse> => {
+  const params: Record<string, string | number | null> = {
+    page: pageParam,
+    size,
+    googleID: viewerGoogleID,
+    userID,
+    postType,
+    tagName,
+  };
+
+  // tagName이 null이거나 비어있으면 파라미터에서 제외
+  if (!tagName) {
+    delete params.tagName;
+  }
+
+  const response = await axios.get<{ data: PaginatedPostsResponse }>(
+    "/api/posts",
+    {
+      params,
+    }
+  );
+  return response.data.data;
 };

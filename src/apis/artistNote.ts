@@ -4,6 +4,71 @@ import type {
   ArtistNoteApiResponse,
 } from "../types/artistNote";
 
+export type ArtistNoteType = "HISTORY" | "TEAM_EVENT" | "PERSONAL_EVENT";
+
+export interface ArtistNoteItem {
+  id: number;
+  artistNoteType: ArtistNoteType;
+  year: string;
+  description: string;
+}
+
+// 💡 ADDED: 작가노트 생성/수정을 위한 Request Body 타입
+export interface ArtistNotePayload {
+  artistNoteType: ArtistNoteType;
+  year: string;
+  description: string;
+}
+
+// --- 작가노트 API 함수들 ---
+
+/** 특정 유저의 작가노트 전체를 조회합니다. */
+export const getArtistNote = async (
+  viewerGoogleID: string,
+  userID: string
+): Promise<ArtistNoteItem[]> => {
+  const response = await axios.get<{ data: ArtistNoteItem[] }>(
+    "/api/artist_note",
+    {
+      params: { googleID: viewerGoogleID, userID },
+    }
+  );
+  return response.data.data;
+};
+
+/** 새로운 작가노트를 생성합니다. (POST /api/artist_note) */
+export const createArtistNote = async (
+  googleID: string,
+  payload: ArtistNotePayload
+): Promise<ArtistNoteItem> => {
+  const response = await axios.post("/api/artist_note/save", payload, {
+    params: { googleID },
+  });
+  return response.data.data;
+};
+
+/** 기존 작가노트를 수정합니다. (PUT /api/artist_note/change) */
+export const updateArtistNote = async (
+  googleID: string,
+  artistNoteID: number,
+  payload: ArtistNotePayload
+): Promise<void> => {
+  // `PUT`이 아닌 `POST` 메소드를 사용하도록 수정
+  await axios.post(`/api/artist_note/change`, payload, {
+    params: { googleID, artistNoteID },
+  });
+};
+
+/** 작가노트를 삭제합니다. (DELETE /api/artist_note/{id}) */
+export const deleteArtistNote = async (
+  googleID: string,
+  artistNoteID: number
+): Promise<void> => {
+  await axios.delete(`/api/artist_note/${artistNoteID}`, {
+    params: { googleID },
+  });
+};
+
 // 작가 노트 API 객체
 export const artistNoteApi = {
   // 작가 노트 리스트 조회 API
