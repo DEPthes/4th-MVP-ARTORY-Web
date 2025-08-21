@@ -16,6 +16,7 @@ import BackNavigate from "../components/Layouts/BackNavigate";
 import Button from "../components/Button/Button";
 
 import { createPostUpload } from "../apis/postUpload";
+import { postChangeApi } from "../apis/postChange";
 import { tagApi } from "../apis";
 
 // 타입 가드(허용값 외 접근 시 홈으로 보냄)
@@ -32,7 +33,7 @@ const editorTypeToTabId: Record<
 };
 
 export default function PostEditorPage({ mode }: { mode: EditorMode }) {
-  const { type: rawType } = useParams();
+  const { type: rawType, id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { state } = useLocation() as { state?: Partial<EditorForm> };
@@ -69,12 +70,8 @@ export default function PostEditorPage({ mode }: { mode: EditorMode }) {
     (async () => {
       try {
         const res = await tagApi.getTagList();
-        const list = Array.isArray((res as any).data)
-          ? (res as any).data
-          : Array.isArray((res as any).data?.list)
-          ? (res as any).data.list
-          : [];
-        const opts = list.map((t: any) => ({ id: t.id, label: t.name }));
+        const list = res.data || [];
+        const opts = list.map((t) => ({ id: t.id, label: t.name }));
         if (mounted) setTagOptions(opts);
       } catch (e) {
         console.error("태그 조회 실패", e);
@@ -95,6 +92,7 @@ export default function PostEditorPage({ mode }: { mode: EditorMode }) {
   // 수정 모드 프리필(필요 시)
   useEffect(() => {
     if (mode === "edit" && state) {
+      console.log("📝 수정 모드 데이터 로드:", state);
       setForm((s) => ({ ...s, ...state }));
     }
   }, [mode, state]);
@@ -117,31 +115,69 @@ export default function PostEditorPage({ mode }: { mode: EditorMode }) {
 
       const urlInput: string = form.url ?? "";
 
-      await createPostUpload({
-        type: type as EditorType,
-        title: form.title,
-        description: form.description,
-        url: urlInput,
-        images: imagesOnlyFile,
-        tagIds,
-      });
+      if (mode === "edit" && id) {
+        // 수정 모드: 수정 API 호출
+        const myGoogleId = localStorage.getItem("googleID") || "";
+        const postId = parseInt(id);
+        if (isNaN(postId)) {
+          throw new Error("유효하지 않은 게시물 ID입니다.");
+        }
 
-      const myGoogleId = localStorage.getItem("googleID") || "";
-      const tab = editorTypeToTabId[type];
-      const profilePath = myGoogleId ? `/profile/${myGoogleId}` : "/profile/me";
+        await postChangeApi.changePost(
+          {
+            postID: postId,
+            googleID: myGoogleId,
+          },
+          {
+            type: type as EditorType,
+            title: form.title,
+            description: form.description || "",
+            url: urlInput,
+            images: imagesOnlyFile,
+            tagIds,
+          }
+        );
 
-      queryClient.invalidateQueries({
-        predicate: (q) =>
-          Array.isArray(q.queryKey) && q.queryKey[0] === "userPosts",
-      });
+        // 수정 후 해당 디테일 페이지로 이동
+        const detailPath = `/${
+          editorTypeToTabId[type as EditorType]
+        }/${postId}`;
+        navigate(detailPath, { replace: true });
+      } else {
+        // 생성 모드: 기존 로직
+        await createPostUpload({
+          type: type as EditorType,
+          title: form.title,
+          description: form.description,
+          url: urlInput,
+          images: imagesOnlyFile,
+          tagIds,
+        });
 
-      navigate(`${profilePath}?tab=${tab}`, {
-        replace: true,
-        state: { initialTabId: tab, from: "post-create" },
-      });
-    } catch (e: any) {
+        const myGoogleId = localStorage.getItem("googleID") || "";
+        const tab = editorTypeToTabId[type];
+        const profilePath = myGoogleId
+          ? `/profile/${myGoogleId}`
+          : "/profile/me";
+
+        queryClient.invalidateQueries({
+          predicate: (q) =>
+            Array.isArray(q.queryKey) && q.queryKey[0] === "userPosts",
+        });
+
+        navigate(`${profilePath}?tab=${tab}`, {
+          replace: true,
+          state: { initialTabId: tab, from: "post-create" },
+        });
+      }
+    } catch (e: unknown) {
       console.error(e);
-      alert(e?.message || "게시물 등록 중 오류가 발생했어요");
+      const action = mode === "edit" ? "수정" : "등록";
+      const errorMessage =
+        e instanceof Error
+          ? e.message
+          : `게시물 ${action} 중 오류가 발생했어요`;
+      alert(errorMessage);
     } finally {
       setSubmitting(false);
     }

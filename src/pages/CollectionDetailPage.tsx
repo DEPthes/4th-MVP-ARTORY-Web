@@ -1,19 +1,19 @@
 // src/pages/CollectionDetailPage.tsx
-import { useParams, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useParams, useNavigate } from "react-router-dom";
+import { useState } from "react";
 
-import Header from '../components/Layouts/Header';
-import BackNavigate from '../components/Layouts/BackNavigate';
-import ArtworkThumbnail from '../components/Collection/ArtworkThumbnail';
-import ArtworkMeta from '../components/Collection/ArtworkMeta';
-import ArtworkGallery from '../components/Collection/ArtworkGallery';
-import DescriptionCard from '../components/Collection/DescriptionCard';
-import ArchiveBar from '../components/Collection/ArchiveBar';
-import ConfirmModal from '../components/Modals/ConfirmModal';
-import OwnerActions from '../components/Detail/OwnerActions';
+import Header from "../components/Layouts/Header";
+import BackNavigate from "../components/Layouts/BackNavigate";
+import ArtworkThumbnail from "../components/Collection/ArtworkThumbnail";
+import ArtworkMeta from "../components/Collection/ArtworkMeta";
+import ArtworkGallery from "../components/Collection/ArtworkGallery";
+import DescriptionCard from "../components/Collection/DescriptionCard";
+import ArchiveBar from "../components/Collection/ArchiveBar";
+import ConfirmModal from "../components/Modals/ConfirmModal";
+import OwnerActions from "../components/Detail/OwnerActions";
 
-import { useCollectionDetail } from '../hooks/useDetail';
-import { useResolvedAuthor, attachAuthor } from '../hooks/useAuthor';
+import { useCollectionDetail } from "../hooks/useDetail";
+import { useResolvedAuthor, attachAuthor } from "../hooks/useAuthor";
 
 const CollectionDetailPage = () => {
   const { id } = useParams();
@@ -44,7 +44,7 @@ const CollectionDetailPage = () => {
   }
 
   if (error) {
-    console.error('💥 작품 상세 조회 에러:', error);
+    console.error("💥 작품 상세 조회 에러:", error);
     return (
       <div className="min-h-screen bg-white">
         <Header />
@@ -67,11 +67,47 @@ const CollectionDetailPage = () => {
   }
 
   const isOwner = artworkForMeta.isMine;
-  const handleEdit = () => navigate(`/collection/${id}/edit`);
+  const handleEdit = () => {
+    // 수정 페이지로 이동하면서 기존 데이터 전달
+    navigate(`/editor/work/${artworkForMeta.id}/edit`, {
+      state: {
+        images:
+          artworkForMeta.images?.map((url, index) => ({
+            id: index.toString(),
+            url: url,
+            file: undefined,
+            isCover: index === 0, // 첫 번째 이미지를 대표 이미지로 설정
+          })) || [],
+        title: artworkForMeta.title,
+        description: artworkForMeta.description,
+        url: "",
+        tags: artworkForMeta.tags?.map((tag) => tag.name) || [],
+      },
+    });
+  };
+
   const handleDelete = () => setOpenDelete(true);
-  const confirmDelete = () => {
-    setOpenDelete(false);
-    navigate('/collection');
+  const confirmDelete = async () => {
+    try {
+      const myGoogleId = localStorage.getItem("googleID") || "";
+      if (!myGoogleId) {
+        alert("로그인이 필요합니다.");
+        return;
+      }
+
+      // 삭제 API 호출
+      const { postDeleteApi } = await import("../apis/postDelete");
+      await postDeleteApi.deletePost({
+        postID: artworkForMeta.id,
+        googleID: myGoogleId,
+      });
+
+      setOpenDelete(false);
+      navigate("/collection");
+    } catch (error: any) {
+      console.error("삭제 실패:", error);
+      alert(error?.message || "게시물 삭제 중 오류가 발생했습니다.");
+    }
   };
 
   return (
@@ -102,7 +138,7 @@ const CollectionDetailPage = () => {
 
         <div className="my-8 mx-6 h-0.5 bg-neutral-200" />
         <ArtworkGallery artwork={artworkForMeta} />
-        <DescriptionCard description={artworkForMeta.description || ''} />
+        <DescriptionCard description={artworkForMeta.description || ""} />
         <ArchiveBar artwork={artworkForMeta} />
       </div>
 

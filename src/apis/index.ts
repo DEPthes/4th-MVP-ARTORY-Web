@@ -20,3 +20,7 @@ export { tagApi } from "./tag";
 
 // 상세 페이지 관련 API
 export type { DetailArtwork } from "../types/detail";
+
+// 게시물 수정/삭제 관련 API
+export { postChangeApi } from "./postChange";
+export { postDeleteApi } from "./postDelete";
