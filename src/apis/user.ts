@@ -97,6 +97,7 @@ export interface GalleryChangePayload {
 // 사이드바 프로필 응답 타입
 export interface SidebarProfileResponse {
   id: number; // 실제 사용자 ID
+  id: number; // 실제 사용자 ID
   username: string;
   profileImageURL: string;
   userType: "ARTIST" | "GALLERY" | "COLLECTOR";
