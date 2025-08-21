@@ -4,6 +4,12 @@ import BaseProfileImage from "../../assets/images/BaseProfileImage.png";
 import { useState, useRef, useEffect } from "react";
 import EditIcon from "../../assets/editIcon.svg";
 import { changeProfile } from "../../apis/user";
+import { useQuery } from "@tanstack/react-query";
+import {
+  getFollowers,
+  getFollowing,
+  type FollowUserSummary,
+} from "../../apis/follow";
 
 interface ProfileCardProps {
   role: string;
@@ -24,6 +30,7 @@ interface ProfileCardProps {
   onEditClick?: () => void;
   initialIsFollowed?: boolean;
   viewerGoogleID?: string; // 추가: 현재 로그인한 사용자의 Google ID
+  userIdForFollowList?: string; // 팔로워/팔로잉 조회 대상 ID
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({
@@ -45,10 +52,11 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   onEditClick,
   initialIsFollowed,
   viewerGoogleID, // 추가
+  userIdForFollowList,
 }) => {
   const [imageError, setImageError] = useState(false);
   const [localImage, setLocalImage] = useState<string | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false); // 추가: 업데이트 상태
+  const [isUpdating, setIsUpdating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 이미지가 없거나 빈 문자열이거나 로딩 실패 시 기본 이미지 사용
@@ -64,46 +72,35 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = event.target.files?.[0];
-    if (file) {
-      // 파일 유효성 검사
-      if (!file.type.startsWith("image/")) {
-        alert("이미지 파일만 업로드 가능합니다.");
-        return;
-      }
+    if (!file) return;
 
-      if (file.size > 5 * 1024 * 1024) {
-        // 5MB 제한
-        alert("파일 크기는 5MB 이하여야 합니다.");
-        return;
-      }
+    if (!file.type.startsWith("image/")) {
+      alert("이미지 파일만 업로드 가능합니다.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert("파일 크기는 5MB 이하여야 합니다.");
+      return;
+    }
 
-      // 로컬 미리보기 설정
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setLocalImage(result);
-      };
-      reader.readAsDataURL(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      setLocalImage(result);
+    };
+    reader.readAsDataURL(file);
 
-      // 프로필 이미지 변경 API 호출
-      if (viewerGoogleID && isMyProfile) {
-        try {
-          setIsUpdating(true);
-          await changeProfile(viewerGoogleID, file); // 파일 객체 직접 전달
-          console.log("프로필 이미지 변경 성공");
-
-          // 부모 컴포넌트에 파일 변경 알림
-          if (onImageChange) {
-            onImageChange(file);
-          }
-        } catch (error) {
-          console.error("프로필 이미지 변경 실패:", error);
-          alert("프로필 이미지 변경에 실패했습니다.");
-          // 실패 시 로컬 이미지 상태 되돌리기
-          setLocalImage(null);
-        } finally {
-          setIsUpdating(false);
-        }
+    if (viewerGoogleID && isMyProfile) {
+      try {
+        setIsUpdating(true);
+        await changeProfile(viewerGoogleID, file);
+        if (onImageChange) onImageChange(file);
+      } catch (error) {
+        console.error("프로필 이미지 변경 실패:", error);
+        alert("프로필 이미지 변경에 실패했습니다.");
+        setLocalImage(null);
+      } finally {
+        setIsUpdating(false);
       }
     }
   };
@@ -116,22 +113,55 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     fileInputRef.current?.click();
   };
 
-  // 팔로우 상태 (API 초기값 반영 및 이후 토글)
   const [isFollowing, setIsFollowing] = useState<boolean>(
     initialIsFollowed ?? false
   );
-
   useEffect(() => {
     setIsFollowing(initialIsFollowed ?? false);
   }, [initialIsFollowed]);
 
-  // 팔로우/팔로잉 토글 함수
   const toggleFollow = () => {
     setIsFollowing((prev) => !prev);
-    // 서버 로직 추가
+    // TODO: 서버 연동 추가
   };
 
-  // 가로 모드일 때의 레이아웃
+  const targetUserId = userIdForFollowList;
+  const { data: followersList, isLoading: isFollowersLoading } = useQuery<
+    FollowUserSummary[]
+  >({
+    queryKey: ["followers", targetUserId],
+    queryFn: () => getFollowers(viewerGoogleID!, targetUserId!),
+    enabled: !!viewerGoogleID && !!targetUserId,
+  });
+  const { data: followingList, isLoading: isFollowingLoading } = useQuery<
+    FollowUserSummary[]
+  >({
+    queryKey: ["following", targetUserId],
+    queryFn: () => getFollowing(viewerGoogleID!, targetUserId!),
+    enabled: !!viewerGoogleID && !!targetUserId,
+  });
+
+  const [hovered, setHovered] = useState<null | "followers" | "following">(
+    null
+  );
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openPopover = (type: "followers" | "following") => {
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+    setHovered(type);
+  };
+  const closePopoverDelayed = () => {
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = setTimeout(() => setHovered(null), 150);
+  };
+  useEffect(() => {
+    return () => {
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    };
+  }, []);
+
   if (isHorizontal) {
     return (
       <div
@@ -142,10 +172,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         )}
         onClick={onClick}
       >
-        {/* 빨간 줄 */}
-
         <div className="flex relative items-start gap-7">
-          {/* 왼쪽 프로필 이미지 */}
           <div className="relative">
             <img
               src={profileImage}
@@ -153,7 +180,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
               className="size-37.5 rounded-full flex-shrink-0 object-cover"
               onError={handleImageError}
             />
-            {/* 수정 버튼 */}
             {isMyProfile && (
               <button
                 onClick={handleEditClick}
@@ -172,18 +198,15 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             />
           </div>
 
-          {/* 오른쪽 정보 */}
           <div className="flex flex-col gap-4 flex-1">
-            <div className="flex items-center text-lg  gap-2">
+            <div className="flex items-center text-lg gap-2">
               <div className="text-zinc-500">{role}</div>
               <div className="font-semibold text-zinc-900">{nickName}</div>
             </div>
-
             <div className="flex flex-col gap-1 text-xs font-light text-zinc-900">
               <div>{phoneNumber}</div>
               <div>{email}</div>
             </div>
-
             <div className="text-sm font-light text-zinc-900 break-words pr-8">
               {introduction}
             </div>
@@ -193,7 +216,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     );
   }
 
-  // 세로 모드 (기존 레이아웃)
   return (
     <div
       className={cn(
@@ -211,7 +233,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             className="size-40 rounded-full object-cover"
             onError={handleImageError}
           />
-          {/* 수정 버튼 */}
           {isMyProfile && (
             <button
               onClick={handleEditClick}
@@ -234,17 +255,101 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           <div className="text-lg text-zinc-500">{role}</div>
           <div className="text-xl font-semibold text-zinc-900">{nickName}</div>
         </div>
+
         <div className="flex items-center gap-5 font-light text-zinc-500">
-          <div>
+          <div
+            className="relative"
+            onMouseEnter={() => openPopover("followers")}
+            onMouseLeave={closePopoverDelayed}
+          >
             팔로워{" "}
             <span className="font-medium text-zinc-900">{followers}</span>
+            {hovered === "followers" && (
+              <div
+                className="absolute -left-9 mt-2 w-30 bg-gray-100 border border-stone-300 rounded-md shadow-lg z-20"
+                onMouseEnter={() => openPopover("followers")}
+                onMouseLeave={closePopoverDelayed}
+              >
+                {isFollowersLoading ? (
+                  <div className="px-3 py-2 text-sm text-zinc-500">
+                    불러오는 중...
+                  </div>
+                ) : followersList && followersList.length > 0 ? (
+                  <ul className="max-h-48 overflow-auto">
+                    {followersList.map((u) => (
+                      <li
+                        key={u.id}
+                        className="flex items-center gap-2 px-3 py-2 hover:bg-zinc-50"
+                      >
+                        <img
+                          src={u.profileImageUrl || BaseProfileImage}
+                          alt={u.name}
+                          className="w-6 h-6 rounded-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src =
+                              BaseProfileImage;
+                          }}
+                        />
+                        <span className="text-sm text-zinc-800">{u.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="px-3 py-2 text-sm text-zinc-500">
+                    팔로워 없음
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-          <div>
+
+          <div
+            className="relative"
+            onMouseEnter={() => openPopover("following")}
+            onMouseLeave={closePopoverDelayed}
+          >
             팔로잉{" "}
             <span className="font-medium text-zinc-900">{following}</span>
+            {hovered === "following" && (
+              <div
+                className="absolute -left-5 mt-2 w-30 bg-gray-100 border border-stone-300 rounded-md shadow-lg z-20"
+                onMouseEnter={() => openPopover("following")}
+                onMouseLeave={closePopoverDelayed}
+              >
+                {isFollowingLoading ? (
+                  <div className="px-3 py-2 text-sm text-zinc-500">
+                    불러오는 중...
+                  </div>
+                ) : followingList && followingList.length > 0 ? (
+                  <ul className="max-h-48 overflow-auto">
+                    {followingList.map((u) => (
+                      <li
+                        key={u.id}
+                        className="flex items-center gap-2 px-3 py-2 hover:bg-zinc-50"
+                      >
+                        <img
+                          src={u.profileImageUrl || BaseProfileImage}
+                          alt={u.name}
+                          className="w-6 h-6 rounded-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src =
+                              BaseProfileImage;
+                          }}
+                        />
+                        <span className="text-sm text-zinc-800">{u.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="px-3 py-2 text-sm text-zinc-500">
+                    팔로잉 없음
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
-        {/* 내 프로필이면 편집 버튼, 아니면 팔로우/팔로잉 버튼 */}
+
         {isMyProfile ? (
           <UserActionButton
             type="edit"
@@ -258,6 +363,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             onClick={toggleFollow}
           />
         )}
+
         <div className="font-light text-zinc-900 text-center break-words px-3">
           {introduction}
         </div>
@@ -269,11 +375,14 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           <div className="text-zinc-900 text-center break-words">
             {birthdate}
           </div>
-          <div className="text-zinc-900 text-center break-words">
-            {education}
-          </div>
+          {education ? (
+            <div className="text-zinc-900 text-center break-words">
+              {education}
+            </div>
+          ) : null}
         </div>
       </div>
+
       <div className="flex flex-col text-left gap-4 font-light w-full pt-2 pb-12 border-t border-zinc-400">
         <div className="text-zinc-400 text-xs">CONTACT</div>
         <div className="flex flex-col gap-2 px-3 items-start">

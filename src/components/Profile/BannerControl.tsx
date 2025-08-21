@@ -25,22 +25,52 @@ const BannerControl: React.FC<BannerControlProps> = ({
   );
   // API 호출 중인지 추적
   const [isUpdating, setIsUpdating] = useState(false);
-  // 원래 배너 URL 저장 (되돌리기용)
+  // 실패 롤백용 현재 표시 중인 배너 URL 스냅샷
   const [originalBannerUrl, setOriginalBannerUrl] = useState<string>(
     initialBannerUrl || DefaultBanner
   );
+  // 되돌리기 대상: 최초(또는 부모 변경 반영 후) 배너 URL 보관
+  const initialUrlRef = useRef<string>(initialBannerUrl || DefaultBanner);
+  // 세션 내 업로드 파일 히스토리 (직전 파일 보관)
+  const lastUploadedFileRef = useRef<File | null>(null);
+  const prevUploadedFileRef = useRef<File | null>(null);
 
-  // initialBannerUrl이 외부에서 변경될 때 imageUrl을 초기화
+  // initialBannerUrl이 외부에서 변경될 때 imageUrl과 참조 초기화
   useEffect(() => {
     const newUrl = initialBannerUrl || DefaultBanner;
     setImageUrl(newUrl);
     setOriginalBannerUrl(newUrl);
-  }, [initialBannerUrl]); // initialBannerUrl이 바뀔 때마다 실행
+    initialUrlRef.current = newUrl;
+    // 초기화 시 파일 히스토리도 리셋
+    lastUploadedFileRef.current = null;
+    prevUploadedFileRef.current = null;
+  }, [initialBannerUrl]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleEditClick = () => {
     fileInputRef.current?.click();
+  };
+
+  // URL을 File로 변환 (동일 출처 자원에만 사용)
+  const urlToFile = async (
+    url: string,
+    fallbackName = "banner.jpg"
+  ): Promise<File> => {
+    // 개발 환경에서 S3 CORS 우회: 절대 URL은 가져오지 않음 (세션 파일 또는 기본 배너만 사용)
+    const response = await fetch(url, { mode: "cors" });
+    const blob = await response.blob();
+    const fileName = (() => {
+      try {
+        const u = new URL(url);
+        const last = u.pathname.split("/").pop() || fallbackName;
+        return last.includes(".") ? last : fallbackName;
+      } catch {
+        return fallbackName;
+      }
+    })();
+    const type = blob.type || "image/jpeg";
+    return new File([blob], fileName, { type });
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,11 +101,15 @@ const BannerControl: React.FC<BannerControlProps> = ({
         try {
           setIsUpdating(true);
 
+          // 서버 업로드 전, 이전 파일 스냅샷 저장
+          prevUploadedFileRef.current = lastUploadedFileRef.current;
+          lastUploadedFileRef.current = file;
+
           // File 객체를 직접 전달
           await changeCover(viewerGoogleID, file);
           console.log("커버 이미지 변경 성공");
 
-          // 성공 시 원래 URL 업데이트 (로컬 미리보기 URL 사용)
+          // 실패 롤백 기준은 현재 표시 중인 최신 URL로 갱신
           const localUrl = URL.createObjectURL(file);
           setOriginalBannerUrl(localUrl);
 
@@ -88,6 +122,8 @@ const BannerControl: React.FC<BannerControlProps> = ({
           alert("커버 이미지 변경에 실패했습니다.");
           // 실패 시 이전 상태로 되돌리기
           setImageUrl(originalBannerUrl);
+          // 업로드 실패 시 파일 히스토리 롤백
+          lastUploadedFileRef.current = prevUploadedFileRef.current;
         } finally {
           setIsUpdating(false);
         }
@@ -96,15 +132,45 @@ const BannerControl: React.FC<BannerControlProps> = ({
   };
 
   const handleResetClick = async () => {
-    if (!isMyProfile) return;
+    if (!viewerGoogleID || !isMyProfile) return;
 
-    // API 호출 없이, 로컬에서 기본 배너로 되돌리기
-    setImageUrl(DefaultBanner);
-    setOriginalBannerUrl(DefaultBanner);
+    try {
+      setIsUpdating(true);
+      let fileToUpload: File | null = null;
 
-    // 파일 입력값 초기화
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      // 1) 세션 내 직전 업로드 파일이 있으면 그걸 사용
+      if (prevUploadedFileRef.current) {
+        fileToUpload = prevUploadedFileRef.current;
+      } else {
+        // 2) 없으면 기본 배너를 파일로 변환해 업로드 (동일 출처라 fetch 가능)
+        fileToUpload = await urlToFile(DefaultBanner);
+      }
+
+      await changeCover(viewerGoogleID, fileToUpload);
+
+      // 화면과 기준 URL 갱신
+      const localUrl = URL.createObjectURL(fileToUpload);
+      setImageUrl(localUrl);
+      setOriginalBannerUrl(localUrl);
+
+      // 파일 입력값 초기화
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+
+      // 업로드 이후, 최신 파일 상태 갱신 (되돌리기 한 번만 지원)
+      lastUploadedFileRef.current = fileToUpload;
+      prevUploadedFileRef.current = null;
+
+      // 부모 컴포넌트에 변경 알림
+      if (onCoverChange) {
+        onCoverChange();
+      }
+    } catch (error) {
+      console.error("커버 이미지 되돌리기 실패:", error);
+      alert("커버 이미지를 되돌리는 중 오류가 발생했습니다.");
+    } finally {
+      setIsUpdating(false);
     }
   };
 
