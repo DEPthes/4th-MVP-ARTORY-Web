@@ -1,7 +1,7 @@
 // src/pages/CollectionDetailPage.tsx
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+
 import Header from '../components/Layouts/Header';
 import BackNavigate from '../components/Layouts/BackNavigate';
 import ArtworkThumbnail from '../components/Collection/ArtworkThumbnail';
@@ -11,8 +11,9 @@ import DescriptionCard from '../components/Collection/DescriptionCard';
 import ArchiveBar from '../components/Collection/ArchiveBar';
 import ConfirmModal from '../components/Modals/ConfirmModal';
 import OwnerActions from '../components/Detail/OwnerActions';
+
 import { useCollectionDetail } from '../hooks/useDetail';
-import { userApi } from '../apis/user';
+import { useResolvedAuthor, attachAuthor } from '../hooks/useAuthor';
 
 const CollectionDetailPage = () => {
   const { id } = useParams();
@@ -25,21 +26,10 @@ const CollectionDetailPage = () => {
   } = useCollectionDetail({ id: String(id) });
   const [openDelete, setOpenDelete] = useState(false);
 
-  // ✅ artwork 로드 후 userId로 작가 이름 조회 (백엔드가 이름을 안 줄 때)
-  const { data: authorUser } = useQuery({
-    queryKey: ['user', artwork?.userId],
-    queryFn: () => userApi.getUserById(artwork!.userId),
-    enabled: !!artwork?.userId,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  // ✅ 최종 데이터: 제목은 artwork.title, 아래 줄은 author
-  // (혹시 목록 API에서 이미 author를 준다면 우선 사용하고, 없으면 조회값 사용)
+  // 목록 state / URL ?author / artwork.author 순으로 작가명 해석
+  const finalAuthor = useResolvedAuthor(artwork?.author);
   const artworkForMeta = artwork
-    ? {
-        ...artwork,
-        author: artwork.author ?? authorUser?.name ?? '익명',
-      }
+    ? attachAuthor(artwork, finalAuthor)
     : undefined;
 
   if (isLoading) {
@@ -77,7 +67,6 @@ const CollectionDetailPage = () => {
   }
 
   const isOwner = artworkForMeta.isMine;
-
   const handleEdit = () => navigate(`/collection/${id}/edit`);
   const handleDelete = () => setOpenDelete(true);
   const confirmDelete = () => {
@@ -107,12 +96,11 @@ const CollectionDetailPage = () => {
           <div>
             <ArtworkThumbnail artwork={artworkForMeta} />
           </div>
-          {/* ✅ 제목은 title, 그 아래는 author 렌더링 */}
+          {/* 제목 아래 author 표시 (없으면 ArtworkMeta에서 자동 숨김) */}
           <ArtworkMeta artwork={artworkForMeta} />
         </div>
 
         <div className="my-8 mx-6 h-0.5 bg-neutral-200" />
-
         <ArtworkGallery artwork={artworkForMeta} />
         <DescriptionCard description={artworkForMeta.description || ''} />
         <ArchiveBar artwork={artworkForMeta} />
