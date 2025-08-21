@@ -64,3 +64,48 @@ export const getFollowing = async (
   });
   return normalizeFollowList(response.data?.data ?? response.data);
 };
+
+// 팔로우/언팔로우 API 추가 (실제 API 엔드포인트에 맞춤)
+export const followUser = async (
+  googleID: string,
+  targetUserId: string
+): Promise<{
+  targetUserId: number;
+  following: boolean;
+  targetFollowerCount: number;
+}> => {
+  const response = await axios.post(`/api/follow/${targetUserId}`, null, {
+    params: { googleId: googleID },
+  });
+  return response.data;
+};
+
+export const unfollowUser = async (
+  googleID: string,
+  targetUserId: string
+): Promise<{
+  targetUserId: number;
+  following: boolean;
+  targetFollowerCount: number;
+}> => {
+  // 언팔로우도 같은 엔드포인트로 POST 요청
+  const response = await axios.post(`/api/follow/${targetUserId}`, null, {
+    params: { googleId: googleID },
+  });
+  return response.data;
+};
+
+// 팔로우 상태 확인 API
+export const checkFollowStatus = async (
+  _googleID: string,
+  _targetUserId: string
+): Promise<boolean> => {
+  try {
+    // 실제로는 별도 API가 없으므로, 팔로우/언팔로우 API를 호출해서 상태 확인
+    // 하지만 이는 비효율적이므로, 초기값은 false로 설정
+    return false;
+  } catch (error) {
+    console.error("팔로우 상태 확인 실패:", error);
+    return false;
+  }
+};

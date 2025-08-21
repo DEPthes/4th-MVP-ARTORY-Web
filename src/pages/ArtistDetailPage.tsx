@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Header } from "../components";
 import BannerControl from "../components/Profile/BannerControl";
 import ProfileCard from "../components/Profile/ProfileCard";
@@ -9,6 +10,7 @@ import ArtworkCard from "../components/ArtworkCard";
 import TagFilterBar from "../components/Profile/TagFilterBar";
 import { useParams } from "react-router-dom";
 import BackNavigate from "../components/Layouts/BackNavigate";
+import { getUserProfile } from "../apis/user";
 
 const artistTabs = [
   { id: "artistNote", label: "작가노트" },
@@ -110,59 +112,88 @@ const noContentMessages = {
   },
 };
 
-interface ArtistData {
-  role: string;
-  nickName: string;
-  phoneNumber: string;
-  email: string;
-  introduction: string;
-  birthdate: string;
-  education: string;
-  followers: number;
-  following: number;
-}
-
-// Mock 작가 데이터 (실제로는 API에서 가져와야 함)
-const mockArtistData: Record<string, ArtistData> = {
-  "1": {
-    role: "작가",
-    nickName: "김아티스트",
-    phoneNumber: "010-1234-5678",
-    email: "artist1@test.com",
-    introduction:
-      "전통 수묵의 깊이와 현대미술의 자유로움이 만나, 새로운 숨결을 그려냅니다.",
-    birthdate: "1985.03.15",
-    education: "홍익대학교 미술대학 졸업",
-    followers: 234,
-    following: 67,
-  },
-  "2": {
-    role: "작가",
-    nickName: "박크리에이터",
-    phoneNumber: "010-2345-6789",
-    email: "artist2@test.com",
-    introduction: "자연과 인간의 조화를 담은 작품을 만듭니다.",
-    birthdate: "1990.07.22",
-    education: "서울대학교 미술대학 졸업",
-    followers: 156,
-    following: 43,
-  },
-};
-
 const ArtistDetailPage: React.FC = () => {
   const { artistId } = useParams<{ artistId: string }>();
-
-  // 현재 로그인한 사용자의 Google ID 가져오기
   const viewerGoogleID = localStorage.getItem("googleID");
 
-  // 작가 정보 가져오기 (Mock 데이터 사용)
-  const artistData = mockArtistData[artistId || "1"] || mockArtistData["1"];
+  console.log("🔍 ArtistDetailPage 렌더링:", {
+    artistId,
+    viewerGoogleID,
+    localStorage_keys: Object.keys(localStorage),
+    googleID_value: localStorage.getItem("googleID"),
+  });
+
+  // API로 작가 프로필 정보 조회
+  const {
+    data: artistProfile,
+    isLoading: isProfileLoading,
+    error: profileError,
+  } = useQuery({
+    queryKey: ["artistProfile", artistId],
+    queryFn: () => getUserProfile(viewerGoogleID!, artistId!),
+    enabled: !!viewerGoogleID && !!artistId,
+  });
+
+  // API로 작가노트 조회 (기존 훅 사용)
+  const {
+    data: artistNotes,
+    isLoading: isArtistNoteLoading,
+    error: artistNoteError,
+  } = useQuery({
+    queryKey: ["artistNote", artistId],
+    queryFn: () => {
+      // 기존 useArtistNote 훅과 동일한 API 호출
+      return fetch(
+        `/api/artist_note?googleID=${viewerGoogleID}&userID=${artistId}`
+      )
+        .then((res) => res.json())
+        .then((data) => data.data);
+    },
+    enabled: !!viewerGoogleID && !!artistId,
+  });
 
   const [selectedTabId, setSelectedTabId] = useState(artistTabs[0].id);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
   // 현재 사용자와 다른 프로필이므로 항상 false
   const isMyProfile = false;
+
+  // 작가노트 데이터를 섹션별로 분류
+  const registeredEntries = React.useMemo(() => {
+    if (!artistNotes) {
+      return {
+        achievement: [],
+        groupExhibition: [],
+        soloExhibition: [],
+      };
+    }
+
+    const achievement = artistNotes
+      .filter((item) => item.artistNoteType === "HISTORY")
+      .map((item) => ({
+        id: item.id,
+        year: item.year,
+        text: item.description,
+      }));
+
+    const groupExhibition = artistNotes
+      .filter((item) => item.artistNoteType === "TEAM_EVENT")
+      .map((item) => ({
+        id: item.id,
+        year: item.year,
+        text: item.description,
+      }));
+
+    const soloExhibition = artistNotes
+      .filter((item) => item.artistNoteType === "PERSONAL_EVENT")
+      .map((item) => ({
+        id: item.id,
+        year: item.year,
+        text: item.description,
+      }));
+
+    return { achievement, groupExhibition, soloExhibition };
+  }, [artistNotes]);
 
   // 현재 탭의 작품 리스트(필터 태그 적용 전)
   let data =
@@ -191,20 +222,62 @@ const ArtistDetailPage: React.FC = () => {
     setSelectedTag(null); // 탭이 바뀌면 태그 필터도 초기화
   };
 
-  // 작가노트 등록된 데이터 (Mock - 실제로는 API에서 가져와야 함)
-  const registeredEntries = {
-    achievement: [
-      { id: 1, year: "2023", text: "한국미술대상 우수상 수상" },
-      { id: 2, year: "2022", text: "개인전 '새로운 시작' 성공적 개최" },
-    ],
-    groupExhibition: [
-      { id: 1, year: "2023", text: "서울현대미술관 단체전 참여" },
-      { id: 2, year: "2022", text: "부산비엔날레 참여" },
-    ],
-    soloExhibition: [
-      { id: 1, year: "2023", text: "갤러리 현대 개인전 '내면의 풍경'" },
-    ],
-  };
+  // 로딩 상태 처리
+  if (isProfileLoading) {
+    return (
+      <>
+        <Header />
+        <div className="flex justify-center items-center min-h-screen">
+          <div className="text-lg">작가 정보를 불러오는 중...</div>
+        </div>
+      </>
+    );
+  }
+
+  // 에러 상태 처리
+  if (profileError || artistNoteError) {
+    const errorMessage = profileError
+      ? "작가 프로필을 불러오는데 실패했습니다."
+      : "작가노트를 불러오는데 실패했습니다.";
+
+    const errorDetails = profileError?.message || artistNoteError?.message;
+
+    return (
+      <>
+        <Header />
+        <div className="flex justify-center items-center min-h-screen">
+          <div className="text-lg text-red-500 text-center">
+            <div>{errorMessage}</div>
+            {errorDetails && (
+              <div className="text-sm text-gray-600 mt-2">
+                오류 상세: {errorDetails}
+              </div>
+            )}
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              다시 시도
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // 프로필 데이터가 없는 경우
+  if (!artistProfile) {
+    return (
+      <>
+        <Header />
+        <div className="flex justify-center items-center min-h-screen">
+          <div className="text-lg text-gray-500">
+            작가 정보를 찾을 수 없습니다.
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -216,22 +289,34 @@ const ArtistDetailPage: React.FC = () => {
           variant="primary"
           className="absolute z-10"
         />
-        <BannerControl isMyProfile={isMyProfile} />
+        <BannerControl
+          isMyProfile={isMyProfile}
+          initialBannerUrl={artistProfile?.coverImageUrl || undefined}
+        />
         <div className="flex">
           <div className="-mt-24 z-10 pl-60 xl:pl-40 md:pl-20 sm:pl-5">
             <div className="sticky top-24">
               <ProfileCard
-                role={artistData.role}
-                nickName={artistData.nickName}
-                followers={artistData.followers}
-                following={artistData.following}
-                introduction={artistData.introduction}
-                birthdate={artistData.birthdate}
-                education={artistData.education}
-                phoneNumber={artistData.phoneNumber}
-                email={artistData.email}
-                isMyProfile={isMyProfile}
+                role="작가"
+                nickName={artistProfile.name}
+                followers={artistProfile.followersCount}
+                following={artistProfile.followingCount}
+                introduction={artistProfile.description}
+                birthdate={artistProfile.birth}
+                education={
+                  !isMyProfile && !artistProfile.disclosureStatus
+                    ? ""
+                    : artistProfile.educationBackground
+                }
+                phoneNumber={artistProfile.contact}
+                email={artistProfile.email}
+                isMyProfile={artistProfile.isMe}
                 viewerGoogleID={viewerGoogleID || undefined}
+                userIdForFollowList={artistId}
+                showEditControls={false}
+                useNoneAction={artistProfile.isMe}
+                initialIsFollowed={artistProfile.isFollowed}
+                image={artistProfile.profileImageUrl || undefined}
               />
             </div>
           </div>
@@ -242,7 +327,7 @@ const ArtistDetailPage: React.FC = () => {
               onTabChange={handleTabChange}
             />
             <UserTabInfo
-              nickname={artistData.nickName}
+              nickname={artistProfile.name}
               currentTabLabel={
                 artistTabs.find((t) => t.id === selectedTabId)?.label || ""
               }
@@ -260,14 +345,16 @@ const ArtistDetailPage: React.FC = () => {
                     이력 및 수상 경력
                   </div>
                   <div className="flex flex-col gap-4 w-full min-h-15.5 px-6 py-5 bg-white">
-                    {registeredEntries.achievement.length > 0 ? (
-                      registeredEntries.achievement.map(({ year, text }) => (
-                        <DisplayEntry
-                          key={year + text}
-                          year={year}
-                          text={text}
-                        />
-                      ))
+                    {isArtistNoteLoading ? (
+                      <div className="text-center py-4 text-gray-500">
+                        작가노트를 불러오는 중...
+                      </div>
+                    ) : registeredEntries.achievement.length > 0 ? (
+                      registeredEntries.achievement.map(
+                        ({ year, text, id }) => (
+                          <DisplayEntry key={id} year={year} text={text} />
+                        )
+                      )
                     ) : (
                       <div className="text-[#717478] text-center py-4">
                         등록된 이력이 없습니다.
@@ -278,14 +365,14 @@ const ArtistDetailPage: React.FC = () => {
                     단체전
                   </div>
                   <div className="flex flex-col w-full gap-4 min-h-15.5 px-6 py-5 bg-white">
-                    {registeredEntries.groupExhibition.length > 0 ? (
+                    {isArtistNoteLoading ? (
+                      <div className="text-center py-4 text-gray-500">
+                        작가노트를 불러오는 중...
+                      </div>
+                    ) : registeredEntries.groupExhibition.length > 0 ? (
                       registeredEntries.groupExhibition.map(
-                        ({ year, text }) => (
-                          <DisplayEntry
-                            key={year + text}
-                            year={year}
-                            text={text}
-                          />
+                        ({ year, text, id }) => (
+                          <DisplayEntry key={id} year={year} text={text} />
                         )
                       )
                     ) : (
@@ -298,14 +385,16 @@ const ArtistDetailPage: React.FC = () => {
                     개인전
                   </div>
                   <div className="flex flex-col w-full gap-4 min-h-15.5 px-6 py-5 bg-white">
-                    {registeredEntries.soloExhibition.length > 0 ? (
-                      registeredEntries.soloExhibition.map(({ year, text }) => (
-                        <DisplayEntry
-                          key={year + text}
-                          year={year}
-                          text={text}
-                        />
-                      ))
+                    {isArtistNoteLoading ? (
+                      <div className="text-center py-4 text-gray-500">
+                        작가노트를 불러오는 중...
+                      </div>
+                    ) : registeredEntries.soloExhibition.length > 0 ? (
+                      registeredEntries.soloExhibition.map(
+                        ({ year, text, id }) => (
+                          <DisplayEntry key={id} year={year} text={text} />
+                        )
+                      )
                     ) : (
                       <div className="text-[#717478] text-center py-4">
                         등록된 개인전이 없습니다.

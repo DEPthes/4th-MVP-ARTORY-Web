@@ -6,8 +6,10 @@ import TabMenu from "../components/Profile/TabMenu";
 import ArtworkCard from "../components/ArtworkCard";
 import Chip from "../components/Chip";
 import { useTagList } from "../hooks/useTag";
-import { useSearchPosts } from "../hooks/useSearch";
+import { useSearchPosts, searchKeys } from "../hooks/useSearch";
 import type { SearchItem, PostType } from "../apis/search";
+import { useQueryClient } from "@tanstack/react-query";
+import { useToggleArchive } from "../hooks/useArchive";
 
 // 탭별 카테고리 정의 (동적으로 생성됨)
 
@@ -57,6 +59,56 @@ const SearchResultPage = () => {
     page: 0,
     size: 30,
   });
+
+  // 좋아요(아카이브) 토글
+  const queryClient = useQueryClient();
+  const toggleArchive = useToggleArchive();
+
+  const currentQueryKey = searchKeys.list({
+    text: submittedSearchText,
+    postType:
+      selectedTabId === "artworkCollection"
+        ? ("ART" as PostType)
+        : selectedTabId === "exhibition"
+        ? ("EXHIBITION" as PostType)
+        : ("CONTEST" as PostType),
+    tagName: selectedCategory === "전체" ? "ALL" : selectedCategory,
+    page: 0,
+    size: 30,
+  });
+
+  const handleToggleArchive = (item: ArtworkItem) => {
+    const googleID = localStorage.getItem("googleID");
+    if (!googleID) {
+      window.location.href = "/login";
+      return;
+    }
+
+    const previous = queryClient.getQueryData<SearchItem[]>(currentQueryKey);
+
+    // 낙관적 업데이트
+    queryClient.setQueryData<SearchItem[] | undefined>(currentQueryKey, (old) =>
+      (old || []).map((it) =>
+        it.postId === item.postId
+          ? {
+              ...it,
+              isArchived: !it.isArchived,
+              archived: it.archived + (it.isArchived ? -1 : 1),
+            }
+          : it
+      )
+    );
+
+    toggleArchive.mutate(
+      { postId: item.postId, googleID },
+      {
+        onError: () => {
+          // 롤백
+          queryClient.setQueryData(currentQueryKey, previous);
+        },
+      }
+    );
+  };
 
   // 검색 API 실패(예: 401) 시에도 페이지는 유지되며 빈 결과로 처리
 
@@ -173,7 +225,9 @@ const SearchResultPage = () => {
               title={artworkItem.title}
               author={artworkItem.userName}
               imageUrl={artworkItem.imageUrls?.[0] || ""}
-              likes={0} // 백엔드에서 likes 정보가 없으므로 기본값
+              likes={artworkItem.archived}
+              liked={artworkItem.isArchived}
+              onToggleLike={() => handleToggleArchive(artworkItem)}
             />
           );
         });
@@ -186,7 +240,9 @@ const SearchResultPage = () => {
               title={exhibitionItem.title}
               author={exhibitionItem.userName}
               imageUrl={exhibitionItem.imageUrls?.[0] || ""}
-              likes={0} // 백엔드에서 likes 정보가 없으므로 기본값
+              likes={exhibitionItem.archived}
+              liked={exhibitionItem.isArchived}
+              onToggleLike={() => handleToggleArchive(exhibitionItem)}
               variant="secondary"
             />
           );
@@ -200,7 +256,9 @@ const SearchResultPage = () => {
               title={contestItem.title}
               author={contestItem.userName}
               imageUrl={contestItem.imageUrls?.[0] || ""}
-              likes={0} // 백엔드에서 likes 정보가 없으므로 기본값
+              likes={contestItem.archived}
+              liked={contestItem.isArchived}
+              onToggleLike={() => handleToggleArchive(contestItem)}
               variant="secondary"
             />
           );
