@@ -4,7 +4,6 @@ import BannerEditIcon from "../../assets/bannerEdit.svg?react";
 import ResetIcon from "../../assets/bannerReset.svg?react";
 import DefaultBanner from "../../assets/images/Banner.png";
 import { changeCover } from "../../apis/user";
-import { changeCover } from "../../apis/user";
 
 interface BannerControlProps {
   isMyProfile: boolean;
@@ -12,15 +11,11 @@ interface BannerControlProps {
   className?: string;
   viewerGoogleID?: string; // 현재 로그인한 사용자의 Google ID
   onCoverChange?: () => void; // 커버 변경 후 호출할 콜백
-  viewerGoogleID?: string; // 현재 로그인한 사용자의 Google ID
-  onCoverChange?: () => void; // 커버 변경 후 호출할 콜백
 }
 
 const BannerControl: React.FC<BannerControlProps> = ({
   isMyProfile,
   initialBannerUrl,
-  viewerGoogleID,
-  onCoverChange,
   viewerGoogleID,
   onCoverChange,
 }) => {
@@ -183,7 +178,6 @@ const BannerControl: React.FC<BannerControlProps> = ({
     "flex items-center justify-center h-11 rounded-md font-asta font-bold bg-[#242121]/60 text-white border border-zinc-400 cursor-pointer";
 
   const objectFitClass = "object-cover";
-  const objectFitClass = "object-cover";
 
   return (
     <div className="relative overflow-hidden">
@@ -210,18 +204,11 @@ const BannerControl: React.FC<BannerControlProps> = ({
               "px-4 py-2.5",
               isUpdating && "opacity-50 cursor-not-allowed"
             )}
-            className={cn(
-              buttonBaseClasses,
-              "px-4 py-2.5",
-              isUpdating && "opacity-50 cursor-not-allowed"
-            )}
             onClick={handleEditClick}
             type="button"
             disabled={isUpdating}
-            disabled={isUpdating}
           >
             <BannerEditIcon className="mr-1.5 size-4.5" />
-            {isUpdating ? "업로드 중..." : "배너 사진 편집"}
             {isUpdating ? "업로드 중..." : "배너 사진 편집"}
           </button>
 
@@ -231,14 +218,8 @@ const BannerControl: React.FC<BannerControlProps> = ({
               "px-4 py-2.5",
               isUpdating && "opacity-50 cursor-not-allowed"
             )}
-            className={cn(
-              buttonBaseClasses,
-              "px-4 py-2.5",
-              isUpdating && "opacity-50 cursor-not-allowed"
-            )}
             onClick={handleResetClick}
             type="button"
-            disabled={isUpdating}
             disabled={isUpdating}
           >
             <ResetIcon className="size-4.5" />

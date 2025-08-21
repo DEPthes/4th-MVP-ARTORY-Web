@@ -8,16 +8,6 @@ import {
 import { useParams, useNavigate } from "react-router-dom";
 
 // 컴포넌트
-import React, { useEffect, useState } from "react";
-import {
-  useInfiniteQuery,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
-import { useParams, useNavigate } from "react-router-dom";
-
-// 컴포넌트
 import { Header } from "../components";
 import BannerControl from "../components/Profile/BannerControl";
 import ProfileCard from "../components/Profile/ProfileCard";
@@ -28,28 +18,6 @@ import EntryList from "../components/NoteField/EntryList";
 import type { Entry } from "../components/NoteField/EntryList";
 import ArtworkCard from "../components/ArtworkCard";
 import TagFilterBar from "../components/Profile/TagFilterBar";
-
-// API 및 타입
-import {
-  getUserPosts,
-  getUserProfile,
-  type PaginatedPostsResponse,
-  type Post,
-} from "../apis/user";
-import {
-  type ArtistNoteItem,
-  type ArtistNotePayload,
-  type ArtistNoteType,
-  createArtistNote,
-  deleteArtistNote,
-  getArtistNote,
-  updateArtistNote,
-} from "../apis/artistNote";
-
-// Hooks
-import { useSidebarProfile } from "../hooks/useUser";
-
-// 상수
 
 // API 및 타입
 import {
@@ -89,7 +57,6 @@ const noContentMessages = {
   myProfile: {
     works:
       "아직 등록된 작품이 없습니다.\n진행중이거나 예정된 작품을 소개해주세요.",
-      "아직 등록된 작품이 없습니다.\n진행중이거나 예정된 작품을 소개해주세요.",
     exhibition:
       "아직 등록된 전시가 없습니다.\n진행중이거나 예정된 전시를 소개해주세요.",
     contest:
@@ -123,27 +90,7 @@ interface UserProfile {
   artistID: number;
 }
 
-interface UserProfile {
-  name: string;
-  userType: "ARTIST" | "GALLERY" | "COLLECTOR";
-  profileImageUrl: string | null;
-  coverImageUrl: string | null;
-  followersCount: number;
-  followingCount: number;
-  description: string;
-  birth: string;
-  educationBackground: string;
-  contact: string;
-  email: string;
-  isMe: boolean;
-  isFollowed: boolean;
-  disclosureStatus: boolean;
-  artistID: number;
-}
-
 const ProfilePage: React.FC = () => {
-  const queryClient = useQueryClient();
-  const { googleID } = useParams<{ googleID: string }>();
   const queryClient = useQueryClient();
   const { googleID } = useParams<{ googleID: string }>();
   const navigate = useNavigate();
@@ -198,53 +145,8 @@ const ProfilePage: React.FC = () => {
     achievement: EntryWithArtistNote[];
     groupExhibition: EntryWithArtistNote[];
     soloExhibition: EntryWithArtistNote[];
-  // 작가노트 데이터를 위한 상태 타입 정의
-  type EntryWithArtistNote = Entry & {
-    artistNoteType?: ArtistNoteType;
-    description?: string;
   };
 
-  type RegisteredEntriesType = {
-    achievement: EntryWithArtistNote[];
-    groupExhibition: EntryWithArtistNote[];
-    soloExhibition: EntryWithArtistNote[];
-  };
-
-  // 고정된 ID 값들 (컴포넌트 마운트 시 한 번만 생성)
-  const [entryIds] = useState(() => ({
-    achievement: [1, 2, 3],
-    groupExhibition: [4, 5, 6],
-    soloExhibition: [7, 8, 9],
-  }));
-
-  const [temporaryEntries, setTemporaryEntries] =
-    useState<RegisteredEntriesType>({
-      achievement: [
-        { id: entryIds.achievement[0], year: "", text: "", registered: false },
-      ],
-      groupExhibition: [
-        {
-          id: entryIds.groupExhibition[0],
-          year: "",
-          text: "",
-          registered: false,
-        },
-      ],
-      soloExhibition: [
-        {
-          id: entryIds.soloExhibition[0],
-          year: "",
-          text: "",
-          registered: false,
-        },
-      ],
-    });
-  const [registeredEntries, setRegisteredEntries] =
-    useState<RegisteredEntriesType>({
-      achievement: [],
-      groupExhibition: [],
-      soloExhibition: [],
-    });
   // 고정된 ID 값들 (컴포넌트 마운트 시 한 번만 생성)
   const [entryIds] = useState(() => ({
     achievement: [1, 2, 3],
@@ -289,12 +191,9 @@ const ProfilePage: React.FC = () => {
   };
 
   const handleAchievementChange = (newEntries: Entry[]) =>
-  const handleAchievementChange = (newEntries: Entry[]) =>
     updateTemporaryEntries("achievement", newEntries);
   const handleGroupExhibitionChange = (newEntries: Entry[]) =>
-  const handleGroupExhibitionChange = (newEntries: Entry[]) =>
     updateTemporaryEntries("groupExhibition", newEntries);
-  const handleSoloExhibitionChange = (newEntries: Entry[]) =>
   const handleSoloExhibitionChange = (newEntries: Entry[]) =>
     updateTemporaryEntries("soloExhibition", newEntries);
 
@@ -776,81 +675,6 @@ const ProfilePage: React.FC = () => {
                           />
                         ) : registeredEntries.soloExhibition.length > 0 ? (
                           registeredEntries.soloExhibition.map(
-                            ({ year, text, id }) => (
-                              <DisplayEntry key={id} year={year} text={text} />
-                            )
-                          )
-                        ) : (
-                          <div className="text-gray-500">
-                            등록된 개인전 정보가 없습니다.
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <TagFilterBar
-                        tags={currentTags}
-                        selectedTag={selectedTag}
-                        onTagSelect={setSelectedTag}
-                      />
-                      {isPostsLoading ? (
-                        <div className="text-center py-10">
-                          게시물을 불러오는 중...
-                        </div>
-                      ) : allPosts.length > 0 ? (
-                        <>
-                          <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6 px-13.5">
-                            {allPosts.map((post) => (
-                              <ArtworkCard
-                                key={post.postId}
-                                imageUrl={post.imageUrls[0]}
-                                title={post.title}
-                                author={post.userName}
-                                likes={post.archived}
-                                variant="primary"
-                                onClick={() =>
-                                  navigate(`/posts/${post.postId}`)
-                                }
-                              />
-                            ))}
-                          </div>
-                          <div className="flex justify-center mt-8">
-                            {hasNextPage && (
-                              <button
-                                onClick={() => fetchNextPage()}
-                                disabled={isFetchingNextPage}
-                                className="px-6 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 disabled:bg-gray-400"
-                              >
-                                {" "}
-                                {isFetchingNextPage
-                                  ? "불러오는 중..."
-                                  : "더 보기"}{" "}
-                              </button>
-                            )}
-                          </div>
-                        </>
-                      ) : (
-                        <div
-                          className="col-span-3 mt-30 flex flex-col justify-center items-center pb-10 text-[#717478] font-normal whitespace-pre-line text-center px-6"
-                          style={{ minHeight: "150px" }}
-                        >
-                          {isMyProfile
-                            ? noContentMessages.myProfile[
-                                selectedTabId as keyof typeof noContentMessages.myProfile
-                              ]
-                            : noContentMessages.otherProfile[
-                                selectedTabId as keyof typeof noContentMessages.otherProfile
-                              ]}
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          </>
-        )}
                             ({ year, text, id }) => (
                               <DisplayEntry key={id} year={year} text={text} />
                             )

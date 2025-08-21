@@ -2,7 +2,6 @@ import { cn } from "../../utils/classname";
 import UserActionButton from "../Profile/UserActionButton";
 import BaseProfileImage from "../../assets/images/BaseProfileImage.png";
 import { useState, useRef, useEffect } from "react";
-import { useState, useRef, useEffect } from "react";
 import EditIcon from "../../assets/editIcon.svg";
 import { changeProfile } from "../../apis/user";
 import { useQuery } from "@tanstack/react-query";
@@ -57,8 +56,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
 }) => {
   const [imageError, setImageError] = useState(false);
   const [localImage, setLocalImage] = useState<string | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false); // 추가: 업데이트 상태
-  const [isUpdating, setIsUpdating] = useState(false); // 추가: 업데이트 상태
+  const [isUpdating, setIsUpdating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 이미지가 없거나 빈 문자열이거나 로딩 실패 시 기본 이미지 사용
@@ -73,72 +71,36 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   const handleImageUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-  const handleImageUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
     const file = event.target.files?.[0];
-    if (file) {
-      // 파일 유효성 검사
-      if (!file.type.startsWith("image/")) {
-        alert("이미지 파일만 업로드 가능합니다.");
-        return;
-      }
+    if (!file) return;
 
-      if (file.size > 5 * 1024 * 1024) {
-        // 5MB 제한
-        alert("파일 크기는 5MB 이하여야 합니다.");
-        return;
-      }
+    if (!file.type.startsWith("image/")) {
+      alert("이미지 파일만 업로드 가능합니다.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert("파일 크기는 5MB 이하여야 합니다.");
+      return;
+    }
 
-      // 로컬 미리보기 설정
-      // 로컬 미리보기 설정
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setLocalImage(result);
-      };
-      reader.readAsDataURL(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      setLocalImage(result);
+    };
+    reader.readAsDataURL(file);
 
-      // 프로필 이미지 변경 API 호출
-      if (viewerGoogleID && isMyProfile) {
-        try {
-          setIsUpdating(true);
-          await changeProfile(viewerGoogleID, file); // 파일 객체 직접 전달
-          console.log("프로필 이미지 변경 성공");
-
-          // 부모 컴포넌트에 파일 변경 알림
-          if (onImageChange) {
-            onImageChange(file);
-          }
-        } catch (error) {
-          console.error("프로필 이미지 변경 실패:", error);
-          alert("프로필 이미지 변경에 실패했습니다.");
-          // 실패 시 로컬 이미지 상태 되돌리기
-          setLocalImage(null);
-        } finally {
-          setIsUpdating(false);
-        }
-      }
-
-      // 프로필 이미지 변경 API 호출
-      if (viewerGoogleID && isMyProfile) {
-        try {
-          setIsUpdating(true);
-          await changeProfile(viewerGoogleID, file); // 파일 객체 직접 전달
-          console.log("프로필 이미지 변경 성공");
-
-          // 부모 컴포넌트에 파일 변경 알림
-          if (onImageChange) {
-            onImageChange(file);
-          }
-        } catch (error) {
-          console.error("프로필 이미지 변경 실패:", error);
-          alert("프로필 이미지 변경에 실패했습니다.");
-          // 실패 시 로컬 이미지 상태 되돌리기
-          setLocalImage(null);
-        } finally {
-          setIsUpdating(false);
-        }
+    if (viewerGoogleID && isMyProfile) {
+      try {
+        setIsUpdating(true);
+        await changeProfile(viewerGoogleID, file);
+        if (onImageChange) onImageChange(file);
+      } catch (error) {
+        console.error("프로필 이미지 변경 실패:", error);
+        alert("프로필 이미지 변경에 실패했습니다.");
+        setLocalImage(null);
+      } finally {
+        setIsUpdating(false);
       }
     }
   };
@@ -148,37 +110,21 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
       alert("로그인이 필요합니다.");
       return;
     }
-    if (!viewerGoogleID) {
-      alert("로그인이 필요합니다.");
-      return;
-    }
     fileInputRef.current?.click();
   };
 
-  // 팔로우 상태 (API 초기값 반영 및 이후 토글)
   const [isFollowing, setIsFollowing] = useState<boolean>(
     initialIsFollowed ?? false
   );
-
-  useEffect(() => {
-    setIsFollowing(initialIsFollowed ?? false);
-  }, [initialIsFollowed]);
-  // 팔로우 상태 (API 초기값 반영 및 이후 토글)
-  const [isFollowing, setIsFollowing] = useState<boolean>(
-    initialIsFollowed ?? false
-  );
-
   useEffect(() => {
     setIsFollowing(initialIsFollowed ?? false);
   }, [initialIsFollowed]);
 
-  // 팔로우/팔로잉 토글 함수
   const toggleFollow = () => {
     setIsFollowing((prev) => !prev);
-    // 서버 로직 추가
+    // TODO: 서버 연동 추가
   };
 
-  // 팔로워/팔로잉 목록 조회
   const targetUserId = userIdForFollowList;
   const { data: followersList, isLoading: isFollowersLoading } = useQuery<
     FollowUserSummary[]
@@ -198,7 +144,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   const [hovered, setHovered] = useState<null | "followers" | "following">(
     null
   );
-  // 팝오버 유지 딜레이
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const openPopover = (type: "followers" | "following") => {
     if (hideTimerRef.current) {
@@ -217,7 +162,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     };
   }, []);
 
-  // 가로 모드일 때의 레이아웃
   if (isHorizontal) {
     return (
       <div
@@ -228,24 +172,17 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         )}
         onClick={onClick}
       >
-        {/* 빨간 줄 */}
-
         <div className="flex relative items-start gap-7">
-          {/* 왼쪽 프로필 이미지 */}
           <div className="relative">
             <img
               src={profileImage}
               alt={nickName}
               className="size-37.5 rounded-full flex-shrink-0 object-cover"
-              className="size-37.5 rounded-full flex-shrink-0 object-cover"
               onError={handleImageError}
             />
-            {/* 수정 버튼 */}
             {isMyProfile && (
               <button
                 onClick={handleEditClick}
-                disabled={isUpdating}
-                className="absolute bottom-2 right-2 bg-red-500 rounded-full p-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isUpdating}
                 className="absolute bottom-2 right-2 bg-red-500 rounded-full p-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -261,18 +198,15 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             />
           </div>
 
-          {/* 오른쪽 정보 */}
           <div className="flex flex-col gap-4 flex-1">
-            <div className="flex items-center text-lg  gap-2">
+            <div className="flex items-center text-lg gap-2">
               <div className="text-zinc-500">{role}</div>
               <div className="font-semibold text-zinc-900">{nickName}</div>
             </div>
-
             <div className="flex flex-col gap-1 text-xs font-light text-zinc-900">
               <div>{phoneNumber}</div>
               <div>{email}</div>
             </div>
-
             <div className="text-sm font-light text-zinc-900 break-words pr-8">
               {introduction}
             </div>
@@ -282,7 +216,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     );
   }
 
-  // 세로 모드 (기존 레이아웃)
   return (
     <div
       className={cn(
@@ -298,15 +231,11 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             src={profileImage}
             alt={nickName}
             className="size-40 rounded-full object-cover"
-            className="size-40 rounded-full object-cover"
             onError={handleImageError}
           />
-          {/* 수정 버튼 */}
           {isMyProfile && (
             <button
               onClick={handleEditClick}
-              disabled={isUpdating}
-              className="absolute bottom-2 right-2 bg-[#D32F2F] rounded-full p-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={isUpdating}
               className="absolute bottom-2 right-2 bg-[#D32F2F] rounded-full p-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -326,6 +255,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           <div className="text-lg text-zinc-500">{role}</div>
           <div className="text-xl font-semibold text-zinc-900">{nickName}</div>
         </div>
+
         <div className="flex items-center gap-5 font-light text-zinc-500">
           <div
             className="relative"
@@ -372,6 +302,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
               </div>
             )}
           </div>
+
           <div
             className="relative"
             onMouseEnter={() => openPopover("following")}
@@ -418,7 +349,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             )}
           </div>
         </div>
-        {/* 내 프로필이면 편집 버튼, 아니면 팔로우/팔로잉 버튼 */}
+
         {isMyProfile ? (
           <UserActionButton
             type="edit"
@@ -432,6 +363,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             onClick={toggleFollow}
           />
         )}
+
         <div className="font-light text-zinc-900 text-center break-words px-3">
           {introduction}
         </div>
@@ -450,6 +382,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           ) : null}
         </div>
       </div>
+
       <div className="flex flex-col text-left gap-4 font-light w-full pt-2 pb-12 border-t border-zinc-400">
         <div className="text-zinc-400 text-xs">CONTACT</div>
         <div className="flex flex-col gap-2 px-3 items-start">
