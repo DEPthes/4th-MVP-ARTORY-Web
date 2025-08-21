@@ -55,7 +55,7 @@ export const postChangeApi = {
     formData.append("url", requestData.url);
 
     // 이미지 파일들 추가
-    requestData.images.forEach((image, index) => {
+    requestData.images.forEach((image) => {
       if (image.file) {
         formData.append("images", image.file);
       }

@@ -1,5 +1,5 @@
 // src/pages/ContestDetailPage.tsx
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import Header from "../components/Layouts/Header";
 import BackNavigate from "../components/Layouts/BackNavigate";
@@ -16,7 +16,6 @@ import { useResolvedAuthor, attachAuthor } from "../hooks/useAuthor";
 const ContestDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
 
   // 실제 API 사용
   const {
@@ -123,9 +122,13 @@ const ContestDetailPage = () => {
 
       setOpenDelete(false);
       navigate("/contest");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("삭제 실패:", error);
-      alert(error?.message || "게시물 삭제 중 오류가 발생했습니다.");
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "게시물 삭제 중 오류가 발생했습니다.";
+      alert(errorMessage);
     }
   };
 
