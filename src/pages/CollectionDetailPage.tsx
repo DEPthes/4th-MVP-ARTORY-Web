@@ -1,9 +1,9 @@
 // src/pages/CollectionDetailPage.tsx
 import { useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
+
 import Header from "../components/Layouts/Header";
 import BackNavigate from "../components/Layouts/BackNavigate";
-
 import ArtworkThumbnail from "../components/Collection/ArtworkThumbnail";
 import ArtworkMeta from "../components/Collection/ArtworkMeta";
 import ArtworkGallery from "../components/Collection/ArtworkGallery";
@@ -11,117 +11,107 @@ import DescriptionCard from "../components/Collection/DescriptionCard";
 import ArchiveBar from "../components/Collection/ArchiveBar";
 import ConfirmModal from "../components/Modals/ConfirmModal";
 import OwnerActions from "../components/Detail/OwnerActions";
+
 import { useCollectionDetail } from "../hooks/useDetail";
-
-/* ---------- 예시 타입/데이터 (CollectionPage와 동일) ---------- */
-const Category = [
-  "전체",
-  "회화",
-  "조각",
-  "공예",
-  "건축",
-  "사진",
-  "미디어아트",
-  "인테리어",
-  "기타",
-] as const;
-type Category = (typeof Category)[number];
-
-type Artwork = {
-  imageUrl: string;
-  images?: string[]; // 갤러리 재사용 대비
-  title: string;
-  author?: string;
-  likes: number;
-  category: Category;
-  ownerId?: string; // 소유자 판별
-};
-
-const artworks: Artwork[] = [
-  {
-    imageUrl: "",
-    title: "봄의 정원",
-    author: "홍길동",
-    likes: 10,
-    category: "회화",
-    ownerId: "u-1",
-  },
-  {
-    imageUrl: "",
-    title: "빛의 단면",
-    author: "김작가",
-    likes: 3,
-    category: "사진",
-    ownerId: "u-2",
-  },
-  {
-    imageUrl: "",
-    title: "공간의 기억",
-    author: "이아티스트",
-    likes: 8,
-    category: "조각",
-    ownerId: "u-2",
-  },
-  {
-    imageUrl: "",
-    title: "목질의 온도",
-    author: "최공예",
-    likes: 6,
-    category: "공예",
-    ownerId: "u-1",
-  },
-  {
-    imageUrl: "",
-    title: "도시의 결",
-    author: "정디자이너",
-    likes: 5,
-    category: "건축",
-    ownerId: "u-1",
-  },
-];
+import { useResolvedAuthor, attachAuthor } from "../hooks/useAuthor";
 
 const CollectionDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data: fetchedArtwork, isLoading } = useCollectionDetail({
-    id: String(id),
-  });
 
-  // 1-based → 0-based
-  const idx = Number(id) - 1;
-  const localItem =
-    Number.isInteger(idx) && idx >= 0 && idx < artworks.length
-      ? artworks[idx]
-      : undefined;
-  const artwork = fetchedArtwork ?? localItem;
-
-  // 로그인 유저(예시)
-  const currentUserId = "u-1";
-  const isOwner = (localItem?.ownerId ?? undefined) === currentUserId;
-
+  const {
+    data: artwork,
+    isLoading,
+    error,
+  } = useCollectionDetail({ id: String(id) });
   const [openDelete, setOpenDelete] = useState(false);
 
-  if (!artwork) {
+  // 목록 state / URL ?author / artwork.author 순으로 작가명 해석
+  const finalAuthor = useResolvedAuthor(artwork?.author);
+  const artworkForMeta = artwork
+    ? attachAuthor(artwork, finalAuthor)
+    : undefined;
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-white">
         <Header />
-        <div className="max-w-300 mx-auto px-6 py-10 text-gray-600">
-          {isLoading ? "로딩 중..." : "작품을 찾을 수 없습니다."}
+        <div className="max-w-300 mx-auto px-6 py-10 text-gray-600 text-center">
+          로딩 중...
         </div>
       </div>
     );
   }
 
-  const handleEdit = () => navigate(`/collection/${id}/edit`);
+  if (error) {
+    console.error("💥 작품 상세 조회 에러:", error);
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="max-w-300 mx-auto px-6 py-10 text-gray-600 text-center">
+          작품을 불러오는 중 오류가 발생했습니다.
+        </div>
+      </div>
+    );
+  }
+
+  if (!artworkForMeta) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="max-w-300 mx-auto px-6 py-10 text-gray-600 text-center">
+          작품을 찾을 수 없습니다.
+        </div>
+      </div>
+    );
+  }
+
+  const isOwner = artworkForMeta.isMine;
+  const handleEdit = () => {
+    // 수정 페이지로 이동하면서 기존 데이터 전달
+    navigate(`/editor/work/${artworkForMeta.id}/edit`, {
+      state: {
+        images:
+          artworkForMeta.images?.map((url, index) => ({
+            id: index.toString(),
+            url: url,
+            file: undefined,
+            isCover: index === 0, // 첫 번째 이미지를 대표 이미지로 설정
+          })) || [],
+        title: artworkForMeta.title,
+        description: artworkForMeta.description,
+        url: "",
+        tags: artworkForMeta.tags?.map((tag) => tag.name) || [],
+      },
+    });
+  };
+
   const handleDelete = () => setOpenDelete(true);
-  const confirmDelete = () => {
-    setOpenDelete(false);
-    navigate("/collection");
+  const confirmDelete = async () => {
+    try {
+      const myGoogleId = localStorage.getItem("googleID") || "";
+      if (!myGoogleId) {
+        alert("로그인이 필요합니다.");
+        return;
+      }
+
+      // 삭제 API 호출
+      const { postDeleteApi } = await import("../apis/postDelete");
+      await postDeleteApi.deletePost({
+        postID: artworkForMeta.id,
+        googleID: myGoogleId,
+      });
+
+      setOpenDelete(false);
+      navigate("/collection");
+    } catch (error: any) {
+      console.error("삭제 실패:", error);
+      alert(error?.message || "게시물 삭제 중 오류가 발생했습니다.");
+    }
   };
 
   return (
     <div className="min-h-screen bg-white">
-      {/* 상단 네비 */}
       <Header />
       <BackNavigate
         pathname="/collection"
@@ -129,9 +119,7 @@ const CollectionDetailPage = () => {
         variant="secondary"
       />
 
-      {/* 본문 */}
       <div className="max-w-300 mx-auto px-6 mt-6 pb-40">
-        {/* 소유자 전용 액션 */}
         {isOwner && (
           <OwnerActions
             onEdit={handleEdit}
@@ -140,30 +128,20 @@ const CollectionDetailPage = () => {
           />
         )}
 
-        {/* 상단: 좌(썸네일) / 우(제목·작가) */}
         <div className="flex gap-10 mt-20">
           <div>
-            <ArtworkThumbnail artwork={artwork} />
+            <ArtworkThumbnail artwork={artworkForMeta} />
           </div>
-          <ArtworkMeta artwork={artwork} />
+          {/* 제목 아래 author 표시 (없으면 ArtworkMeta에서 자동 숨김) */}
+          <ArtworkMeta artwork={artworkForMeta} />
         </div>
 
-        {/* 구분선 */}
         <div className="my-8 mx-6 h-0.5 bg-neutral-200" />
-
-        {/* 갤러리 (이미지 없으면 내부에서 렌더 X) */}
-        <ArtworkGallery artwork={artwork} />
-
-        {/* 설명 카드 (예시) */}
-        <DescriptionCard
-          description={`이 영역은 API 연동 후 서버에서 내려온 설명을 보여줍니다.\n현재는 '${artwork.title}' 예시 텍스트입니다.`}
-        />
-
-        {/* 태그 + 아카이브 */}
-        <ArchiveBar artwork={artwork} />
+        <ArtworkGallery artwork={artworkForMeta} />
+        <DescriptionCard description={artworkForMeta.description || ""} />
+        <ArchiveBar artwork={artworkForMeta} />
       </div>
 
-      {/* 삭제 확인 모달 */}
       <ConfirmModal
         open={openDelete}
         title="해당 게시글을 삭제하시겠어요?"

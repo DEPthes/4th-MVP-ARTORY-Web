@@ -1,8 +1,13 @@
 // src/utils/detailMappers.ts
-import type { DetailArtwork } from "../types/detail";
+import type { DetailArtwork } from '../types/detail';
 
-// Adapters to map various domain entities to DetailArtwork used by shared UI
+/** 상세 UI에서 실제로 쓰는 경량 형태만 매핑 */
+type DetailLight = Pick<
+  DetailArtwork,
+  'imageUrl' | 'images' | 'title' | 'author' | 'likes' | 'category'
+>;
 
+// 도메인 엔티티들(목록 카드 등)
 export type CollectionEntity = {
   imageUrl: string;
   images?: string[];
@@ -28,9 +33,8 @@ export type ContestEntity = {
   category: string;
 };
 
-export const mapCollectionToDetail = (
-  item: CollectionEntity
-): DetailArtwork => ({
+// ✅ DetailLight 로 반환 (DetailArtwork 전체를 요구하지 않음)
+export const mapCollectionToDetail = (item: CollectionEntity): DetailLight => ({
   imageUrl: item.imageUrl,
   images: item.images,
   title: item.title,
@@ -39,9 +43,7 @@ export const mapCollectionToDetail = (
   category: item.category,
 });
 
-export const mapExhibitionToDetail = (
-  item: ExhibitionEntity
-): DetailArtwork => ({
+export const mapExhibitionToDetail = (item: ExhibitionEntity): DetailLight => ({
   imageUrl: item.imageUrl,
   images: item.images,
   title: item.exhibitionName,
@@ -50,7 +52,7 @@ export const mapExhibitionToDetail = (
   category: item.category,
 });
 
-export const mapContestToDetail = (item: ContestEntity): DetailArtwork => ({
+export const mapContestToDetail = (item: ContestEntity): DetailLight => ({
   imageUrl: item.imageUrl,
   images: undefined,
   title: item.contestName,

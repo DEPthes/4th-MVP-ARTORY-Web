@@ -19,11 +19,17 @@ const ArchiveBar = ({ artwork }: Props) => {
   return (
     <div className="mt-6 flex items-center justify-between">
       <div className="flex flex-wrap gap-2">
-        <Chip
-          label={`# ${artwork.category}`}
-          className="text-xl px-6 py-4"
-          isActive={false}
-        />
+        {/* 동적 태그들만 표시 */}
+        {artwork.tags &&
+          artwork.tags.length > 0 &&
+          artwork.tags.map((tag) => (
+            <Chip
+              key={tag.id}
+              label={`# ${tag.name}`}
+              className="text-xl px-6 py-4"
+              isActive={false}
+            />
+          ))}
       </div>
 
       <button

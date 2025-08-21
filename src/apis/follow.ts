@@ -94,18 +94,3 @@ export const unfollowUser = async (
   });
   return response.data;
 };
-
-// 팔로우 상태 확인 API
-export const checkFollowStatus = async (
-  _googleID: string,
-  _targetUserId: string
-): Promise<boolean> => {
-  try {
-    // 실제로는 별도 API가 없으므로, 팔로우/언팔로우 API를 호출해서 상태 확인
-    // 하지만 이는 비효율적이므로, 초기값은 false로 설정
-    return false;
-  } catch (error) {
-    console.error("팔로우 상태 확인 실패:", error);
-    return false;
-  }
-};

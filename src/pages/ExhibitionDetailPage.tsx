@@ -1,4 +1,5 @@
-import { useParams, useNavigate } from "react-router-dom";
+// pages/ExhibitionDetailPage.tsx
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
 import Header from "../components/Layouts/Header";
 import BackNavigate from "../components/Layouts/BackNavigate";
@@ -11,117 +12,122 @@ import ArchiveBar from "../components/Collection/ArchiveBar";
 import ConfirmModal from "../components/Modals/ConfirmModal";
 import OwnerActions from "../components/Detail/OwnerActions";
 import { useExhibitionDetail } from "../hooks/useDetail";
-import { mapExhibitionToDetail } from "../utils/detailMappers";
-
-/** Exhibition 전용 로컬 타입/데이터 */
-const Category = [
-  "전체",
-  "회화",
-  "조각",
-  "공예",
-  "건축",
-  "사진",
-  "미디어아트",
-  "인테리어",
-  "기타",
-] as const;
-type Category = (typeof Category)[number];
-
-type Exhibition = {
-  imageUrl: string;
-  images?: string[]; // [thumb, 16:9, 3:4]
-  exhibitionName: string;
-  curator?: string;
-  likes: number;
-  category: Category;
-  ownerId?: string;
-};
-
-const exhibitions: Exhibition[] = [
-  {
-    imageUrl: "",
-    images: ["", "", ""],
-    exhibitionName: "봄, 색의 변주",
-    likes: 7,
-    category: "회화",
-    curator: "홍길동",
-    ownerId: "u-1",
-  },
-  {
-    imageUrl: "",
-    images: ["", ""],
-    exhibitionName: "빛과 공간의 대화",
-    likes: 11,
-    category: "건축",
-    curator: "김건축",
-    ownerId: "u-2",
-  },
-  {
-    imageUrl: "",
-    exhibitionName: "시간의 조각",
-    likes: 4,
-    category: "조각",
-    curator: "이조각",
-    ownerId: "u-2",
-  },
-  {
-    imageUrl: "",
-    images: ["", "", ""],
-    exhibitionName: "사소한 물성",
-    likes: 2,
-    category: "공예",
-    curator: "최공예",
-    ownerId: "u-1",
-  },
-  {
-    imageUrl: "",
-    exhibitionName: "프레임 너머",
-    likes: 9,
-    category: "사진",
-    curator: "정사진",
-    ownerId: "u-1",
-  },
-];
+import { useResolvedAuthor, attachAuthor } from "../hooks/useAuthor";
 
 const ExhibitionDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data: fetchedArtwork, isLoading } = useExhibitionDetail({
+  const location = useLocation();
+
+  // 실제 API 사용
+  const {
+    data: artwork,
+    isLoading,
+    error,
+  } = useExhibitionDetail({
     id: String(id),
   });
 
-  // 1-based → 0-based
-  const idx = Number(id) - 1;
-  const exhibit =
-    Number.isInteger(idx) && idx >= 0 && idx < exhibitions.length
-      ? exhibitions[idx]
-      : undefined;
-
-  // 로그인 유저(예시)
-  const currentUserId = "u-1";
-  const isOwner = exhibit?.ownerId === currentUserId;
-
   const [openDelete, setOpenDelete] = useState(false);
 
-  const artwork =
-    fetchedArtwork ?? (exhibit ? mapExhibitionToDetail(exhibit) : undefined);
+  // 목록 state / URL ?author / artwork.author 순으로 작가명 해석 (hooks는 항상 최상위에서 호출)
+  const finalAuthor = useResolvedAuthor(artwork?.author);
+  const artworkForMeta = artwork
+    ? attachAuthor(artwork, finalAuthor)
+    : undefined;
 
-  if (!artwork) {
+  // 로딩 상태
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-white">
         <Header />
-        <div className="max-w-300 mx-auto px-6 py-10 text-gray-600">
-          {isLoading ? "로딩 중..." : "전시를 찾을 수 없습니다."}
+        <div className="max-w-300 mx-auto px-6 py-10 text-gray-600 text-center">
+          로딩 중...
         </div>
       </div>
     );
   }
 
-  const handleEdit = () => navigate(`/exhibition/${id}/edit`);
+  // 에러 상태
+  if (error) {
+    console.error("💥 전시 상세 조회 에러:", error);
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="max-w-300 mx-auto px-6 py-10 text-gray-600 text-center">
+          전시를 불러오는 중 오류가 발생했습니다.
+        </div>
+      </div>
+    );
+  }
+
+  // 데이터가 없는 경우
+  if (!artwork) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="max-w-300 mx-auto px-6 py-10 text-gray-600 text-center">
+          전시를 찾을 수 없습니다.
+        </div>
+      </div>
+    );
+  }
+
+  if (!artworkForMeta) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="max-w-300 mx-auto px-6 py-10 text-gray-600 text-center">
+          전시 데이터를 처리할 수 없습니다.
+        </div>
+      </div>
+    );
+  }
+
+  // 소유자 여부 확인 (API에서 제공하는 isMine 사용)
+  const isOwner = artwork.isMine;
+
+  const handleEdit = () => {
+    // 수정 페이지로 이동하면서 기존 데이터 전달
+    navigate(`/editor/exhibition/${artwork.id}/edit`, {
+      state: {
+        images:
+          artwork.images?.map((url, index) => ({
+            id: index.toString(),
+            url: url,
+            file: undefined,
+            isCover: index === 0, // 첫 번째 이미지를 대표 이미지로 설정
+          })) || [],
+        title: artwork.title,
+        description: artwork.description,
+        url: "",
+        tags: artwork.tags?.map((tag) => tag.name) || [],
+      },
+    });
+  };
+
   const handleDelete = () => setOpenDelete(true);
-  const confirmDelete = () => {
-    setOpenDelete(false);
-    navigate("/exhibition");
+  const confirmDelete = async () => {
+    try {
+      const myGoogleId = localStorage.getItem("googleID") || "";
+      if (!myGoogleId) {
+        alert("로그인이 필요합니다.");
+        return;
+      }
+
+      // 삭제 API 호출
+      const { postDeleteApi } = await import("../apis/postDelete");
+      await postDeleteApi.deletePost({
+        postID: artwork.id,
+        googleID: myGoogleId,
+      });
+
+      setOpenDelete(false);
+      navigate("/exhibition");
+    } catch (error: any) {
+      console.error("삭제 실패:", error);
+      alert(error?.message || "게시물 삭제 중 오류가 발생했습니다.");
+    }
   };
 
   return (
@@ -134,6 +140,7 @@ const ExhibitionDetailPage = () => {
       />
 
       <div className="max-w-300 mx-auto px-6 mt-6 pb-40">
+        {/* 소유자 전용 액션 */}
         {isOwner && (
           <OwnerActions
             onEdit={handleEdit}
@@ -145,24 +152,22 @@ const ExhibitionDetailPage = () => {
         {/* 상단: 좌(썸네일) / 우(제목·작가) */}
         <div className="flex gap-10 mt-20">
           <div>
-            <ArtworkThumbnail artwork={artwork} />
+            <ArtworkThumbnail artwork={artworkForMeta} />
           </div>
-          <ArtworkMeta artwork={artwork} />
+          <ArtworkMeta artwork={artworkForMeta} />
         </div>
 
         {/* 구분선 */}
         <div className="my-8 mx-6 h-0.5 bg-neutral-200" />
 
         {/* 갤러리 (이미지 없으면 내부에서 렌더 X) */}
-        <ArtworkGallery artwork={artwork} />
+        <ArtworkGallery artwork={artworkForMeta} />
 
-        {/* 설명 카드 (예시) */}
-        <DescriptionCard
-          description={`이 영역은 API 연동 후 서버에서 내려올 설명을 보여줍니다.\n현재는 '${artwork.title}' 예시 텍스트입니다.`}
-        />
+        {/* 설명 카드 */}
+        <DescriptionCard description={artworkForMeta.description || ""} />
 
         {/* 태그 + 아카이브 */}
-        <ArchiveBar artwork={artwork} />
+        <ArchiveBar artwork={artworkForMeta} />
       </div>
 
       <ConfirmModal

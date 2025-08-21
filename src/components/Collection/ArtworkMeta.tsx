@@ -1,5 +1,5 @@
 // src/components/Collection/ArtworkMeta.tsx
-import type { DetailArtwork } from "../../types/detail";
+import type { DetailArtwork } from '../../types/detail';
 
 type Props = { artwork: DetailArtwork };
 
@@ -7,12 +7,12 @@ const ArtworkMeta = ({ artwork }: Props) => {
   return (
     <div className="flex-1 flex flex-col min-h-128 pt-2">
       <div>
-        {/* 제목 */}
+        {/* 제목 (= API data.name 매핑) */}
         <h1 className="text-2xl text-zinc-900 font-semibold">
           {artwork.title}
         </h1>
 
-        {/* 작가/업로더 닉네임 */}
+        {/* 작가 이름 (아래 줄) */}
         {artwork.author && (
           <span className="mt-4 inline-flex items-center font-light text-xl text-zinc-900">
             {artwork.author}
