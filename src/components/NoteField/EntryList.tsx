@@ -14,12 +14,14 @@ interface EntryListProps {
   onChange: (newEntries: Entry[]) => void;
   placeholder?: string;
   className?: string;
+  onDeleteRegistered?: (id: number) => void;
 }
 
 const EntryList: React.FC<EntryListProps> = ({
   entries,
   onChange,
   placeholder = "내용을 입력하세요",
+  onDeleteRegistered,
 }) => {
   const addEntry = () => {
     const newEntry: Entry = {
@@ -39,6 +41,10 @@ const EntryList: React.FC<EntryListProps> = ({
   };
 
   const deleteEntry = (id: number) => {
+    const target = entries.find((entry) => entry.id === id);
+    if (target?.registered && onDeleteRegistered) {
+      onDeleteRegistered(id);
+    }
     const filteredEntries = entries.filter((entry) => entry.id !== id);
     onChange(filteredEntries);
   };

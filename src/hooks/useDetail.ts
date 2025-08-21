@@ -1,8 +1,12 @@
-// hooks/useDetail.ts
+// src/hooks/useDetail.ts
 import { useQuery } from '@tanstack/react-query';
-import { postDetailApi } from '../apis/postDetail';
-import type { DetailArtwork } from '../types/detail';
-import { mapPostDetailToArtwork } from '../types/detail';
+import { apiClient } from '../apis';
+import { DetailArtwork } from '../types/detail';
+import {
+  mapCollectionToDetail,
+  mapExhibitionToDetail,
+  mapContestToDetail,
+} from '../utils/detailMappers';
 
 type Params = { id: string };
 

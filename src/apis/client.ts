@@ -57,10 +57,19 @@ apiClient.interceptors.response.use(
     console.error("- 전체 에러:", error);
 
     if (error.response?.status === 401) {
-      // 토큰이 만료되었을 때 로그인 페이지로 리다이렉트
-      console.warn("🔒 인증 토큰 만료 - 로그인 페이지로 이동");
-      localStorage.removeItem("accessToken");
-      window.location.href = "/login";
+      const requestUrl: string = error.config?.url || "";
+      const isSearchEndpoint = requestUrl.includes("/api/post/search");
+
+      if (!isSearchEndpoint) {
+        // 검색은 비보호 처리: 리다이렉트하지 않음
+        console.warn("🔒 인증 토큰 만료 - 로그인 페이지로 이동");
+        localStorage.removeItem("accessToken");
+        window.location.href = "/login";
+      } else {
+        console.warn(
+          "🔎 검색 엔드포인트 401 - 리다이렉트하지 않고 에러만 전달"
+        );
+      }
     }
     return Promise.reject(error);
   }

@@ -10,6 +10,7 @@ interface UserTabInfoProps {
   onCompleteClick?: () => void;
   onRegisterClick?: () => void;
   isEditing?: boolean;
+  isSaving?: boolean;
 }
 
 const UserTabInfo: React.FC<UserTabInfoProps> = ({
@@ -21,6 +22,7 @@ const UserTabInfo: React.FC<UserTabInfoProps> = ({
   onCompleteClick,
   onRegisterClick,
   isEditing = false,
+  isSaving = false,
 }) => {
   // 작가노트 외 탭일 때 (nn) 표시
   const showCount =
@@ -44,13 +46,25 @@ const UserTabInfo: React.FC<UserTabInfoProps> = ({
         <div>
           {isArtistNoteTab ? (
             isEditing ? (
-              <ProfileFieldEdit variant="complete" onClick={onCompleteClick} />
+              <ProfileFieldEdit
+                variant="complete"
+                onClick={onCompleteClick}
+                disabled={isSaving}
+              />
             ) : (
-              <ProfileFieldEdit variant="edit" onClick={onEditClick} />
+              <ProfileFieldEdit
+                variant="edit"
+                onClick={onEditClick}
+                disabled={isSaving}
+              />
             )
           ) : (
             !isArchiveTab && (
-              <ProfileFieldEdit variant="register" onClick={onRegisterClick} />
+              <ProfileFieldEdit
+                variant="register"
+                onClick={onRegisterClick}
+                disabled={isSaving}
+              />
             )
           )}
         </div>

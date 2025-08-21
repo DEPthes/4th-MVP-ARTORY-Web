@@ -1,5 +1,5 @@
 // src/components/Collection/ArtworkGallery.tsx
-import { DetailArtwork } from "../../types/detail";
+import type { DetailArtwork } from "../../types/detail";
 
 type Props = { artwork: DetailArtwork };
 

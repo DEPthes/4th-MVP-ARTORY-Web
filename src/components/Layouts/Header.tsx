@@ -3,6 +3,7 @@ import { cn } from "../../utils/classname";
 import { Button } from "../Button";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useLogout, useSidebarProfile } from "../../hooks/useUser";
+import BaseProfileImage from "../../assets/images/BaseProfileImage.png";
 
 interface HeaderProps {
   className?: string;
@@ -24,6 +25,11 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
     isLoading: isProfileLoading,
     error: profileError,
   } = useSidebarProfile(googleId);
+
+  // 사이드바 프로필 이미지 URL (없으면 기본 이미지)
+  const rawUrl = (sidebarProfile?.profileImageURL || "").trim();
+  const sanitizedUrl = rawUrl.replace(/\\+$/, "");
+  const sidebarImgSrc = sanitizedUrl || BaseProfileImage;
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
@@ -188,7 +194,18 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
           </div>
 
           {/* 프로필 아이콘 */}
-          <button className="focus:outline-none" aria-label="프로필 메뉴">
+          <button
+            className="focus:outline-none cursor-pointer"
+            aria-label="프로필 메뉴"
+            onClick={() => {
+              const id = googleId;
+              if (id) {
+                navigate(`/profile/${id}`);
+              } else {
+                navigate("/login");
+              }
+            }}
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="28"
@@ -271,32 +288,11 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
           <div className="flex flex-col items-center">
             {/* 프로필 이미지 */}
             <div className="size-45 rounded-full mb-8.5 bg-zinc-300 flex items-center justify-center overflow-hidden">
-              {sidebarProfile?.profileImageURL ? (
-                <img
-                  src={sidebarProfile.profileImageURL}
-                  alt="프로필 이미지"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-zinc-300 flex items-center justify-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="32"
-                    height="32"
-                    viewBox="0 0 32 32"
-                    fill="none"
-                  >
-                    <path
-                      d="M16 8C18.2091 8 20 9.79086 20 12C20 14.2091 18.2091 16 16 16C13.7909 16 12 14.2091 12 12C12 9.79086 13.7909 8 16 8Z"
-                      fill="#9CA3AF"
-                    />
-                    <path
-                      d="M16 18C21.5228 18 26 22.4772 26 28H6C6 22.4772 10.4772 18 16 18Z"
-                      fill="#9CA3AF"
-                    />
-                  </svg>
-                </div>
-              )}
+              <img
+                src={sidebarImgSrc}
+                alt="프로필 이미지"
+                className="w-full h-full object-cover"
+              />
             </div>
 
             {/* 로딩 상태 */}
@@ -324,12 +320,18 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
                 </p>
               </>
             ) : (
-              <>
-                <p className="text-xl text-zinc-500 mb-6">-</p>
-                <p className="text-2xl font-semibold text-zinc-900">
-                  프로필을 불러오는 중...
-                </p>
-              </>
+              <div className="flex flex-col items-center">
+                <p className="text-xl text-zinc-500 mb-6"></p>
+                <button
+                  onClick={() => {
+                    navigate("/login");
+                    closeSidebar();
+                  }}
+                  className="text-2xl font-semibold text-zinc-900 cursor-pointer"
+                >
+                  로그인 하기
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -349,7 +351,12 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
 
             <button
               onClick={() => {
-                navigate("/profile");
+                const id = googleId;
+                if (id) {
+                  navigate(`/profile/${id}`);
+                } else {
+                  navigate("/login");
+                }
                 closeSidebar();
               }}
               className="w-full flex justify-center font-semibold cursor-pointer items-center px-4 py-3 text-zinc-900 hover:bg-gray-100 rounded-lg transition-colors duration-200"
