@@ -15,6 +15,7 @@ import ArtistDetailPage from "../pages/ArtistDetailPage";
 import CollectionDetailPage from "../pages/CollectionDetailPage";
 import ExhibitionDetailPage from "../pages/ExhibitionDetailPage";
 import ContestDetailPage from "../pages/ContestDetailPage";
+import PostEditorPage from "../pages/PostEditorPage";
 
 export const routes = [
   { path: "/", element: <HomePage /> },
@@ -33,4 +34,6 @@ export const routes = [
   { path: "/auth/google/callback", element: <GoogleAuthCallback /> },
   { path: "/profile/:googleID", element: <ProfilePage /> }, // googleID 기반 프로필
   { path: "/profile/edit", element: <ProfileEditPage /> }, // 프로필 수정 페이지
+  { path: "/editor/:type/new", element: <PostEditorPage mode="create" /> },
+  { path: "/editor/:type/:id/edit", element: <PostEditorPage mode="edit" /> },
 ] satisfies RouteObject[];
