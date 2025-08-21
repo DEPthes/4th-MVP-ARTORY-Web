@@ -4,6 +4,12 @@ import BaseProfileImage from "../../assets/images/BaseProfileImage.png";
 import { useState, useRef, useEffect } from "react";
 import EditIcon from "../../assets/editIcon.svg";
 import { changeProfile } from "../../apis/user";
+import { useQuery } from "@tanstack/react-query";
+import {
+  getFollowers,
+  getFollowing,
+  type FollowUserSummary,
+} from "../../apis/follow";
 
 interface ProfileCardProps {
   role: string;
@@ -24,6 +30,7 @@ interface ProfileCardProps {
   onEditClick?: () => void;
   initialIsFollowed?: boolean;
   viewerGoogleID?: string; // 추가: 현재 로그인한 사용자의 Google ID
+  userIdForFollowList?: string; // 팔로워/팔로잉 조회 대상 ID
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({
@@ -45,6 +52,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   onEditClick,
   initialIsFollowed,
   viewerGoogleID, // 추가
+  userIdForFollowList,
 }) => {
   const [imageError, setImageError] = useState(false);
   const [localImage, setLocalImage] = useState<string | null>(null);
@@ -130,6 +138,27 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     setIsFollowing((prev) => !prev);
     // 서버 로직 추가
   };
+
+  // 팔로워/팔로잉 목록 조회
+  const targetUserId = userIdForFollowList;
+  const { data: followersList, isLoading: isFollowersLoading } = useQuery<
+    FollowUserSummary[]
+  >({
+    queryKey: ["followers", targetUserId],
+    queryFn: () => getFollowers(viewerGoogleID!, targetUserId!),
+    enabled: !!viewerGoogleID && !!targetUserId,
+  });
+  const { data: followingList, isLoading: isFollowingLoading } = useQuery<
+    FollowUserSummary[]
+  >({
+    queryKey: ["following", targetUserId],
+    queryFn: () => getFollowing(viewerGoogleID!, targetUserId!),
+    enabled: !!viewerGoogleID && !!targetUserId,
+  });
+
+  const [hovered, setHovered] = useState<null | "followers" | "following">(
+    null
+  );
 
   // 가로 모드일 때의 레이아웃
   if (isHorizontal) {
@@ -235,13 +264,87 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           <div className="text-xl font-semibold text-zinc-900">{nickName}</div>
         </div>
         <div className="flex items-center gap-5 font-light text-zinc-500">
-          <div>
+          <div
+            className="relative"
+            onMouseEnter={() => setHovered("followers")}
+            onMouseLeave={() => setHovered(null)}
+          >
             팔로워{" "}
             <span className="font-medium text-zinc-900">{followers}</span>
+            {hovered === "followers" && (
+              <div className="absolute -left-10 mt-3 w-30 bg-gray-100 border border-stone-300 rounded-md shadow-lg z-20">
+                {isFollowersLoading ? (
+                  <div className="px-3 py-2 text-sm text-zinc-500">
+                    불러오는 중...
+                  </div>
+                ) : followersList && followersList.length > 0 ? (
+                  <ul className="max-h-60 overflow-auto">
+                    {followersList.map((u) => (
+                      <li
+                        key={u.id}
+                        className="flex items-center gap-2 px-3 py-2 hover:bg-zinc-50"
+                      >
+                        <img
+                          src={u.profileImageUrl || BaseProfileImage}
+                          alt={u.name}
+                          className="w-6 h-6 rounded-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src =
+                              BaseProfileImage;
+                          }}
+                        />
+                        <span className="text-sm text-zinc-800">{u.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="px-3 py-2 text-sm text-zinc-500">
+                    팔로워 없음
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-          <div>
+          <div
+            className="relative"
+            onMouseEnter={() => setHovered("following")}
+            onMouseLeave={() => setHovered(null)}
+          >
             팔로잉{" "}
             <span className="font-medium text-zinc-900">{following}</span>
+            {hovered === "following" && (
+              <div className="absolute -left-5 mt-3 w-30 bg-gray-100 border border-stone-300 rounded-md shadow-lg z-20">
+                {isFollowingLoading ? (
+                  <div className="px-3 py-2 text-sm text-zinc-500">
+                    불러오는 중...
+                  </div>
+                ) : followingList && followingList.length > 0 ? (
+                  <ul className="max-h-60 overflow-auto">
+                    {followingList.map((u) => (
+                      <li
+                        key={u.id}
+                        className="flex items-center gap-2 px-3 py-2 hover:bg-zinc-50"
+                      >
+                        <img
+                          src={u.profileImageUrl || BaseProfileImage}
+                          alt={u.name}
+                          className="w-6 h-6 rounded-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src =
+                              BaseProfileImage;
+                          }}
+                        />
+                        <span className="text-sm text-zinc-800">{u.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="px-3 py-2 text-sm text-zinc-500">
+                    팔로잉 없음
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
         {/* 내 프로필이면 편집 버튼, 아니면 팔로우/팔로잉 버튼 */}

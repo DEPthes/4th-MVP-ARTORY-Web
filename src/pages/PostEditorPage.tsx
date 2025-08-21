@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import TagSelector from "../components/Form/TagSelector";
 import ImageUploader from "../components/Form/ImageUploader";
 import TextInput from "../components/Form/TextInput";
@@ -14,9 +14,8 @@ const isValidType = (t: string | undefined): t is EditorType =>
   t === "work" || t === "exhibition" || t === "contest";
 
 export default function PostEditorPage({ mode }: { mode: EditorMode }) {
-  const { type: rawType, id } = useParams();
+  const { type: rawType } = useParams();
   const navigate = useNavigate();
-  const { state } = useLocation() as { state?: Partial<EditorForm> };
   const [submitting, setSubmitting] = useState(false);
 
   const TAG_OPTIONS = [
