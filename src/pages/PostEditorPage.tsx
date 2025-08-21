@@ -1,33 +1,46 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import TagSelector from "../components/Form/TagSelector";
 import ImageUploader from "../components/Form/ImageUploader";
 import TextInput from "../components/Form/TextInput";
 import TextArea from "../components/Form/TextArea";
-import type { EditorForm, EditorMode, EditorType } from "../types/post";
+import type {
+  EditorForm,
+  EditorMode,
+  EditorType,
+  UploadedImage,
+} from "../types/post";
 import { Header } from "../components";
 import BackNavigate from "../components/Layouts/BackNavigate";
 import Button from "../components/Button/Button";
+
+import { createPostUpload } from "../apis/postUpload";
+import { tagApi } from "../apis";
 
 // 타입 가드(허용값 외 접근 시 홈으로 보냄)
 const isValidType = (t: string | undefined): t is EditorType =>
   t === "work" || t === "exhibition" || t === "contest";
 
+const editorTypeToTabId: Record<
+  EditorType,
+  "works" | "exhibition" | "contest"
+> = {
+  work: "works",
+  exhibition: "exhibition",
+  contest: "contest",
+};
+
 export default function PostEditorPage({ mode }: { mode: EditorMode }) {
   const { type: rawType } = useParams();
   const navigate = useNavigate();
-  const [submitting, setSubmitting] = useState(false);
+  const queryClient = useQueryClient();
+  const { state } = useLocation() as { state?: Partial<EditorForm> };
 
-  const TAG_OPTIONS = [
-    "회화",
-    "조각",
-    "공예",
-    "건축",
-    "사진",
-    "미디어아트",
-    "인테리어",
-    "기타",
-  ];
+  const [submitting, setSubmitting] = useState(false);
+  const [tagOptions, setTagOptions] = useState<{ id: number; label: string }[]>(
+    []
+  );
 
   const type = useMemo<EditorType | null>(() => {
     if (!isValidType(rawType)) return null;
@@ -35,44 +48,12 @@ export default function PostEditorPage({ mode }: { mode: EditorMode }) {
   }, [rawType]);
 
   const [form, setForm] = useState<EditorForm>({
-    images: [] as { id: string; url: string; file?: File; isCover: boolean }[],
+    images: [] as UploadedImage[],
     title: "",
     url: "",
     description: "",
     tags: [] as string[],
   });
-
-  // 수정 모드
-  useEffect(() => {
-    if (mode === "edit") {
-      // const data = await getPostDetail(...);
-      // setForm(s => ({ ...s, tags: data.tags ?? [] }));
-    }
-  }, [mode]);
-
-  useEffect(() => {
-    if (!type) {
-      // 타입이 이상하면 홈으로
-      navigate("/", { replace: true });
-    }
-  }, [type, navigate]);
-
-  const onSubmit = async () => {
-    if (!isValid) return;
-    setSubmitting(true);
-    try {
-      // TODO: API 연동 시 여기서 호출
-      await new Promise((r) => setTimeout(r, 600)); // 임시 딜레이
-      if (mode === "create") {
-        // 생성 후 이동
-        navigate("/profile/me");
-      } else {
-        // 수정 후 이동
-      }
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   const isValid = useMemo(
     () =>
@@ -81,6 +62,90 @@ export default function PostEditorPage({ mode }: { mode: EditorMode }) {
       form.tags.length > 0,
     [form.title, form.images.length, form.tags.length]
   );
+
+  // 태그 목록 가져오기
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await tagApi.getTagList();
+        const list = Array.isArray((res as any).data)
+          ? (res as any).data
+          : Array.isArray((res as any).data?.list)
+          ? (res as any).data.list
+          : [];
+        const opts = list.map((t: any) => ({ id: t.id, label: t.name }));
+        if (mounted) setTagOptions(opts);
+      } catch (e) {
+        console.error("태그 조회 실패", e);
+        if (mounted) setTagOptions([]);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // label → id 매핑
+  const labelToId = useMemo(
+    () => Object.fromEntries(tagOptions.map((t) => [t.label, t.id])),
+    [tagOptions]
+  );
+
+  // 수정 모드 프리필(필요 시)
+  useEffect(() => {
+    if (mode === "edit" && state) {
+      setForm((s) => ({ ...s, ...state }));
+    }
+  }, [mode, state]);
+
+  useEffect(() => {
+    if (!type) navigate("/", { replace: true });
+  }, [type, navigate]);
+
+  const onSubmit = async () => {
+    if (!isValid || !type) return;
+    setSubmitting(true);
+    try {
+      // 서버 스펙: list<MultipartFile> → 파일 있는 항목만 전송
+      const imagesOnlyFile = form.images.filter((i) => !!i.file);
+
+      // 문자열 태그 → 숫자 ID 변환(매핑 실패 항목은 제외)
+      const tagIds = form.tags
+        .map((label) => labelToId[label])
+        .filter((v): v is number => Number.isFinite(v));
+
+      const urlInput: string = form.url ?? "";
+
+      await createPostUpload({
+        type: type as EditorType,
+        title: form.title,
+        description: form.description,
+        url: urlInput,
+        images: imagesOnlyFile,
+        tagIds,
+      });
+
+      const myGoogleId = localStorage.getItem("googleID") || "";
+      const tab = editorTypeToTabId[type];
+      const profilePath = myGoogleId ? `/profile/${myGoogleId}` : "/profile/me";
+
+      queryClient.invalidateQueries({
+        predicate: (q) =>
+          Array.isArray(q.queryKey) && q.queryKey[0] === "userPosts",
+      });
+
+      navigate(`${profilePath}?tab=${tab}`, {
+        replace: true,
+        state: { initialTabId: tab, from: "post-create" },
+      });
+    } catch (e: any) {
+      console.error(e);
+      alert(e?.message || "게시물 등록 중 오류가 발생했어요");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="flex flex-col items-center">
@@ -119,7 +184,7 @@ export default function PostEditorPage({ mode }: { mode: EditorMode }) {
           />
 
           <TagSelector
-            options={TAG_OPTIONS}
+            options={tagOptions.map((t) => t.label)}
             value={form.tags}
             onChange={(next) => setForm((s) => ({ ...s, tags: next }))}
             selectMode="multi"
