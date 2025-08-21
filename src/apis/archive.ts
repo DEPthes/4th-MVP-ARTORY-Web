@@ -97,4 +97,73 @@ export const archiveApi = {
     }
     return true; // 보수적으로 true 처리 (백엔드가 단순 200만 내려줄 수도 있음)
   },
+
+  /** 특정 유저의 아카이브된 게시물을 조회합니다. */
+  async getUserArchivedPosts({
+    googleID,
+    userID,
+    postType,
+    page = 0,
+    size = 10,
+  }: {
+    googleID: string;
+    userID: string | number;
+    postType: string;
+    page?: number;
+    size?: number;
+  }): Promise<{
+    content: Array<{
+      postId: string;
+      postType: string;
+      title: string;
+      imageUrls: string[];
+      userName: string;
+      archived: number;
+      isMine: boolean;
+      isArchived: boolean;
+    }>;
+    pageable: {
+      pageNumber: number;
+      pageSize: number;
+      sort: { sorted: boolean; empty: boolean; unsorted: boolean };
+      offset: number;
+      unpaged: boolean;
+      paged: boolean;
+    };
+    last: boolean;
+    totalPages: number;
+    totalElements: number;
+    size: number;
+    number: number;
+    sort: { sorted: boolean; empty: boolean; unsorted: boolean };
+    first: boolean;
+    numberOfElements: number;
+    empty: boolean;
+  }> {
+    try {
+      console.log("📚 아카이브 게시물 조회 API 호출:", {
+        googleID,
+        userID,
+        postType,
+        page,
+        size,
+      });
+
+      const response = await apiClient.get("/api/post/user/archived", {
+        params: {
+          googleID,
+          userID,
+          postType,
+          page,
+          size,
+        },
+      });
+
+      console.log("✅ 아카이브 게시물 API 응답:", response.data);
+      return response.data.data;
+    } catch (error) {
+      console.error("❌ 아카이브 게시물 조회 실패:", error);
+      throw error;
+    }
+  },
 };

@@ -102,7 +102,6 @@ const ArtistNotePage = () => {
             </div>
           ) : (
             filteredData.map((artistData) => {
-              console.log("🎨 작가 데이터:", artistData);
               return (
                 <ProfileCard
                   key={artistData.id}
@@ -117,6 +116,7 @@ const ArtistNotePage = () => {
                   image={artistData.profileImage || undefined}
                   viewerGoogleID={googleID}
                   userIdForFollowList={artistData.id}
+                  useNoneAction={artistData.isMyProfile}
                   onClick={() => {
                     console.log("🖱️ 작가 클릭:", artistData.id);
                     handleArtistClick(artistData.id);

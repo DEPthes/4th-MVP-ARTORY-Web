@@ -72,7 +72,7 @@ const UserActionButton: React.FC<UserActionButtonProps> = ({
     following: "text-[#1D1E20] bg-[#D32F2F]/10",
     follow: "bg-[#D32F2F] text-white",
     edit: "text-[#1D1E20] bg-[#D32F2F]/10",
-    none: "bg-transparent bg-[#D32F2F]/10 disabled",
+    none: "bg-[#D32F2F]/10 disabled",
   };
 
   return (

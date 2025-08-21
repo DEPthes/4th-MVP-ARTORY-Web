@@ -34,6 +34,7 @@ interface ProfileCardProps {
   userIdForFollowList?: string; // 팔로워/팔로잉 조회 대상 ID
   showEditControls?: boolean; // 편집 UI 노출 여부 (디폴트 true)
   useNoneAction?: boolean; // 액션 버튼을 none으로 강제 (디폴트 false)
+  galleryLocation?: string; // 추가: 갤러리 위치 (갤러리 사용자일 때만 사용)
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({
@@ -58,6 +59,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   userIdForFollowList, // 팔로워/팔로잉 조회 대상 ID
   showEditControls = true,
   useNoneAction = false,
+  galleryLocation, // 추가
 }) => {
   const [imageError, setImageError] = useState(false);
   const [localImage, setLocalImage] = useState<string | null>(null);
@@ -128,11 +130,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     if (!viewerGoogleID || !showEditControls) {
       return;
     }
-    if (onEditClick) {
-      onEditClick();
-    } else {
-      fileInputRef.current?.click();
-    }
+    // 이미지 편집 버튼은 항상 이미지 변경만 수행
+    fileInputRef.current?.click();
   };
 
   const [isFollowing, setIsFollowing] = useState<boolean>(
@@ -188,7 +187,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
       queryClient.invalidateQueries({ queryKey: ["followers", targetUserId] });
       queryClient.invalidateQueries({ queryKey: ["following", targetUserId] });
 
-      // 팔로워/팔로잉 수 즉시 업데이트
+      // 팔로워 수만 즉시 업데이트 (대상 사용자의 팔로워 수)
       if (localFollowers !== undefined) {
         const newFollowerCount = response.following
           ? (localFollowers || 0) + 1
@@ -196,12 +195,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         setLocalFollowers(newFollowerCount);
       }
 
-      if (localFollowing !== undefined) {
-        const newFollowingCount = response.following
-          ? (localFollowing || 0) + 1
-          : (localFollowing || 0) - 1;
-        setLocalFollowing(newFollowingCount);
-      }
+      // 팔로잉 수는 변경하지 않음 (현재 사용자의 팔로잉 수는 별도 관리)
+      // 팔로잉 수는 부모 컴포넌트에서 관리하거나 별도 API로 조회
 
       console.log("🔄 팔로우 상태 변경:", {
         targetUserId: response.targetUserId,
@@ -442,13 +437,33 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           </div>
         </div>
 
-        <UserActionButton
-          type={useNoneAction ? "none" : isFollowing ? "following" : "follow"}
-          className="w-full"
-          onClick={toggleFollow}
-          isLoading={isFollowLoading}
-          disabled={useNoneAction || isMyProfile}
-        />
+        {(() => {
+          // useNoneAction이 true면 none 버튼, 아니면 기존 로직
+          if (useNoneAction) {
+            return (
+              <UserActionButton
+                type="none"
+                className="w-full"
+                disabled={true}
+              />
+            );
+          }
+
+          return isMyProfile ? (
+            <UserActionButton
+              type="edit"
+              className="w-full"
+              onClick={onEditClick}
+            />
+          ) : (
+            <UserActionButton
+              type={isFollowing ? "following" : "follow"}
+              className="w-full"
+              onClick={toggleFollow}
+              isLoading={isFollowLoading}
+            />
+          );
+        })()}
 
         <div className="font-light text-zinc-900 text-center break-words px-3">
           {introduction}
@@ -466,6 +481,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
               {education}
             </div>
           ) : null}
+          {/* 갤러리 사용자일 때만 갤러리 위치 표시 */}
+          {role === "갤러리" && galleryLocation && (
+            <div className="text-zinc-900 text-center break-words">
+              📍 {galleryLocation}
+            </div>
+          )}
         </div>
       </div>
 
