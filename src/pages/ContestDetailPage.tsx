@@ -1,118 +1,78 @@
-import { useParams, useNavigate } from "react-router-dom";
-import { useState } from "react";
-import Header from "../components/Layouts/Header";
-import BackNavigate from "../components/Layouts/BackNavigate";
+// pages/ContestDetailPage.tsx
+import { useParams, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import Header from '../components/Layouts/Header';
+import BackNavigate from '../components/Layouts/BackNavigate';
 
-import ArtworkThumbnail from "../components/Collection/ArtworkThumbnail";
-import ArtworkMeta from "../components/Collection/ArtworkMeta";
-import ArtworkGallery from "../components/Collection/ArtworkGallery";
-import DescriptionCard from "../components/Collection/DescriptionCard";
-import ArchiveBar from "../components/Collection/ArchiveBar";
-import ConfirmModal from "../components/Modals/ConfirmModal";
-import OwnerActions from "../components/Detail/OwnerActions";
-import { useContestDetail } from "../hooks/useDetail";
-import { mapContestToDetail } from "../utils/detailMappers";
-
-/** Contest 전용 로컬 타입/데이터 */
-const Category = [
-  "전체",
-  "회화",
-  "조각",
-  "공예",
-  "건축",
-  "사진",
-  "미디어아트",
-  "인테리어",
-  "기타",
-] as const;
-type Category = (typeof Category)[number];
-
-type Contest = {
-  imageUrl: string;
-  contestName: string;
-  likes: number;
-  category: Category;
-  ownerId?: string;
-};
-
-// ContestPage와 동일 순서/내용 유지(인덱스 매칭)
-const contests: Contest[] = [
-  {
-    imageUrl: "",
-    contestName: "뉴미디어 아트 공모전",
-    likes: 12,
-    category: "미디어아트",
-    ownerId: "u-1",
-  },
-  {
-    imageUrl: "",
-    contestName: "청년 사진 공모전",
-    likes: 5,
-    category: "사진",
-    ownerId: "u-2",
-  },
-  {
-    imageUrl: "",
-    contestName: "도시 공간 디자인",
-    likes: 8,
-    category: "건축",
-    ownerId: "u-1",
-  },
-  {
-    imageUrl: "",
-    contestName: "현대 회화 기획전 공모",
-    likes: 3,
-    category: "회화",
-    ownerId: "u-2",
-  },
-  {
-    imageUrl: "",
-    contestName: "공예 리빙 디자인",
-    likes: 2,
-    category: "공예",
-    ownerId: "u-1",
-  },
-];
+import ArtworkThumbnail from '../components/Collection/ArtworkThumbnail';
+import ArtworkMeta from '../components/Collection/ArtworkMeta';
+import ArtworkGallery from '../components/Collection/ArtworkGallery';
+import DescriptionCard from '../components/Collection/DescriptionCard';
+import ArchiveBar from '../components/Collection/ArchiveBar';
+import ConfirmModal from '../components/Modals/ConfirmModal';
+import OwnerActions from '../components/Detail/OwnerActions';
+import { useContestDetail } from '../hooks/useDetail';
 
 const ContestDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data: fetchedArtwork, isLoading } = useContestDetail({
+
+  // 실제 API 사용
+  const {
+    data: artwork,
+    isLoading,
+    error,
+  } = useContestDetail({
     id: String(id),
   });
 
-  // 1-based → 0-based
-  const idx = Number(id) - 1;
-  const contest =
-    Number.isInteger(idx) && idx >= 0 && idx < contests.length
-      ? contests[idx]
-      : undefined;
-
-  // 로그인 유저(예시)
-  const currentUserId = "u-1";
-  const isOwner = contest?.ownerId === currentUserId;
-
   const [openDelete, setOpenDelete] = useState(false);
 
-  const artwork =
-    fetchedArtwork ?? (contest ? mapContestToDetail(contest) : undefined);
-
-  if (!artwork) {
+  // 로딩 상태
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-white">
         <Header />
-        <div className="max-w-300 mx-auto px-6 py-10 text-gray-600">
-          {isLoading ? "로딩 중..." : "공모전을 찾을 수 없습니다."}
+        <div className="max-w-300 mx-auto px-6 py-10 text-gray-600 text-center">
+          로딩 중...
         </div>
       </div>
     );
   }
 
+  // 에러 상태
+  if (error) {
+    console.error('💥 공모전 상세 조회 에러:', error);
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="max-w-300 mx-auto px-6 py-10 text-gray-600 text-center">
+          공모전을 불러오는 중 오류가 발생했습니다.
+        </div>
+      </div>
+    );
+  }
+
+  // 데이터가 없는 경우
+  if (!artwork) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="max-w-300 mx-auto px-6 py-10 text-gray-600 text-center">
+          공모전을 찾을 수 없습니다.
+        </div>
+      </div>
+    );
+  }
+
+  // 소유자 여부 확인 (API에서 제공하는 isMine 사용)
+  const isOwner = artwork.isMine;
+
   const handleEdit = () => navigate(`/contest/${id}/edit`);
   const handleDelete = () => setOpenDelete(true);
   const confirmDelete = () => {
     setOpenDelete(false);
-    navigate("/contest");
+    navigate('/contest');
   };
 
   return (
@@ -121,6 +81,7 @@ const ContestDetailPage = () => {
       <BackNavigate pathname="/contest" text="CONTEST" variant="secondary" />
 
       <div className="max-w-300 mx-auto px-6 mt-6 pb-40">
+        {/* 소유자 전용 액션 */}
         {isOwner && (
           <OwnerActions
             onEdit={handleEdit}
@@ -143,10 +104,8 @@ const ContestDetailPage = () => {
         {/* 갤러리 (이미지 없으면 내부에서 렌더 X) */}
         <ArtworkGallery artwork={artwork} />
 
-        {/* 설명 카드 (예시) */}
-        <DescriptionCard
-          description={`이 영역은 API 연동 후 서버에서 내려올 설명을 보여줍니다.\n현재는 '${artwork.title}' 예시 텍스트입니다.`}
-        />
+        {/* 설명 카드 */}
+        <DescriptionCard description={artwork.description || ''} />
 
         {/* 태그 + 아카이브 */}
         <ArchiveBar artwork={artwork} />
