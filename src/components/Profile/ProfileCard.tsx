@@ -4,10 +4,11 @@ import BaseProfileImage from "../../assets/images/BaseProfileImage.png";
 import { useState, useRef, useEffect } from "react";
 import EditIcon from "../../assets/editIcon.svg";
 import { changeProfile } from "../../apis/user";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getFollowers,
   getFollowing,
+  followUser,
   type FollowUserSummary,
 } from "../../apis/follow";
 
@@ -31,6 +32,9 @@ interface ProfileCardProps {
   initialIsFollowed?: boolean;
   viewerGoogleID?: string; // 추가: 현재 로그인한 사용자의 Google ID
   userIdForFollowList?: string; // 팔로워/팔로잉 조회 대상 ID
+  showEditControls?: boolean; // 편집 UI 노출 여부 (디폴트 true)
+  useNoneAction?: boolean; // 액션 버튼을 none으로 강제 (디폴트 false)
+  galleryLocation?: string; // 추가: 갤러리 위치 (갤러리 사용자일 때만 사용)
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({
@@ -52,11 +56,15 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   onEditClick,
   initialIsFollowed,
   viewerGoogleID, // 추가
-  userIdForFollowList,
+  userIdForFollowList, // 팔로워/팔로잉 조회 대상 ID
+  showEditControls = true,
+  useNoneAction = false,
+  galleryLocation, // 추가
 }) => {
   const [imageError, setImageError] = useState(false);
   const [localImage, setLocalImage] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 이미지가 없거나 빈 문자열이거나 로딩 실패 시 기본 이미지 사용
@@ -64,7 +72,20 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     localImage ||
     (image && image.trim() !== "" && !imageError ? image : BaseProfileImage);
 
+  // 디버깅을 위한 로그
+  useEffect(() => {
+    if (image) {
+      console.log("🖼️ ProfileCard 이미지 설정:", {
+        image,
+        imageTrimmed: image.trim(),
+        imageError,
+        finalProfileImage: profileImage,
+      });
+    }
+  }, [image, imageError, profileImage]);
+
   const handleImageError = () => {
+    console.error("🖼️ 이미지 로드 실패:", image);
     setImageError(true);
   };
 
@@ -106,23 +127,89 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   };
 
   const handleEditClick = () => {
-    if (!viewerGoogleID) {
-      alert("로그인이 필요합니다.");
+    if (!viewerGoogleID || !showEditControls) {
       return;
     }
+    // 이미지 편집 버튼은 항상 이미지 변경만 수행
     fileInputRef.current?.click();
   };
 
   const [isFollowing, setIsFollowing] = useState<boolean>(
     initialIsFollowed ?? false
   );
-  useEffect(() => {
-    setIsFollowing(initialIsFollowed ?? false);
-  }, [initialIsFollowed]);
+  const [isFollowLoading, setIsFollowLoading] = useState(false);
+  const [localFollowers, setLocalFollowers] = useState<number | undefined>(
+    followers
+  );
+  const [localFollowing, setLocalFollowing] = useState<number | undefined>(
+    following
+  );
+  const queryClient = useQueryClient();
 
-  const toggleFollow = () => {
-    setIsFollowing((prev) => !prev);
-    // TODO: 서버 연동 추가
+  // 팔로우 상태는 초기에 false로 시작하고, 팔로우/언팔로우 API 응답으로 업데이트
+
+  // 초기 팔로우 상태 설정 (initialIsFollowed prop 사용)
+  useEffect(() => {
+    console.log("🔍 ProfileCard 초기 팔로우 상태 설정:", {
+      artistId: userIdForFollowList,
+      isMyProfile,
+      initialIsFollowed,
+      finalState: initialIsFollowed ?? false,
+      willShowFollowButton: !isMyProfile && !(initialIsFollowed ?? false),
+      willShowFollowingButton: !isMyProfile && (initialIsFollowed ?? false),
+    });
+    setIsFollowing(initialIsFollowed ?? false);
+  }, [initialIsFollowed, userIdForFollowList, isMyProfile]);
+
+  // followers/following props가 변경될 때 localFollowers/localFollowing 업데이트
+  useEffect(() => {
+    setLocalFollowers(followers);
+  }, [followers]);
+
+  useEffect(() => {
+    setLocalFollowing(following);
+  }, [following]);
+
+  const toggleFollow = async () => {
+    if (!viewerGoogleID || !userIdForFollowList || isMyProfile) return;
+
+    try {
+      setIsFollowLoading(true);
+      // 팔로우/언팔로우는 같은 엔드포인트로 POST 요청
+      const response = await followUser(viewerGoogleID, userIdForFollowList);
+
+      // API 응답의 following 필드로 상태 업데이트
+      setIsFollowing(response.following);
+
+      // 팔로우 상태만 업데이트, 숫자는 서버에서 관리
+
+      // 팔로워/팔로잉 관련 쿼리 캐시 무효화하여 즉시 업데이트
+      queryClient.invalidateQueries({ queryKey: ["followers", targetUserId] });
+      queryClient.invalidateQueries({ queryKey: ["following", targetUserId] });
+
+      // 팔로워 수만 즉시 업데이트 (대상 사용자의 팔로워 수)
+      if (localFollowers !== undefined) {
+        const newFollowerCount = response.following
+          ? (localFollowers || 0) + 1
+          : (localFollowers || 0) - 1;
+        setLocalFollowers(newFollowerCount);
+      }
+
+      // 팔로잉 수는 변경하지 않음 (현재 사용자의 팔로잉 수는 별도 관리)
+      // 팔로잉 수는 부모 컴포넌트에서 관리하거나 별도 API로 조회
+
+      console.log("🔄 팔로우 상태 변경:", {
+        targetUserId: response.targetUserId,
+        following: response.following,
+        followerCount: response.targetFollowerCount,
+        cacheInvalidated: true,
+      });
+    } catch (error) {
+      console.error("팔로우 토글 실패:", error);
+      alert("팔로우 상태 변경에 실패했습니다.");
+    } finally {
+      setIsFollowLoading(false);
+    }
   };
 
   const targetUserId = userIdForFollowList;
@@ -180,7 +267,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
               className="size-37.5 rounded-full flex-shrink-0 object-cover"
               onError={handleImageError}
             />
-            {isMyProfile && (
+            {showEditControls && isMyProfile && !isHorizontal && (
               <button
                 onClick={handleEditClick}
                 disabled={isUpdating}
@@ -233,7 +320,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             className="size-40 rounded-full object-cover"
             onError={handleImageError}
           />
-          {isMyProfile && (
+          {showEditControls && isMyProfile && (
             <button
               onClick={handleEditClick}
               disabled={isUpdating}
@@ -263,7 +350,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             onMouseLeave={closePopoverDelayed}
           >
             팔로워{" "}
-            <span className="font-medium text-zinc-900">{followers}</span>
+            <span className="font-medium text-zinc-900">{localFollowers}</span>
             {hovered === "followers" && (
               <div
                 className="absolute -left-9 mt-2 w-30 bg-gray-100 border border-stone-300 rounded-md shadow-lg z-20"
@@ -309,7 +396,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             onMouseLeave={closePopoverDelayed}
           >
             팔로잉{" "}
-            <span className="font-medium text-zinc-900">{following}</span>
+            <span className="font-medium text-zinc-900">{localFollowing}</span>
             {hovered === "following" && (
               <div
                 className="absolute -left-5 mt-2 w-30 bg-gray-100 border border-stone-300 rounded-md shadow-lg z-20"
@@ -350,19 +437,33 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           </div>
         </div>
 
-        {isMyProfile ? (
-          <UserActionButton
-            type="edit"
-            className="w-full"
-            onClick={onEditClick}
-          />
-        ) : (
-          <UserActionButton
-            type={isFollowing ? "following" : "follow"}
-            className="w-full"
-            onClick={toggleFollow}
-          />
-        )}
+        {(() => {
+          // useNoneAction이 true면 none 버튼, 아니면 기존 로직
+          if (useNoneAction) {
+            return (
+              <UserActionButton
+                type="none"
+                className="w-full"
+                disabled={true}
+              />
+            );
+          }
+
+          return isMyProfile ? (
+            <UserActionButton
+              type="edit"
+              className="w-full"
+              onClick={onEditClick}
+            />
+          ) : (
+            <UserActionButton
+              type={isFollowing ? "following" : "follow"}
+              className="w-full"
+              onClick={toggleFollow}
+              isLoading={isFollowLoading}
+            />
+          );
+        })()}
 
         <div className="font-light text-zinc-900 text-center break-words px-3">
           {introduction}
@@ -380,6 +481,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
               {education}
             </div>
           ) : null}
+          {/* 갤러리 사용자일 때만 갤러리 위치 표시 */}
+          {role === "갤러리" && galleryLocation && (
+            <div className="text-zinc-900 text-center break-words">
+              📍 {galleryLocation}
+            </div>
+          )}
         </div>
       </div>
 

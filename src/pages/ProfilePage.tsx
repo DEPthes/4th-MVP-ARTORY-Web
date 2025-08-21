@@ -20,12 +20,7 @@ import ArtworkCard from "../components/ArtworkCard";
 import TagFilterBar from "../components/Profile/TagFilterBar";
 
 // API 및 타입
-import {
-  getUserPosts,
-  getUserProfile,
-  type PaginatedPostsResponse,
-  type Post,
-} from "../apis/user";
+import { getUserProfile, type UserProfile } from "../apis/user";
 import {
   type ArtistNoteItem,
   type ArtistNotePayload,
@@ -36,14 +31,10 @@ import {
   updateArtistNote,
 } from "../apis/artistNote";
 import { fetchProfilePosts, type ProfilePostsParams } from "../apis/userPosts";
-import {
-  tabIdToPostType,
-  normalizeTagName,
-  type TabId,
-  type PostType,
-} from "../utils/postType";
+import { normalizeTagName, type PostType } from "../utils/postType";
 import type { ProfilePostsPage, ProfilePost } from "../types/post-list";
 import { getUserTags } from "../apis/userTags";
+import { archiveApi } from "../apis/archive";
 
 // Hooks
 import { useSidebarProfile } from "../hooks/useUser";
@@ -90,24 +81,6 @@ const noContentMessages = {
     archive: "아직 등록된 아카이브가 없습니다.",
   },
 };
-
-interface UserProfile {
-  name: string;
-  userType: "ARTIST" | "GALLERY" | "COLLECTOR";
-  profileImageUrl: string | null;
-  coverImageUrl: string | null;
-  followersCount: number;
-  followingCount: number;
-  description: string;
-  birth: string;
-  educationBackground: string;
-  contact: string;
-  email: string;
-  isMe: boolean;
-  isFollowed: boolean;
-  disclosureStatus: boolean;
-  artistID: number;
-}
 
 const ProfilePage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -493,27 +466,67 @@ const ProfilePage: React.FC = () => {
     getNextPageParam: (lastPage) =>
       lastPage.last ? undefined : (lastPage.pageable?.pageNumber ?? 0) + 1,
     initialPageParam: 0,
-    enabled: !!viewerGoogleID && !!targetUserId && !!postType,
+    enabled:
+      !!viewerGoogleID &&
+      !!targetUserId &&
+      !!postType &&
+      selectedTabId !== "archive",
   });
+
+  // 아카이브 탭용 별도 API 쿼리
+  const { data: archiveData, isLoading: isArchiveLoading } = useQuery({
+    queryKey: ["userArchive", targetUserId, selectedTag],
+    queryFn: () =>
+      archiveApi.getUserArchivedPosts({
+        googleID: viewerGoogleID!,
+        userID: targetUserId!,
+        postType: "ART", // 아카이브는 ART 타입으로 조회
+        page: 0,
+        size: pageSize,
+      }),
+    enabled: !!viewerGoogleID && !!targetUserId && selectedTabId === "archive",
+  });
+
+  // 아카이브 토글 뮤테이션
+  const toggleArchiveMutation = useMutation({
+    mutationFn: ({ postId }: { postId: string }) =>
+      archiveApi.toggleArchive({ postId, googleID: viewerGoogleID! }),
+    onSuccess: () => {
+      // 아카이브 상태가 변경되면 아카이브 쿼리 무효화
+      queryClient.invalidateQueries({
+        queryKey: ["userArchive", targetUserId, selectedTag],
+      });
+      // 게시물 목록도 무효화 (아카이브 상태가 변경되었을 수 있음)
+      queryClient.invalidateQueries({
+        queryKey: ["userPosts"],
+      });
+    },
+    onError: (error) => {
+      console.error("❌ 아카이브 토글 실패:", error);
+      alert("아카이브 상태 변경에 실패했습니다.");
+    },
+  });
+
+  // 아카이브 토글 핸들러
+  const handleToggleArchive = (postId: string | number) => {
+    toggleArchiveMutation.mutate({ postId: String(postId) });
+  };
 
   // 현재 로드된 데이터로 카드/태그 도출
   const allPosts: ProfilePost[] =
     postsData?.pages.flatMap((page) => (page?.content ?? []).filter(Boolean)) ??
     [];
 
-  const currentTags = useMemo(() => {
-    if (!allPosts.length) return [];
-    const set = new Set<string>();
-    for (const p of allPosts) {
-      const t = (p as any)?.tags;
-      if (Array.isArray(t)) {
-        for (const name of t) {
-          if (typeof name === "string" && name.trim()) set.add(name.trim());
-        }
-      }
-    }
-    return Array.from(set);
-  }, [allPosts]);
+  const archivePosts = archiveData?.content ?? [];
+
+  // 현재 탭의 작품 리스트(필터 태그 적용 전)
+  let data: ProfilePost[] | typeof archivePosts = [];
+
+  if (selectedTabId === "archive") {
+    data = archivePosts;
+  } else if (postType) {
+    data = allPosts;
+  }
 
   // --- 5. 이벤트 핸들러 ---
   const handleTabChange = (tabId: string) => {
@@ -682,9 +695,15 @@ const ProfilePage: React.FC = () => {
                     }
                     phoneNumber={userProfile.contact}
                     email={userProfile.email}
+                    useNoneAction={false}
                     initialIsFollowed={userProfile.isFollowed}
                     onEditClick={() => navigate("/profile/edit")}
                     onImageChange={handleProfileImageChange}
+                    galleryLocation={
+                      userProfile.userType === "GALLERY"
+                        ? userProfile.location
+                        : undefined
+                    }
                   />
                 </div>
               </div>
@@ -806,41 +825,55 @@ const ProfilePage: React.FC = () => {
                         selectedTag={currentSelectedTag ?? selectedTag}
                         onTagSelect={handleTagSelect}
                       />
-                      {isPostsLoading ? (
+                      {isPostsLoading || isArchiveLoading ? (
                         <div className="text-center py-10">
-                          게시물을 불러오는 중...
+                          {selectedTabId === "archive"
+                            ? "아카이브를 불러오는 중..."
+                            : "게시물을 불러오는 중..."}
                         </div>
-                      ) : allPosts.length > 0 ? (
+                      ) : data.length > 0 ? (
                         <>
                           <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6 px-13.5">
-                            {allPosts.map((post) => (
-                              <ArtworkCard
-                                key={post.postId}
-                                imageUrl={post.imageUrls?.[0] ?? ""}
-                                title={post.title ?? ""}
-                                author={post.userName ?? ""}
-                                likes={post.archived ?? 0}
-                                variant="primary"
-                                onClick={() =>
-                                  navigate(`/posts/${post.postId}`)
-                                }
-                              />
-                            ))}
+                            {data.map(
+                              (
+                                post: ProfilePost | (typeof archivePosts)[0]
+                              ) => (
+                                <ArtworkCard
+                                  key={post.postId}
+                                  imageUrl={post.imageUrls?.[0] ?? ""}
+                                  title={post.title ?? ""}
+                                  author={post.userName ?? ""}
+                                  likes={post.archived ?? 0}
+                                  liked={
+                                    selectedTabId === "archive" ? true : false
+                                  } // 아카이브 탭에서는 항상 채워진 하트
+                                  onToggleLike={
+                                    selectedTabId === "archive"
+                                      ? () => handleToggleArchive(post.postId) // 아카이브 탭에서는 아카이브 제거
+                                      : undefined // 다른 탭에서는 기본 좋아요 동작
+                                  }
+                                  variant="primary"
+                                  onClick={() =>
+                                    navigate(`/posts/${post.postId}`)
+                                  }
+                                />
+                              )
+                            )}
                           </div>
-                          <div className="flex justify-center mt-8">
-                            {hasNextPage && (
+                          {/* 더 보기 버튼 (아카이브가 아닌 경우에만) */}
+                          {selectedTabId !== "archive" && hasNextPage && (
+                            <div className="flex justify-center mt-8">
                               <button
                                 onClick={() => fetchNextPage()}
                                 disabled={isFetchingNextPage}
                                 className="px-6 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 disabled:bg-gray-400"
                               >
-                                {" "}
                                 {isFetchingNextPage
                                   ? "불러오는 중..."
-                                  : "더 보기"}{" "}
+                                  : "더 보기"}
                               </button>
-                            )}
-                          </div>
+                            </div>
+                          )}
                         </>
                       ) : (
                         <div
