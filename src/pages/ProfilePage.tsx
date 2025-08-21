@@ -124,26 +124,218 @@ const ProfilePage: React.FC = () => {
     queryKey: ["artistNote", userProfile?.artistID],
     queryFn: () => getArtistNote(viewerGoogleID!, userId!),
     enabled: !!userProfile?.artistID && userProfile.userType === "ARTIST",
-    onSuccess: (data: ArtistNoteItem[]) => {
-      const achievement = data
-        .filter((item) => item.artistNoteType === "HISTORY")
-        .map((d) => ({ ...d, text: d.description, registered: true }));
-      const groupExhibition = data
-        .filter((item) => item.artistNoteType === "TEAM_EVENT")
-        .map((d) => ({ ...d, text: d.description, registered: true }));
-      const soloExhibition = data
-        .filter((item) => item.artistNoteType === "PERSONAL_EVENT")
-        .map((d) => ({ ...d, text: d.description, registered: true }));
-      const structuredData = { achievement, groupExhibition, soloExhibition };
-      setRegisteredEntries(structuredData);
-      setTemporaryEntries(structuredData);
-    },
   });
 
   // --- 2. 상태 관리 ---
   const [selectedTabId, setSelectedTabId] = useState("artistNote");
   const [isEditing, setIsEditing] = useState(false);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+
+  // 작가노트 데이터를 위한 상태 타입 정의
+  type EntryWithArtistNote = Entry & {
+    artistNoteType?: ArtistNoteType;
+    description?: string;
+  };
+
+  type RegisteredEntriesType = {
+    achievement: EntryWithArtistNote[];
+    groupExhibition: EntryWithArtistNote[];
+    soloExhibition: EntryWithArtistNote[];
+  };
+
+  // 고정된 ID 값들 (컴포넌트 마운트 시 한 번만 생성)
+  const [entryIds] = useState(() => ({
+    achievement: [1, 2, 3],
+    groupExhibition: [4, 5, 6],
+    soloExhibition: [7, 8, 9],
+  }));
+
+  const [temporaryEntries, setTemporaryEntries] =
+    useState<RegisteredEntriesType>({
+      achievement: [
+        { id: entryIds.achievement[0], year: "", text: "", registered: false },
+      ],
+      groupExhibition: [
+        {
+          id: entryIds.groupExhibition[0],
+          year: "",
+          text: "",
+          registered: false,
+        },
+      ],
+      soloExhibition: [
+        {
+          id: entryIds.soloExhibition[0],
+          year: "",
+          text: "",
+          registered: false,
+        },
+      ],
+    });
+  const [registeredEntries, setRegisteredEntries] =
+    useState<RegisteredEntriesType>({
+      achievement: [],
+      groupExhibition: [],
+      soloExhibition: [],
+    });
+
+  const updateTemporaryEntries = (
+    section: keyof typeof temporaryEntries,
+    entries: Entry[]
+  ) => {
+    setTemporaryEntries((prev) => ({ ...prev, [section]: entries }));
+  };
+
+  const handleAchievementChange = (newEntries: Entry[]) =>
+    updateTemporaryEntries("achievement", newEntries);
+  const handleGroupExhibitionChange = (newEntries: Entry[]) =>
+    updateTemporaryEntries("groupExhibition", newEntries);
+  const handleSoloExhibitionChange = (newEntries: Entry[]) =>
+    updateTemporaryEntries("soloExhibition", newEntries);
+
+  const handleCompleteClick = () => {
+    console.log("🎨 작가노트 저장 시작");
+    console.log("📝 현재 임시 데이터:", temporaryEntries);
+    console.log("📝 기존 등록된 데이터:", registeredEntries);
+
+    const processSection = (
+      original: Entry[],
+      temp: Entry[],
+      type: ArtistNoteType
+    ) => {
+      console.log(`🔍 ${type} 섹션 처리 시작:`, { original, temp });
+
+      const tempMap = new Map(temp.map((item) => [item.id, item]));
+      const originalMap = new Map(original.map((item) => [item.id, item]));
+
+      // 삭제할 항목들 처리
+      originalMap.forEach((origItem) => {
+        if (!tempMap.has(origItem.id)) {
+          console.log(`🗑️ 삭제할 항목:`, origItem);
+          deleteNoteMutation.mutate({ id: origItem.id });
+        }
+      });
+
+      // 생성/수정할 항목들 처리
+      tempMap.forEach((tempItem) => {
+        if (!tempItem.year && !tempItem.text) {
+          console.log(`⏭️ 빈 항목 건너뛰기:`, tempItem);
+          return;
+        }
+
+        const payload = {
+          artistNoteType: type,
+          year: tempItem.year,
+          description: tempItem.text,
+        };
+
+        console.log(`📝 처리할 항목:`, { tempItem, payload });
+
+        if (tempItem.id > 0) {
+          // 기존 항목 수정
+          const origItem = originalMap.get(tempItem.id);
+          if (
+            origItem &&
+            (origItem.year !== tempItem.year || origItem.text !== tempItem.text)
+          ) {
+            console.log(`✏️ 항목 수정:`, { id: tempItem.id, payload });
+            updateNoteMutation.mutate({ id: tempItem.id, payload });
+          } else {
+            console.log(`⏭️ 변경사항 없음, 수정 건너뛰기:`, tempItem);
+          }
+        } else {
+          // 새 항목 생성
+          console.log(`➕ 새 항목 생성:`, payload);
+          createNoteMutation.mutate({ payload });
+        }
+      });
+    };
+
+    processSection(
+      registeredEntries.achievement,
+      temporaryEntries.achievement,
+      "HISTORY"
+    );
+    processSection(
+      registeredEntries.groupExhibition,
+      temporaryEntries.groupExhibition,
+      "TEAM_EVENT"
+    );
+    processSection(
+      registeredEntries.soloExhibition,
+      temporaryEntries.soloExhibition,
+      "PERSONAL_EVENT"
+    );
+
+    console.log("🎨 작가노트 저장 완료");
+    setIsEditing(false);
+  };
+
+  // 작가노트 데이터가 로드되면 상태를 업데이트
+  useEffect(() => {
+    if (userProfile?.artistID && userProfile.userType === "ARTIST") {
+      // 작가노트 쿼리 데이터를 직접 가져오기
+      const artistNoteQuery = queryClient.getQueryData<ArtistNoteItem[]>([
+        "artistNote",
+        userProfile.artistID,
+      ]);
+
+      console.log("🎨 작가노트 데이터 감지:", artistNoteQuery);
+
+      if (artistNoteQuery && artistNoteQuery.length > 0) {
+        const achievement = artistNoteQuery
+          .filter((item) => item.artistNoteType === "HISTORY")
+          .map((d) => ({ ...d, text: d.description, registered: true }));
+        const groupExhibition = artistNoteQuery
+          .filter((item) => item.artistNoteType === "TEAM_EVENT")
+          .map((d) => ({ ...d, text: d.description, registered: true }));
+        const soloExhibition = artistNoteQuery
+          .filter((item) => item.artistNoteType === "PERSONAL_EVENT")
+          .map((d) => ({ ...d, text: d.description, registered: true }));
+        const structuredData = { achievement, groupExhibition, soloExhibition };
+
+        console.log("📝 구조화된 작가노트 데이터:", structuredData);
+
+        setRegisteredEntries(structuredData);
+        setTemporaryEntries(structuredData);
+      } else {
+        // 데이터가 없거나 빈 배열인 경우 기본 상태 설정
+        console.log("📝 작가노트 데이터가 없음 - 기본 상태 설정");
+        const defaultData = {
+          achievement: [],
+          groupExhibition: [],
+          soloExhibition: [],
+        };
+        setRegisteredEntries(defaultData);
+        setTemporaryEntries({
+          achievement: [
+            {
+              id: entryIds.achievement[0],
+              year: "",
+              text: "",
+              registered: false,
+            },
+          ],
+          groupExhibition: [
+            {
+              id: entryIds.groupExhibition[0],
+              year: "",
+              text: "",
+              registered: false,
+            },
+          ],
+          soloExhibition: [
+            {
+              id: entryIds.soloExhibition[0],
+              year: "",
+              text: "",
+              registered: false,
+            },
+          ],
+        });
+      }
+    }
+  }, [userProfile, entryIds]); // userProfile 객체 자체를 의존성으로 사용
 
   // --- 3. 파생 상태 및 사이드 이펙트 ---
   const userRole = userProfile?.userType || "ARTIST";
@@ -187,7 +379,7 @@ const ProfilePage: React.FC = () => {
     queryKey: ["userPosts", userProfile?.artistID, postType, selectedTag],
     queryFn: ({ pageParam = 0 }) =>
       getUserPosts({
-        pageParam,
+        pageParam: pageParam as number,
         viewerGoogleID: viewerGoogleID!,
         userID: userProfile!.artistID,
         postType: postType!,
@@ -201,7 +393,11 @@ const ProfilePage: React.FC = () => {
   const allPosts: Post[] =
     postsData?.pages.flatMap((page) => page.content) ?? [];
   const currentTags = Array.from(
-    new Set(allPosts.flatMap((post) => (post as any).tags || []))
+    new Set(
+      allPosts.flatMap(
+        (post) => (post as Post & { tags?: string[] }).tags || []
+      )
+    )
   );
 
   // --- 5. 이벤트 핸들러 ---
@@ -212,7 +408,20 @@ const ProfilePage: React.FC = () => {
   };
   const handleProfileImageChange = (file: File) => {
     console.log("업로드할 이미지 파일:", file);
-    alert("프로필 이미지 업로드 API를 연동해야 합니다.");
+
+    // 프로필 이미지 변경 후 관련 쿼리 캐시 갱신
+    if (userProfile?.artistID) {
+      queryClient.invalidateQueries({
+        queryKey: ["userProfile", userProfile.artistID.toString()],
+      });
+    }
+
+    // 사이드바 프로필 정보도 갱신
+    if (viewerGoogleID) {
+      queryClient.invalidateQueries({
+        queryKey: ["sidebarProfile", viewerGoogleID],
+      });
+    }
   };
   const handleEditClick = () => setIsEditing(true);
   const handleRegisterClick = () => alert("등록 페이지로 이동");
@@ -223,98 +432,45 @@ const ProfilePage: React.FC = () => {
       queryKey: ["artistNote", userProfile?.artistID],
     });
   };
+
   const createNoteMutation = useMutation({
     mutationFn: (variables: { payload: ArtistNotePayload }) =>
       createArtistNote(viewerGoogleID!, variables.payload),
-    onSuccess: invalidateArtistNoteQuery,
+    onSuccess: (data) => {
+      console.log("✅ 작가노트 생성 성공:", data);
+      invalidateArtistNoteQuery();
+    },
+    onError: (error) => {
+      console.error("❌ 작가노트 생성 실패:", error);
+      alert("작가노트 생성에 실패했습니다.");
+    },
   });
+
   const updateNoteMutation = useMutation({
     mutationFn: (variables: { id: number; payload: ArtistNotePayload }) =>
       updateArtistNote(viewerGoogleID!, variables.id, variables.payload),
-    onSuccess: invalidateArtistNoteQuery,
+    onSuccess: (data) => {
+      console.log("✅ 작가노트 수정 성공:", data);
+      invalidateArtistNoteQuery();
+    },
+    onError: (error) => {
+      console.error("❌ 작가노트 수정 실패:", error);
+      alert("작가노트 수정에 실패했습니다.");
+    },
   });
+
   const deleteNoteMutation = useMutation({
     mutationFn: (variables: { id: number }) =>
       deleteArtistNote(viewerGoogleID!, variables.id),
-    onSuccess: invalidateArtistNoteQuery,
+    onSuccess: (data) => {
+      console.log("✅ 작가노트 삭제 성공:", data);
+      invalidateArtistNoteQuery();
+    },
+    onError: (error) => {
+      console.error("❌ 작가노트 삭제 실패:", error);
+      alert("작가노트 삭제에 실패했습니다.");
+    },
   });
-
-  const [temporaryEntries, setTemporaryEntries] = useState({
-    achievement: [{ id: Date.now(), year: "", text: "", registered: false }],
-    groupExhibition: [
-      { id: Date.now() + 1, year: "", text: "", registered: false },
-    ],
-    soloExhibition: [
-      { id: Date.now() + 2, year: "", text: "", registered: false },
-    ],
-  });
-  const [registeredEntries, setRegisteredEntries] = useState({
-    achievement: [],
-    groupExhibition: [],
-    soloExhibition: [],
-  });
-  const updateTemporaryEntries = (
-    section: keyof typeof temporaryEntries,
-    entries: Entry[]
-  ) => {
-    setTemporaryEntries((prev) => ({ ...prev, [section]: entries }));
-  };
-  const handleAchievementChange = (newEntries: Entry[]) =>
-    updateTemporaryEntries("achievement", newEntries);
-  const handleGroupExhibitionChange = (newEntries: Entry[]) =>
-    updateTemporaryEntries("groupExhibition", newEntries);
-  const handleSoloExhibitionChange = (newEntries: Entry[]) =>
-    updateTemporaryEntries("soloExhibition", newEntries);
-  const handleCompleteClick = () => {
-    const processSection = (
-      original: Entry[],
-      temp: Entry[],
-      type: ArtistNoteType
-    ) => {
-      const tempMap = new Map(temp.map((item) => [item.id, item]));
-      const originalMap = new Map(original.map((item) => [item.id, item]));
-      originalMap.forEach((origItem) => {
-        if (!tempMap.has(origItem.id)) {
-          deleteNoteMutation.mutate({ id: origItem.id });
-        }
-      });
-      tempMap.forEach((tempItem) => {
-        if (!tempItem.year && !tempItem.text) return;
-        const payload = {
-          artistNoteType: type,
-          year: tempItem.year,
-          description: tempItem.text,
-        };
-        if (tempItem.id > 0) {
-          const origItem = originalMap.get(tempItem.id);
-          if (
-            origItem &&
-            (origItem.year !== tempItem.year || origItem.text !== tempItem.text)
-          ) {
-            updateNoteMutation.mutate({ id: tempItem.id, payload });
-          }
-        } else {
-          createNoteMutation.mutate({ payload });
-        }
-      });
-    };
-    processSection(
-      registeredEntries.achievement,
-      temporaryEntries.achievement,
-      "HISTORY"
-    );
-    processSection(
-      registeredEntries.groupExhibition,
-      temporaryEntries.groupExhibition,
-      "TEAM_EVENT"
-    );
-    processSection(
-      registeredEntries.soloExhibition,
-      temporaryEntries.soloExhibition,
-      "PERSONAL_EVENT"
-    );
-    setIsEditing(false);
-  };
 
   // --- 7. 렌더링 ---
   if (isProfileLoading) {
@@ -351,12 +507,22 @@ const ProfilePage: React.FC = () => {
             <BannerControl
               isMyProfile={isMyProfile}
               initialBannerUrl={userProfile.coverImageUrl || undefined}
+              viewerGoogleID={viewerGoogleID || undefined}
+              onCoverChange={() => {
+                // 커버 변경 후 프로필 캐시 갱신
+                if (userProfile?.artistID) {
+                  queryClient.invalidateQueries({
+                    queryKey: ["userProfile", userProfile.artistID.toString()],
+                  });
+                }
+              }}
             />
             <div className="flex">
               <div className="-mt-24 z-10 pl-60 xl:pl-40 md:pl-20 sm:pl-5">
                 <div className="sticky top-24">
                   <ProfileCard
                     isMyProfile={isMyProfile}
+                    viewerGoogleID={viewerGoogleID || undefined}
                     role={
                       userProfile.userType === "ARTIST"
                         ? "작가"
@@ -395,6 +561,11 @@ const ProfilePage: React.FC = () => {
                   onEditClick={handleEditClick}
                   onCompleteClick={handleCompleteClick}
                   onRegisterClick={handleRegisterClick}
+                  isSaving={
+                    createNoteMutation.isPending ||
+                    updateNoteMutation.isPending ||
+                    deleteNoteMutation.isPending
+                  }
                   counts={{
                     [currentTabs.find((t) => t.id === selectedTabId)?.label ||
                     ""]: postsData?.pages[0]?.totalElements ?? 0,
@@ -408,7 +579,9 @@ const ProfilePage: React.FC = () => {
                       </div>
                       <div className="flex flex-col gap-4 w-full min-h-15.5 px-6 py-5 bg-white">
                         {isArtistNoteLoading ? (
-                          <div>로딩 중...</div>
+                          <div className="text-center py-4 text-gray-500">
+                            작가노트를 불러오는 중...
+                          </div>
                         ) : isEditing ? (
                           <EntryList
                             entries={temporaryEntries.achievement}
@@ -432,7 +605,9 @@ const ProfilePage: React.FC = () => {
                       </div>
                       <div className="flex flex-col gap-4 w-full min-h-15.5 px-6 py-5 bg-white">
                         {isArtistNoteLoading ? (
-                          <div>로딩 중...</div>
+                          <div className="text-center py-4 text-gray-500">
+                            작가노트를 불러오는 중...
+                          </div>
                         ) : isEditing ? (
                           <EntryList
                             entries={temporaryEntries.groupExhibition}
@@ -456,7 +631,9 @@ const ProfilePage: React.FC = () => {
                       </div>
                       <div className="flex flex-col gap-4 w-full min-h-15.5 px-6 py-5 bg-white">
                         {isArtistNoteLoading ? (
-                          <div>로딩 중...</div>
+                          <div className="text-center py-4 text-gray-500">
+                            작가노트를 불러오는 중...
+                          </div>
                         ) : isEditing ? (
                           <EntryList
                             entries={temporaryEntries.soloExhibition}

@@ -3,6 +3,7 @@ import UserActionButton from "../Profile/UserActionButton";
 import BaseProfileImage from "../../assets/images/BaseProfileImage.png";
 import { useState, useRef, useEffect } from "react";
 import EditIcon from "../../assets/editIcon.svg";
+import { changeProfile } from "../../apis/user";
 
 interface ProfileCardProps {
   role: string;
@@ -22,6 +23,7 @@ interface ProfileCardProps {
   isMyProfile: boolean;
   onEditClick?: () => void;
   initialIsFollowed?: boolean;
+  viewerGoogleID?: string; // 추가: 현재 로그인한 사용자의 Google ID
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({
@@ -42,9 +44,11 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   isMyProfile,
   onEditClick,
   initialIsFollowed,
+  viewerGoogleID, // 추가
 }) => {
   const [imageError, setImageError] = useState(false);
   const [localImage, setLocalImage] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false); // 추가: 업데이트 상태
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 이미지가 없거나 빈 문자열이거나 로딩 실패 시 기본 이미지 사용
@@ -56,7 +60,9 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     setImageError(true);
   };
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (file) {
       // 파일 유효성 검사
@@ -71,19 +77,42 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         return;
       }
 
+      // 로컬 미리보기 설정
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
         setLocalImage(result);
-        if (onImageChange) {
-          onImageChange(file);
-        }
       };
       reader.readAsDataURL(file);
+
+      // 프로필 이미지 변경 API 호출
+      if (viewerGoogleID && isMyProfile) {
+        try {
+          setIsUpdating(true);
+          await changeProfile(viewerGoogleID, file); // 파일 객체 직접 전달
+          console.log("프로필 이미지 변경 성공");
+
+          // 부모 컴포넌트에 파일 변경 알림
+          if (onImageChange) {
+            onImageChange(file);
+          }
+        } catch (error) {
+          console.error("프로필 이미지 변경 실패:", error);
+          alert("프로필 이미지 변경에 실패했습니다.");
+          // 실패 시 로컬 이미지 상태 되돌리기
+          setLocalImage(null);
+        } finally {
+          setIsUpdating(false);
+        }
+      }
     }
   };
 
   const handleEditClick = () => {
+    if (!viewerGoogleID) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
     fileInputRef.current?.click();
   };
 
@@ -121,14 +150,15 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             <img
               src={profileImage}
               alt={nickName}
-              className="size-37.5 rounded-full flex-shrink-0"
+              className="size-37.5 rounded-full flex-shrink-0 object-cover"
               onError={handleImageError}
             />
             {/* 수정 버튼 */}
             {isMyProfile && (
               <button
                 onClick={handleEditClick}
-                className="absolute bottom-2 right-2 bg-red-500 rounded-full p-2 cursor-pointer"
+                disabled={isUpdating}
+                className="absolute bottom-2 right-2 bg-red-500 rounded-full p-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <img src={EditIcon} alt="edit" className="size-4 text-white" />
               </button>
@@ -178,14 +208,15 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           <img
             src={profileImage}
             alt={nickName}
-            className="size-40 rounded-full"
+            className="size-40 rounded-full object-cover"
             onError={handleImageError}
           />
           {/* 수정 버튼 */}
           {isMyProfile && (
             <button
               onClick={handleEditClick}
-              className="absolute bottom-2 right-2 bg-[#D32F2F] rounded-full p-2 cursor-pointer"
+              disabled={isUpdating}
+              className="absolute bottom-2 right-2 bg-[#D32F2F] rounded-full p-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <img src={EditIcon} alt="edit" className="size-fit" />
             </button>

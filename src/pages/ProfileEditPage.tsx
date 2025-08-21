@@ -4,28 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { getUserProfile } from "../apis/user";
 import { useSidebarProfile } from "../hooks/useUser";
 
-interface UserProfile {
-  name: string;
-  userType: "ARTIST" | "GALLERY" | "COLLECTOR";
-  profileImageUrl: string;
-  coverImageUrl: string;
-  followersCount: number;
-  followingCount: number;
-  description: string;
-  birth: string;
-  educationBackground: string;
-  contact: string;
-  email: string;
-  isMe: boolean;
-  isFollowed: boolean;
-  disclosureStatus: boolean;
-  artistID: number;
-}
-
 const ProfileEditPage: React.FC = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   // 편집 중인 프로필 정보
   const [editingProfileInfo, setEditingProfileInfo] = useState({
@@ -57,7 +38,6 @@ const ProfileEditPage: React.FC = () => {
         // 사이드바에서 id를 userId로 사용
         const userId = sidebarProfile?.id?.toString() || googleID;
         const profile = await getUserProfile(googleID, userId);
-        setUserProfile(profile);
 
         // 사용자 정보 설정
         const userInfo = {

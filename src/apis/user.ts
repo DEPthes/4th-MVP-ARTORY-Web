@@ -417,3 +417,134 @@ export const getUserPosts = async ({
   );
   return response.data.data;
 };
+
+// 유저 커버 사진 변경
+// /api/user/change/cover
+export const changeCover = async (googleID: string, file: File | string) => {
+  try {
+    console.log("🔄 커버 이미지 변경 API 호출 시작");
+
+    let formData: FormData;
+
+    if (file instanceof File) {
+      // File 객체인 경우
+      console.log("📤 File 객체 요청:", {
+        googleID,
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+      });
+
+      formData = new FormData();
+      formData.append("profileImage", file); // 백엔드 요구사항에 맞춤
+    } else {
+      // base64 문자열인 경우 (되돌리기용)
+      console.log("📤 base64 요청:", {
+        googleID,
+        imageData: file.substring(0, 100) + "...",
+      });
+
+      formData = new FormData();
+      formData.append("profileImage", file);
+    }
+
+    console.log("🔐 googleID 기반 인증 사용:", googleID);
+    console.log("📤 FormData 내용:");
+    for (const [key, value] of formData.entries()) {
+      console.log(`- ${key}:`, value);
+    }
+
+    console.log("🔐 googleID 기반 인증 사용 (토큰 없이):", googleID);
+
+    const response = await axios.post<{
+      code: number;
+      status: string;
+      message: string;
+      data: unknown;
+    }>(
+      `/api/user/change/cover?googleID=${encodeURIComponent(googleID)}`,
+      formData
+      // Content-Type은 브라우저가 자동으로 설정하도록 함 (boundary 포함)
+    );
+
+    console.log("📦 커버 이미지 변경 응답:", response.data);
+    console.log("📋 응답 상태:", response.status);
+    console.log("📋 응답 헤더:", response.headers);
+
+    if (response.data.code === 200 && response.data.status === "OK") {
+      console.log("✅ 커버 이미지 변경 성공");
+      return response.data.data;
+    } else {
+      console.error("❌ API 응답 오류:", {
+        code: response.data.code,
+        status: response.data.status,
+        message: response.data.message,
+        data: response.data.data,
+      });
+      throw new Error(
+        response.data.message || "커버 이미지 변경에 실패했습니다."
+      );
+    }
+  } catch (error) {
+    console.error("💥 커버 이미지 변경 API 에러:", error);
+    throw error;
+  }
+};
+
+// 유저 프로필 사진 변경
+// /api/user/change/profile
+export const changeProfile = async (googleID: string, file: File) => {
+  try {
+    console.log("🔄 프로필 이미지 변경 API 호출 시작");
+    console.log("📤 요청 데이터:", {
+      googleID,
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+    });
+
+    // FormData 생성
+    const formData = new FormData();
+    formData.append("profileImage", file); // 백엔드 요구사항에 맞춤
+
+    console.log("📤 FormData 내용:");
+    for (const [key, value] of formData.entries()) {
+      console.log(`- ${key}:`, value);
+    }
+
+    console.log("🔐 googleID 기반 인증 사용 (토큰 없이):", googleID);
+
+    const response = await axios.post<{
+      code: number;
+      status: string;
+      message: string;
+      data: unknown;
+    }>(
+      `/api/user/change/profile?googleID=${encodeURIComponent(googleID)}`,
+      formData
+      // Content-Type은 브라우저가 자동으로 설정하도록 함 (boundary 포함)
+    );
+
+    console.log("📦 프로필 이미지 변경 응답:", response.data);
+    console.log("📋 응답 상태:", response.status);
+    console.log("📋 응답 헤더:", response.headers);
+
+    if (response.data.code === 200 && response.data.status === "OK") {
+      console.log("✅ 프로필 이미지 변경 성공");
+      return response.data.data;
+    } else {
+      console.error("❌ API 응답 오류:", {
+        code: response.data.code,
+        status: response.data.status,
+        message: response.data.message,
+        data: response.data.data,
+      });
+      throw new Error(
+        response.data.message || "프로필 이미지 변경에 실패했습니다."
+      );
+    }
+  } catch (error) {
+    console.error("💥 프로필 이미지 변경 API 에러:", error);
+    throw error;
+  }
+};
