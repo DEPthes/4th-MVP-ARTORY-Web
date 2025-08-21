@@ -1,23 +1,53 @@
 import React, { useState, useEffect } from "react";
 import { Header } from "../components";
+import BackNavigate from "../components/Layouts/BackNavigate";
 import { useNavigate } from "react-router-dom";
-import { getUserProfile } from "../apis/user";
+import {
+  getUserProfile,
+  type UserProfile,
+  changeArtistProfile,
+  changeCollectorProfile,
+  changeGalleryProfile,
+  type ArtistCollectorChangePayload,
+  type GalleryChangePayload,
+} from "../apis/user";
 import { useSidebarProfile } from "../hooks/useUser";
+import Button from "../components/Button/Button";
+import Input from "../components/Input/Input";
+import Checkbox from "../components/Checkbox/Checkbox";
+import { UserJob } from "../types/user";
+// import { useQueryClient } from "@tanstack/react-query";
 
 const ProfileEditPage: React.FC = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
+  // const queryClient = useQueryClient();
 
-  // 편집 중인 프로필 정보
-  const [editingProfileInfo, setEditingProfileInfo] = useState({
+  const [selectedJob, setSelectedJob] = useState<string>("");
+
+  // 회원가입 폼 재사용: 작가/컬렉터
+  const [artistCollectorForm, setArtistCollectorForm] = useState({
     name: "",
-    email: "",
-    role: "",
-    introduction: "",
-    contact: "",
-    birthdate: "",
+    birthDate: "",
     education: "",
+    isEducationPublic: false,
+    phone: "",
+    email: "",
+    bio: "",
   });
+
+  // 회원가입 폼 재사용: 갤러리
+  const [galleryForm, setGalleryForm] = useState({
+    galleryName: "",
+    businessRegistrationNumber: "",
+    galleryLocation: "",
+    managerName: "",
+    managerPhone: "",
+    managerEmail: "",
+    bio: "",
+  });
+
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   // 사이드바 프로필 정보 조회
   const currentGoogleID = localStorage.getItem("googleID");
@@ -37,25 +67,37 @@ const ProfileEditPage: React.FC = () => {
 
         // 사이드바에서 id를 userId로 사용
         const userId = sidebarProfile?.id?.toString() || googleID;
-        const profile = await getUserProfile(googleID, userId);
+        const profile: UserProfile = await getUserProfile(googleID, userId);
 
-        // 사용자 정보 설정
-        const userInfo = {
-          name: profile.name,
-          email: profile.email,
-          role:
-            profile.userType === "ARTIST"
-              ? "작가"
-              : profile.userType === "GALLERY"
-              ? "갤러리"
-              : "아트 컬렉터",
-          introduction: profile.description,
-          contact: profile.contact,
-          birthdate: profile.birth,
-          education: profile.educationBackground,
-        };
+        const role =
+          profile.userType === "GALLERY"
+            ? UserJob.GALLERY
+            : profile.userType === "COLLECTOR"
+            ? UserJob.ART_COLLECTOR
+            : UserJob.YOUNG_ARTIST;
+        setSelectedJob(role);
 
-        setEditingProfileInfo(userInfo);
+        if (role === UserJob.GALLERY) {
+          setGalleryForm({
+            galleryName: profile.galleryName || "",
+            businessRegistrationNumber: profile.registrationNumber || "",
+            galleryLocation: profile.location || "",
+            managerName: profile.name || "",
+            managerPhone: profile.contact || "",
+            managerEmail: profile.email || "",
+            bio: profile.description || "",
+          });
+        } else {
+          setArtistCollectorForm({
+            name: profile.name || "",
+            birthDate: profile.birth || "",
+            education: profile.educationBackground || "",
+            isEducationPublic: profile.disclosureStatus ?? false,
+            phone: profile.contact || "",
+            email: profile.email || "",
+            bio: profile.description || "",
+          });
+        }
       } catch (error) {
         console.error("프로필 정보를 가져오는데 실패했습니다:", error);
       } finally {
@@ -69,19 +111,73 @@ const ProfileEditPage: React.FC = () => {
     }
   }, [navigate, sidebarProfile]);
 
-  const handleProfileFieldChange = (field: string, value: string) => {
-    setEditingProfileInfo((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+  const handleArtistCollectorChange = (
+    field: keyof typeof artistCollectorForm,
+    value: string | boolean
+  ) => {
+    setArtistCollectorForm((prev) => ({ ...prev, [field]: value }));
+    if (errors[field as string])
+      setErrors((prev) => ({ ...prev, [field as string]: "" }));
+  };
+
+  const handleGalleryChange = (
+    field: keyof typeof galleryForm,
+    value: string
+  ) => {
+    setGalleryForm((prev) => ({ ...prev, [field]: value }));
+    if (errors[field as string])
+      setErrors((prev) => ({ ...prev, [field as string]: "" }));
   };
 
   const handleSave = async () => {
     try {
-      // TODO: API 호출하여 서버에 저장
-      console.log("프로필 정보 저장:", editingProfileInfo);
+      const googleID = localStorage.getItem("googleID");
+      if (!googleID) {
+        navigate("/login");
+        return;
+      }
 
-      // 저장 성공 시 프로필 페이지로 이동
+      if (selectedJob === UserJob.GALLERY) {
+        const payload: GalleryChangePayload = {
+          userName: galleryForm.managerName,
+          email: galleryForm.managerEmail,
+          introduction: galleryForm.bio,
+          contact: galleryForm.managerPhone,
+          galleryName: galleryForm.galleryName,
+          location: galleryForm.galleryLocation,
+          registrationNumber: galleryForm.businessRegistrationNumber,
+        };
+        const res = await changeGalleryProfile(googleID, payload);
+        if (!res.success)
+          throw new Error(res.message || "갤러리 프로필 수정 실패");
+      } else if (selectedJob === UserJob.ART_COLLECTOR) {
+        const payload: ArtistCollectorChangePayload = {
+          name: artistCollectorForm.name,
+          email: artistCollectorForm.email,
+          introduction: artistCollectorForm.bio,
+          contact: artistCollectorForm.phone,
+          birth: artistCollectorForm.birthDate,
+          educationBackground: artistCollectorForm.education,
+          disclosureStatus: artistCollectorForm.isEducationPublic,
+        };
+        const res = await changeCollectorProfile(googleID, payload);
+        if (!res.success)
+          throw new Error(res.message || "컬렉터 프로필 수정 실패");
+      } else {
+        const payload: ArtistCollectorChangePayload = {
+          name: artistCollectorForm.name,
+          email: artistCollectorForm.email,
+          introduction: artistCollectorForm.bio,
+          contact: artistCollectorForm.phone,
+          birth: artistCollectorForm.birthDate,
+          educationBackground: artistCollectorForm.education,
+          disclosureStatus: artistCollectorForm.isEducationPublic,
+        };
+        const res = await changeArtistProfile(googleID, payload);
+        if (!res.success)
+          throw new Error(res.message || "작가 프로필 수정 실패");
+      }
+
       const currentGoogleID = localStorage.getItem("googleID");
       navigate(`/profile/${currentGoogleID}`);
     } catch (error) {
@@ -90,12 +186,9 @@ const ProfileEditPage: React.FC = () => {
     }
   };
 
-  const handleCancel = () => {
-    const currentGoogleID = localStorage.getItem("googleID");
-    navigate(`/profile/${currentGoogleID}`);
-  };
+  // 취소 버튼 제거: BackNavigate로 대체
 
-  if (isLoading) {
+  if (isLoading || !selectedJob) {
     return (
       <>
         <Header />
@@ -109,151 +202,190 @@ const ProfileEditPage: React.FC = () => {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-2xl mx-auto px-4">
-          <div className="bg-white rounded-lg shadow-md p-8">
-            <div className="mb-8">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                프로필 수정
-              </h1>
-              <p className="text-gray-600">
-                프로필 정보를 수정하고 저장할 수 있습니다.
-              </p>
-            </div>
-
-            <div className="space-y-6">
-              {/* 이름 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  이름 *
-                </label>
-                <input
-                  type="text"
-                  value={editingProfileInfo.name}
-                  onChange={(e) =>
-                    handleProfileFieldChange("name", e.target.value)
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  placeholder="이름을 입력하세요"
-                />
-              </div>
-
-              {/* 이메일 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  이메일 *
-                </label>
-                <input
-                  type="email"
-                  value={editingProfileInfo.email}
-                  onChange={(e) =>
-                    handleProfileFieldChange("email", e.target.value)
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  placeholder="이메일을 입력하세요"
-                />
-              </div>
-
-              {/* 역할 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  역할 *
-                </label>
-                <select
-                  value={editingProfileInfo.role}
-                  onChange={(e) =>
-                    handleProfileFieldChange("role", e.target.value)
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                >
-                  <option value="">역할을 선택하세요</option>
-                  <option value="작가">작가</option>
-                  <option value="갤러리">갤러리</option>
-                  <option value="아트 컬렉터">아트 컬렉터</option>
-                </select>
-              </div>
-
-              {/* 연락처 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  연락처
-                </label>
-                <input
-                  type="text"
-                  value={editingProfileInfo.contact}
-                  onChange={(e) =>
-                    handleProfileFieldChange("contact", e.target.value)
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  placeholder="연락처를 입력하세요"
-                />
-              </div>
-
-              {/* 생년월일 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  생년월일
-                </label>
-                <input
-                  type="text"
-                  value={editingProfileInfo.birthdate}
-                  onChange={(e) =>
-                    handleProfileFieldChange("birthdate", e.target.value)
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  placeholder="YYYY.MM.DD"
-                />
-              </div>
-
-              {/* 학력 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  학력
-                </label>
-                <input
-                  type="text"
-                  value={editingProfileInfo.education}
-                  onChange={(e) =>
-                    handleProfileFieldChange("education", e.target.value)
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  placeholder="학력을 입력하세요"
-                />
-              </div>
-
-              {/* 소개 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  소개
-                </label>
-                <textarea
-                  value={editingProfileInfo.introduction}
-                  onChange={(e) =>
-                    handleProfileFieldChange("introduction", e.target.value)
-                  }
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
-                  placeholder="자신을 소개해주세요"
-                />
-              </div>
-            </div>
-
-            {/* 버튼 영역 */}
-            <div className="mt-8 flex gap-4">
-              <button
-                onClick={handleSave}
-                className="flex-1 bg-red-600 text-white py-3 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
-              >
-                저장
-              </button>
-              <button
-                onClick={handleCancel}
-                className="flex-1 bg-gray-200 text-gray-700 py-3 px-4 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
-              >
-                취소
-              </button>
-            </div>
+      <BackNavigate back text="취소" variant="secondary" />
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white">
+        <div className="w-full max-w-4xl py-12">
+          <div className="text-[1.75rem] text-center mb-10 font-bold text-zinc-900">
+            프로필 수정
           </div>
+
+          {selectedJob === UserJob.GALLERY ? (
+            <div className="space-y-10 py-6">
+              <div>
+                <p className="text-[1.25rem] font-semibold text-zinc-900 mb-4">
+                  사업자 정보
+                </p>
+                <div className="rounded-lg bg-gray-100 py-6 space-y-4">
+                  <Input
+                    label="갤러리명"
+                    value={galleryForm.galleryName}
+                    onChange={(v) => handleGalleryChange("galleryName", v)}
+                    required
+                    placeholder="갤러리명을 입력해주세요."
+                    error={errors.galleryName}
+                    labelWidth="w-32"
+                  />
+                  <Input
+                    label="사업자 등록번호"
+                    value={galleryForm.businessRegistrationNumber}
+                    onChange={(v) =>
+                      handleGalleryChange("businessRegistrationNumber", v)
+                    }
+                    required
+                    placeholder="사업자 등록번호를 입력해주세요."
+                    error={errors.businessRegistrationNumber}
+                    labelWidth="w-32"
+                  />
+                  <Input
+                    label="갤러리 위치"
+                    value={galleryForm.galleryLocation}
+                    onChange={(v) => handleGalleryChange("galleryLocation", v)}
+                    required
+                    placeholder="정확한 위치 확인을 위해 주소는 '동'까지 기재해주세요."
+                    error={errors.galleryLocation}
+                    labelWidth="w-32"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <p className="text-[1.25rem] font-semibold text-zinc-900 mb-4">
+                  담당자 정보
+                </p>
+                <div className="rounded-lg bg-gray-100 py-6 space-y-4">
+                  <Input
+                    label="이름"
+                    value={galleryForm.managerName}
+                    onChange={(v) => handleGalleryChange("managerName", v)}
+                    required
+                    placeholder="담당자명을 입력해주세요."
+                    error={errors.managerName}
+                    labelWidth="w-32"
+                  />
+                  <Input
+                    label="연락처"
+                    value={galleryForm.managerPhone}
+                    onChange={(v) => handleGalleryChange("managerPhone", v)}
+                    type="tel"
+                    required
+                    placeholder="전화번호를 -없이 입력해주세요."
+                    error={errors.managerPhone}
+                    labelWidth="w-32"
+                  />
+                  <Input
+                    label="메일"
+                    value={galleryForm.managerEmail}
+                    onChange={(v) => handleGalleryChange("managerEmail", v)}
+                    type="email"
+                    required
+                    placeholder="email@example.com"
+                    error={errors.managerEmail}
+                    labelWidth="w-32"
+                  />
+                  <Input
+                    label="소개글"
+                    value={galleryForm.bio}
+                    onChange={(v) => handleGalleryChange("bio", v)}
+                    placeholder="소개글을 입력해주세요. (0/60)"
+                    maxLength={60}
+                    multiline
+                    rows={2}
+                    showCounter
+                    error={errors.bio}
+                    labelWidth="w-32"
+                  />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-lg bg-gray-100 py-6 space-y-4">
+              <Input
+                label="이름"
+                value={artistCollectorForm.name}
+                onChange={(v) => handleArtistCollectorChange("name", v)}
+                required
+                placeholder="이름을 입력해주세요."
+                error={errors.name}
+              />
+              <Input
+                label="생년월일"
+                value={artistCollectorForm.birthDate}
+                onChange={(v) => handleArtistCollectorChange("birthDate", v)}
+                type="date"
+                useCustomDatePicker
+                placeholder="생년월일을 선택해주세요"
+                error={errors.birthDate}
+              />
+              <Input
+                label="학력"
+                value={artistCollectorForm.education}
+                onChange={(v) => handleArtistCollectorChange("education", v)}
+                required
+                placeholder="학교 정보를 입력해주세요."
+                error={errors.education}
+                helperText="OO대학교 OO대학 OO과 OO전공 재학/휴학/졸업"
+              />
+              <div className="grid grid-cols-[auto_1fr] items-center py-4 px-34">
+                <div className="text-lg w-fit mr-10 font-semibold text-zinc-900 whitespace-nowrap">
+                  학력 공개 여부 <span className="text-red-600">*</span>
+                </div>
+                <div className="w-full flex items-center gap-6">
+                  <Checkbox
+                    label="공개"
+                    checked={artistCollectorForm.isEducationPublic}
+                    onChange={(checked) =>
+                      handleArtistCollectorChange("isEducationPublic", checked)
+                    }
+                    className="size-4"
+                  />
+                  <Checkbox
+                    label="비공개"
+                    checked={!artistCollectorForm.isEducationPublic}
+                    onChange={(checked) =>
+                      handleArtistCollectorChange("isEducationPublic", !checked)
+                    }
+                    className="size-4"
+                  />
+                </div>
+              </div>
+              <Input
+                label="연락처"
+                value={artistCollectorForm.phone}
+                onChange={(v) => handleArtistCollectorChange("phone", v)}
+                type="tel"
+                required
+                placeholder="전화번호를 -없이 입력해주세요."
+                error={errors.phone}
+              />
+              <Input
+                label="메일"
+                value={artistCollectorForm.email}
+                onChange={(v) => handleArtistCollectorChange("email", v)}
+                type="email"
+                required
+                placeholder="email@example.com"
+                error={errors.email}
+              />
+              <Input
+                label="소개글"
+                value={artistCollectorForm.bio}
+                onChange={(v) => handleArtistCollectorChange("bio", v)}
+                placeholder="소개글을 입력해주세요. (0/60)"
+                multiline
+                rows={2}
+                maxLength={60}
+                showCounter
+                error={errors.bio}
+              />
+            </div>
+          )}
+
+          <div className="mt-8 w-178 mx-auto text-center">
+            <Button className="w-full" onClick={handleSave}>
+              저장
+            </Button>
+          </div>
+          {/* 취소 버튼 제거: BackNavigate로 대체 */}
         </div>
       </div>
     </>

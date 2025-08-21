@@ -93,18 +93,14 @@ export const updateArtistNote = async (
   }
 };
 
-/** 작가노트를 삭제합니다. (DELETE /api/artist_note/{id}) */
-export const deleteArtistNote = async (
-  googleID: string,
-  artistNoteID: number
-): Promise<void> => {
-  console.log("🎨 작가노트 삭제 API 호출:", { googleID, artistNoteID });
+/** 작가노트를 삭제합니다. (DELETE /api/artist_note?artistNoteID=...) */
+export const deleteArtistNote = async (artistNoteID: number): Promise<void> => {
+  console.log("🎨 작가노트 삭제 API 호출 (DELETE):", { artistNoteID });
 
   try {
-    const response = await axios.delete(`/api/artist_note/${artistNoteID}`, {
-      params: { googleID },
+    const response = await axios.delete(`/api/artist_note`, {
+      params: { artistNoteID },
     });
-
     console.log("✅ 작가노트 삭제 API 응답:", response.data);
   } catch (error) {
     console.error("❌ 작가노트 삭제 API 오류:", error);

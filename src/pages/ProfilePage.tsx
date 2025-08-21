@@ -197,6 +197,38 @@ const ProfilePage: React.FC = () => {
   const handleSoloExhibitionChange = (newEntries: Entry[]) =>
     updateTemporaryEntries("soloExhibition", newEntries);
 
+  // 삭제 버튼 클릭 시 즉시 서버 삭제 처리 핸들러들
+  const handleDeleteAchievement = (id: number) => {
+    const target = registeredEntries.achievement.find((e) => e.id === id);
+    if (target) {
+      deleteNoteMutation.mutate({ id });
+      setRegisteredEntries((prev) => ({
+        ...prev,
+        achievement: prev.achievement.filter((e) => e.id !== id),
+      }));
+    }
+  };
+  const handleDeleteGroupExhibition = (id: number) => {
+    const target = registeredEntries.groupExhibition.find((e) => e.id === id);
+    if (target) {
+      deleteNoteMutation.mutate({ id });
+      setRegisteredEntries((prev) => ({
+        ...prev,
+        groupExhibition: prev.groupExhibition.filter((e) => e.id !== id),
+      }));
+    }
+  };
+  const handleDeleteSoloExhibition = (id: number) => {
+    const target = registeredEntries.soloExhibition.find((e) => e.id === id);
+    if (target) {
+      deleteNoteMutation.mutate({ id });
+      setRegisteredEntries((prev) => ({
+        ...prev,
+        soloExhibition: prev.soloExhibition.filter((e) => e.id !== id),
+      }));
+    }
+  };
+
   const handleCompleteClick = () => {
     console.log("🎨 작가노트 저장 시작");
     console.log("📝 현재 임시 데이터:", temporaryEntries);
@@ -452,8 +484,7 @@ const ProfilePage: React.FC = () => {
   });
 
   const deleteNoteMutation = useMutation({
-    mutationFn: (variables: { id: number }) =>
-      deleteArtistNote(viewerGoogleID!, variables.id),
+    mutationFn: (variables: { id: number }) => deleteArtistNote(variables.id),
     onSuccess: (data) => {
       console.log("✅ 작가노트 삭제 성공:", data);
       invalidateArtistNoteQuery();
@@ -531,7 +562,11 @@ const ProfilePage: React.FC = () => {
                     following={userProfile.followingCount}
                     introduction={userProfile.description}
                     birthdate={userProfile.birth}
-                    education={userProfile.educationBackground}
+                    education={
+                      !isMyProfile && !userProfile.disclosureStatus
+                        ? ""
+                        : userProfile.educationBackground
+                    }
                     phoneNumber={userProfile.contact}
                     email={userProfile.email}
                     initialIsFollowed={userProfile.isFollowed}
@@ -582,6 +617,7 @@ const ProfilePage: React.FC = () => {
                             entries={temporaryEntries.achievement}
                             onChange={handleAchievementChange}
                             placeholder="이력 및 수상 경력을 기재해주세요."
+                            onDeleteRegistered={handleDeleteAchievement}
                           />
                         ) : registeredEntries.achievement.length > 0 ? (
                           registeredEntries.achievement.map(
@@ -608,6 +644,7 @@ const ProfilePage: React.FC = () => {
                             entries={temporaryEntries.groupExhibition}
                             onChange={handleGroupExhibitionChange}
                             placeholder="전시 이력을 기재해주세요."
+                            onDeleteRegistered={handleDeleteGroupExhibition}
                           />
                         ) : registeredEntries.groupExhibition.length > 0 ? (
                           registeredEntries.groupExhibition.map(
@@ -634,6 +671,7 @@ const ProfilePage: React.FC = () => {
                             entries={temporaryEntries.soloExhibition}
                             onChange={handleSoloExhibitionChange}
                             placeholder="전시 이력을 기재해주세요."
+                            onDeleteRegistered={handleDeleteSoloExhibition}
                           />
                         ) : registeredEntries.soloExhibition.length > 0 ? (
                           registeredEntries.soloExhibition.map(

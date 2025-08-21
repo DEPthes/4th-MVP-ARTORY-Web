@@ -73,6 +73,27 @@ export interface GalleryRegistrationData {
   registrationNumber: string;
 }
 
+// 프로필 수정 공통 타입
+export interface ArtistCollectorChangePayload {
+  name: string;
+  email: string;
+  introduction: string;
+  contact: string;
+  birth: string;
+  educationBackground: string;
+  disclosureStatus: boolean;
+}
+
+export interface GalleryChangePayload {
+  userName: string;
+  email: string;
+  introduction: string;
+  contact: string;
+  galleryName: string;
+  location: string;
+  registrationNumber: string;
+}
+
 // 사이드바 프로필 응답 타입
 export interface SidebarProfileResponse {
   id: number; // 실제 사용자 ID
@@ -306,6 +327,10 @@ export interface UserProfile {
   isFollowed: boolean;
   disclosureStatus: boolean;
   artistID: number;
+  // 갤러리인 경우 추가 메타 (백엔드가 제공하면 사용)
+  galleryName?: string;
+  location?: string;
+  registrationNumber?: string;
   // 백엔드에서 counts 객체를 보내준다고 가정
   counts?: {
     works?: number;
@@ -547,4 +572,65 @@ export const changeProfile = async (googleID: string, file: File) => {
     console.error("💥 프로필 이미지 변경 API 에러:", error);
     throw error;
   }
+};
+
+// =================================================================
+// 3. 프로필 수정 API (역할별 엔드포인트 상이)
+// =================================================================
+
+/**
+ * 작가(Young Artist) 프로필 수정
+ * POST /api/user/change/artist?googleID=...
+ */
+export const changeArtistProfile = async (
+  googleID: string,
+  payload: ArtistCollectorChangePayload
+): Promise<{ success: boolean; message?: string }> => {
+  const response = await axios.post<{
+    code: number;
+    status: string;
+    message: string;
+  }>("/api/user/change/artist", payload, { params: { googleID } });
+  return {
+    success: response.data.code === 200 && response.data.status === "OK",
+    message: response.data.message,
+  };
+};
+
+/**
+ * 컬렉터 프로필 수정
+ * POST /api/user/change/collector?googleID=...
+ */
+export const changeCollectorProfile = async (
+  googleID: string,
+  payload: ArtistCollectorChangePayload
+): Promise<{ success: boolean; message?: string }> => {
+  const response = await axios.post<{
+    code: number;
+    status: string;
+    message: string;
+  }>("/api/user/change/collector", payload, { params: { googleID } });
+  return {
+    success: response.data.code === 200 && response.data.status === "OK",
+    message: response.data.message,
+  };
+};
+
+/**
+ * 갤러리 프로필 수정
+ * POST /api/user/change/gallery?googleID=...
+ */
+export const changeGalleryProfile = async (
+  googleID: string,
+  payload: GalleryChangePayload
+): Promise<{ success: boolean; message?: string }> => {
+  const response = await axios.post<{
+    code: number;
+    status: string;
+    message: string;
+  }>("/api/user/change/gallery", payload, { params: { googleID } });
+  return {
+    success: response.data.code === 200 && response.data.status === "OK",
+    message: response.data.message,
+  };
 };

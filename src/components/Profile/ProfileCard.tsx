@@ -159,6 +159,24 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   const [hovered, setHovered] = useState<null | "followers" | "following">(
     null
   );
+  // 팝오버 유지 딜레이
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openPopover = (type: "followers" | "following") => {
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+    setHovered(type);
+  };
+  const closePopoverDelayed = () => {
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = setTimeout(() => setHovered(null), 150);
+  };
+  useEffect(() => {
+    return () => {
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    };
+  }, []);
 
   // 가로 모드일 때의 레이아웃
   if (isHorizontal) {
@@ -266,19 +284,23 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         <div className="flex items-center gap-5 font-light text-zinc-500">
           <div
             className="relative"
-            onMouseEnter={() => setHovered("followers")}
-            onMouseLeave={() => setHovered(null)}
+            onMouseEnter={() => openPopover("followers")}
+            onMouseLeave={closePopoverDelayed}
           >
             팔로워{" "}
             <span className="font-medium text-zinc-900">{followers}</span>
             {hovered === "followers" && (
-              <div className="absolute -left-10 mt-3 w-30 bg-gray-100 border border-stone-300 rounded-md shadow-lg z-20">
+              <div
+                className="absolute -left-9 mt-2 w-30 bg-gray-100 border border-stone-300 rounded-md shadow-lg z-20"
+                onMouseEnter={() => openPopover("followers")}
+                onMouseLeave={closePopoverDelayed}
+              >
                 {isFollowersLoading ? (
                   <div className="px-3 py-2 text-sm text-zinc-500">
                     불러오는 중...
                   </div>
                 ) : followersList && followersList.length > 0 ? (
-                  <ul className="max-h-60 overflow-auto">
+                  <ul className="max-h-48 overflow-auto">
                     {followersList.map((u) => (
                       <li
                         key={u.id}
@@ -307,19 +329,23 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           </div>
           <div
             className="relative"
-            onMouseEnter={() => setHovered("following")}
-            onMouseLeave={() => setHovered(null)}
+            onMouseEnter={() => openPopover("following")}
+            onMouseLeave={closePopoverDelayed}
           >
             팔로잉{" "}
             <span className="font-medium text-zinc-900">{following}</span>
             {hovered === "following" && (
-              <div className="absolute -left-5 mt-3 w-30 bg-gray-100 border border-stone-300 rounded-md shadow-lg z-20">
+              <div
+                className="absolute -left-5 mt-2 w-30 bg-gray-100 border border-stone-300 rounded-md shadow-lg z-20"
+                onMouseEnter={() => openPopover("following")}
+                onMouseLeave={closePopoverDelayed}
+              >
                 {isFollowingLoading ? (
                   <div className="px-3 py-2 text-sm text-zinc-500">
                     불러오는 중...
                   </div>
                 ) : followingList && followingList.length > 0 ? (
-                  <ul className="max-h-60 overflow-auto">
+                  <ul className="max-h-48 overflow-auto">
                     {followingList.map((u) => (
                       <li
                         key={u.id}
@@ -372,9 +398,11 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           <div className="text-zinc-900 text-center break-words">
             {birthdate}
           </div>
-          <div className="text-zinc-900 text-center break-words">
-            {education}
-          </div>
+          {education ? (
+            <div className="text-zinc-900 text-center break-words">
+              {education}
+            </div>
+          ) : null}
         </div>
       </div>
       <div className="flex flex-col text-left gap-4 font-light w-full pt-2 pb-12 border-t border-zinc-400">
