@@ -5,6 +5,7 @@ import SignupJobPage from "../pages/SignupJobPage";
 import SignupProfilePage from "../pages/SignupProfilePage";
 import GoogleAuthCallback from "../pages/GoogleAuthCallback";
 import ProfilePage from "../pages/ProfilePage";
+import ProfileEditPage from "../pages/ProfileEditPage";
 import CollectionPage from "../pages/CollectionPage"; // 🔹 컬렉션 페이지 import
 import ExhibitionPage from "../pages/ExhibitionPage"; // ⬅️ 새로 추가
 import ContestPage from "../pages/ContestPage";
@@ -31,8 +32,8 @@ export const routes = [
   { path: "/signup/job", element: <SignupJobPage /> },
   { path: "/signup/profile", element: <SignupProfilePage /> },
   { path: "/auth/google/callback", element: <GoogleAuthCallback /> },
-  { path: "/profile/me", element: <ProfilePage /> }, // 내 프로필
-  { path: "/profile/:userId", element: <ProfilePage /> },
+  { path: "/profile/:googleID", element: <ProfilePage /> }, // googleID 기반 프로필
+  { path: "/profile/edit", element: <ProfileEditPage /> }, // 프로필 수정 페이지
   { path: "/editor/:type/new", element: <PostEditorPage mode="create" /> },
   { path: "/editor/:type/:id/edit", element: <PostEditorPage mode="edit" /> },
 ] satisfies RouteObject[];

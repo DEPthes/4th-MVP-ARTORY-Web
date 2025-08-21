@@ -152,6 +152,9 @@ const mockArtistData: Record<string, ArtistData> = {
 const ArtistDetailPage: React.FC = () => {
   const { artistId } = useParams<{ artistId: string }>();
 
+  // 현재 로그인한 사용자의 Google ID 가져오기
+  const viewerGoogleID = localStorage.getItem("googleID");
+
   // 작가 정보 가져오기 (Mock 데이터 사용)
   const artistData = mockArtistData[artistId || "1"] || mockArtistData["1"];
 
@@ -228,6 +231,7 @@ const ArtistDetailPage: React.FC = () => {
                 phoneNumber={artistData.phoneNumber}
                 email={artistData.email}
                 isMyProfile={isMyProfile}
+                viewerGoogleID={viewerGoogleID || undefined}
               />
             </div>
           </div>

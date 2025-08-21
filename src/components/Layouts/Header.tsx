@@ -191,7 +191,14 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
           <button
             className="focus:outline-none cursor-pointer"
             aria-label="프로필 메뉴"
-            onClick={() => navigate("/profile/me")}
+            onClick={() => {
+              const id = googleId;
+              if (id) {
+                navigate(`/profile/${id}`);
+              } else {
+                navigate("/login");
+              }
+            }}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -359,7 +366,12 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
 
             <button
               onClick={() => {
-                navigate("/profile/me");
+                const id = googleId;
+                if (id) {
+                  navigate(`/profile/${id}`);
+                } else {
+                  navigate("/login");
+                }
                 closeSidebar();
               }}
               className="w-full flex justify-center font-semibold cursor-pointer items-center px-4 py-3 text-zinc-900 hover:bg-gray-100 rounded-lg transition-colors duration-200"
