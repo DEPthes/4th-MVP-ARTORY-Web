@@ -10,11 +10,6 @@ export interface ProfilePostsParams {
   tagName: string; // "ALL" 또는 태그명
 }
 
-const API_BASE =
-  import.meta.env.MODE === "development"
-    ? ""
-    : import.meta.env.VITE_API_BASE_URL ?? "";
-
 export async function fetchProfilePosts(
   params: ProfilePostsParams
 ): Promise<ProfilePostsPage> {
@@ -27,7 +22,7 @@ export async function fetchProfilePosts(
     tagName: params.tagName || "ALL",
   });
 
-  const res = await fetch(`${API_BASE}/api/post/user?${qs.toString()}`, {
+  const res = await fetch(`/api/post/user?${qs.toString()}`, {
     method: "GET",
     credentials: "include",
   });
