@@ -1,5 +1,5 @@
 // apis/postDetail.ts
-import axios from 'axios';
+import axios from "axios";
 
 // 게시물 상세 조회 파라미터 타입
 export interface PostDetailParams {
@@ -28,8 +28,8 @@ export interface PostDetailData {
   imageURL: string[];
   exhibitionURL: string[];
   description: string;
-  postType: 'ART' | 'EXHIBITION' | 'CONTEST';
-  userType: 'ARTIST' | 'GALLERY' | 'COLLECTOR';
+  postType: "ART" | "EXHIBITION" | "CONTEST";
+  userType: "ARTIST" | "GALLERY" | "COLLECTOR";
   postDate: PostDate;
   archived: number;
   tags: Tag[];
@@ -51,12 +51,7 @@ export const postDetailApi = {
   async getPostDetail(
     params: PostDetailParams
   ): Promise<PostDetailApiResponse> {
-    console.log('📄 게시물 상세 조회 시작:', params);
-
-    // 인터셉터를 우회하여 직접 axios 사용
-    const baseURL = import.meta.env.DEV
-      ? 'http://localhost:5173' // 개발환경에서는 프록시 사용
-      : import.meta.env.VITE_API_BASE_URL || 'http://13.209.252.181:8080';
+    console.log("📄 게시물 상세 조회 시작:", params);
 
     // 쿼리 파라미터 구성
     const queryParams = new URLSearchParams({
@@ -64,19 +59,19 @@ export const postDetailApi = {
       googleID: params.googleID,
     });
 
-    console.log('🔗 게시물 상세 API 호출');
+    console.log("🔗 게시물 상세 API 호출");
     const response = await axios.get<PostDetailApiResponse>(
-      `${baseURL}/api/post/detail?${queryParams.toString()}`,
+      `/api/post/detail?${queryParams.toString()}`,
       {
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         timeout: 30000,
       }
     );
 
-    console.log('📦 게시물 상세 백엔드 응답:', response.data);
-    console.log('📋 게시물 상세 데이터:', response.data.data);
+    console.log("📦 게시물 상세 백엔드 응답:", response.data);
+    console.log("📋 게시물 상세 데이터:", response.data.data);
 
     return response.data;
   },
@@ -86,7 +81,7 @@ export const postDetailApi = {
 export const postDetailHelpers = {
   // 성공 여부 확인
   isSuccess: (response: PostDetailApiResponse): boolean => {
-    return response.code === 200 && response.status === 'OK';
+    return response.code === 200 && response.status === "OK";
   },
 
   // 소유자인지 확인
@@ -117,13 +112,13 @@ export const postDetailHelpers = {
   // 생성일 포맷팅
   getFormattedCreatedAt: (response: PostDetailApiResponse): string => {
     return new Date(response.data.postDate.createdAt).toLocaleDateString(
-      'ko-KR'
+      "ko-KR"
     );
   },
 
   // 수정일 포맷팅 (수정된 경우만)
   getFormattedModifiedAt: (response: PostDetailApiResponse): string | null => {
     const modifiedAt = response.data.postDate.modifiedAt;
-    return modifiedAt ? new Date(modifiedAt).toLocaleDateString('ko-KR') : null;
+    return modifiedAt ? new Date(modifiedAt).toLocaleDateString("ko-KR") : null;
   },
 };

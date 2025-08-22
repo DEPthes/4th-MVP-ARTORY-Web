@@ -1,9 +1,9 @@
 // apis/mainPost.ts
-import axios from 'axios';
+import axios from "axios";
 import type {
   MainPostListParams,
   MainPostApiResponse,
-} from '../types/mainPost';
+} from "../types/mainPost";
 
 // 메인 게시물 API 객체
 export const mainPostApi = {
@@ -11,12 +11,7 @@ export const mainPostApi = {
   async getMainPostList(
     params: MainPostListParams
   ): Promise<MainPostApiResponse> {
-    console.log('📋 메인 게시물 리스트 조회 시작:', params);
-
-    // 인터셉터를 우회하여 직접 axios 사용
-    const baseURL = import.meta.env.DEV
-      ? 'http://localhost:5173' // 개발환경에서는 프록시 사용
-      : import.meta.env.VITE_API_BASE_URL || 'http://13.209.252.181:8080';
+    console.log("📋 메인 게시물 리스트 조회 시작:", params);
 
     // 쿼리 파라미터 구성
     const queryParams = new URLSearchParams({
@@ -28,23 +23,23 @@ export const mainPostApi = {
 
     // tagName이 있으면 추가 (선택적 파라미터)
     if (params.tagName) {
-      queryParams.append('tagName', params.tagName);
+      queryParams.append("tagName", params.tagName);
     }
 
-    console.log('🔗 메인 게시물 리스트 API 호출');
+    console.log("🔗 메인 게시물 리스트 API 호출");
     const response = await axios.get<MainPostApiResponse>(
-      `${baseURL}/api/post/main?${queryParams.toString()}`,
+      `/api/post/main?${queryParams.toString()}`,
       {
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         timeout: 30000,
       }
     );
 
-    console.log('📦 메인 게시물 리스트 백엔드 응답:', response.data);
-    console.log('📋 메인 게시물 리스트 데이터:', response.data.data);
-    console.log('🎭 실제 content 배열:', response.data.data.content);
+    console.log("📦 메인 게시물 리스트 백엔드 응답:", response.data);
+    console.log("📋 메인 게시물 리스트 데이터:", response.data.data);
+    console.log("🎭 실제 content 배열:", response.data.data.content);
 
     return response.data;
   },
@@ -54,7 +49,7 @@ export const mainPostApi = {
 export const mainPostHelpers = {
   // 성공 여부 확인
   isSuccess: (response: MainPostApiResponse): boolean => {
-    return response.code === 200 && response.status === 'OK';
+    return response.code === 200 && response.status === "OK";
   },
 
   // 빈 결과인지 확인

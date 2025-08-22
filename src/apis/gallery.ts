@@ -56,13 +56,9 @@ export class GalleryApi {
     try {
       console.log("📤 사업자 조회 요청:", businessNumber);
 
-      const baseURL = import.meta.env.DEV
-        ? "http://localhost:5173" // 개발환경에서는 프록시 사용
-        : import.meta.env.VITE_API_BASE_URL || "http://13.209.252.181:8080";
-
       // 쿼리 파라미터로 businessNum 전달, Request Body는 빈 객체
       const response = await axios.post<BusinessLookupResponse>(
-        `${baseURL}/api/gallery/register/artist?businessNum=${encodeURIComponent(
+        `/api/gallery/register/artist?businessNum=${encodeURIComponent(
           businessNumber
         )}`,
         {}, // 빈 Request Body
@@ -102,18 +98,8 @@ export class GalleryApi {
 
       console.log("📤 요청 데이터:", requestData);
 
-      // 인터셉터를 우회하여 직접 axios 사용 (회원가입 과정에서는 토큰 불필요)
-      const baseURL = import.meta.env.DEV
-        ? "http://localhost:5173" // 개발환경에서는 프록시 사용
-        : import.meta.env.VITE_API_BASE_URL || "http://13.209.252.181:8080";
-
-      const fullURL = `${baseURL}/api/gallery/register/artist`;
-      console.log("🌐 실제 요청 URL:", fullURL);
-      console.log("🔍 baseURL:", baseURL);
-      console.log("🔍 import.meta.env.DEV:", import.meta.env.DEV);
-
       const response = await axios.post<BusinessLookupResponse>(
-        fullURL,
+        "/api/gallery/register/artist",
         requestData,
         {
           headers: {
@@ -154,13 +140,8 @@ export class GalleryApi {
     try {
       console.log("📱 휴대폰 인증번호 발송 시작:", phoneNumber);
 
-      // 인터셉터를 우회하여 직접 axios 사용 (회원가입 과정에서는 토큰 불필요)
-      const baseURL = import.meta.env.DEV
-        ? "http://localhost:5173" // 개발환경에서는 프록시 사용
-        : import.meta.env.VITE_API_BASE_URL || "http://13.209.252.181:8080";
-
       const response = await axios.post<PhoneVerificationResponse>(
-        `${baseURL}/api/gallery/register/send`,
+        "/api/gallery/register/send",
         {
           phoneNumber,
         },
@@ -199,13 +180,8 @@ export class GalleryApi {
     try {
       console.log("🔐 인증번호 확인 시작:", { phoneNumber, code });
 
-      // 인터셉터를 우회하여 직접 axios 사용 (회원가입 과정에서는 토큰 불필요)
-      const baseURL = import.meta.env.DEV
-        ? "http://localhost:5173" // 개발환경에서는 프록시 사용
-        : import.meta.env.VITE_API_BASE_URL || "http://13.209.252.181:8080";
-
       const response = await axios.post<CodeVerificationResponse>(
-        `${baseURL}/api/gallery/register/verify`,
+        "/api/gallery/register/verify",
         {
           phoneNumber,
           code,

@@ -1,10 +1,10 @@
 import type { EditorType } from "../types/post";
 import type { UploadedImage } from "../types/post";
 
-const API_BASE =
-  import.meta.env.MODE === "development"
-    ? ""
-    : import.meta.env.VITE_API_BASE_URL ?? "";
+// const API_BASE =
+//   import.meta.env.MODE === "development"
+//     ? ""
+//     : import.meta.env.VITE_API_BASE_URL ?? "";
 
 const typeToPostType = (t: EditorType) =>
   t === "work" ? "ART" : t === "exhibition" ? "EXHIBITION" : "CONTEST";
@@ -95,7 +95,7 @@ export async function createPostUpload(params: {
   // }
 
   const res = await fetch(
-    `${API_BASE}/api/post/upload?googleID=${encodeURIComponent(googleID)}`,
+    `/api/post/upload?googleID=${encodeURIComponent(googleID)}`,
     {
       method: "POST",
       body: fd,

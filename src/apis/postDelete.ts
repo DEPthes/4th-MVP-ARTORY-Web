@@ -21,11 +21,6 @@ export const postDeleteApi = {
   async deletePost(params: PostDeleteParams): Promise<PostDeleteApiResponse> {
     console.log("🗑️ 게시물 삭제 시작:", params);
 
-    // 개발환경에서는 프록시 사용, 프로덕션에서는 직접 요청
-    const baseURL = import.meta.env.DEV
-      ? "" // 프록시 사용 (상대 경로)
-      : import.meta.env.VITE_API_BASE_URL || "http://13.209.252.181:8080";
-
     // 쿼리 파라미터 구성
     const queryParams = new URLSearchParams({
       postID: params.postID.toString(),
@@ -34,7 +29,7 @@ export const postDeleteApi = {
 
     console.log("🔗 게시물 삭제 API 호출");
     const response = await axios.delete<PostDeleteApiResponse>(
-      `${baseURL}/api/post/delete?${queryParams.toString()}`,
+      `/api/post/delete?${queryParams.toString()}`,
       {
         headers: {
           "Content-Type": "application/json",

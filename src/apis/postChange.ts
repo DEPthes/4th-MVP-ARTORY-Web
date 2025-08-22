@@ -36,11 +36,6 @@ export const postChangeApi = {
     console.log("📝 게시물 수정 시작:", params);
     console.log("📦 수정 데이터:", requestData);
 
-    // 개발환경에서는 프록시 사용, 프로덕션에서는 직접 요청
-    const baseURL = import.meta.env.DEV
-      ? "" // 프록시 사용 (상대 경로)
-      : import.meta.env.VITE_API_BASE_URL || "http://13.209.252.181:8080";
-
     // 쿼리 파라미터 구성
     const queryParams = new URLSearchParams({
       postID: params.postID.toString(),
@@ -68,7 +63,7 @@ export const postChangeApi = {
 
     console.log("🔗 게시물 수정 API 호출");
     const response = await axios.post<PostChangeApiResponse>(
-      `${baseURL}/api/post/change?${queryParams.toString()}`,
+      `/api/post/change?${queryParams.toString()}`,
       formData,
       {
         headers: {
