@@ -127,20 +127,20 @@ const CollectionDetailPage = () => {
 
       setOpenDelete(false);
       navigate("/collection");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("삭제 실패:", error);
-      alert(error?.message || "게시물 삭제 중 오류가 발생했습니다.");
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "게시물 삭제 중 오류가 발생했습니다.";
+      alert(errorMessage);
     }
   };
 
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      <BackNavigate
-        pathname="/collection"
-        text="COLLECTION"
-        variant="secondary"
-      />
+      <BackNavigate back={true} text="COLLECTION" variant="secondary" />
 
       <div className="max-w-300 mx-auto px-6 mt-6 pb-40">
         {isOwner && (

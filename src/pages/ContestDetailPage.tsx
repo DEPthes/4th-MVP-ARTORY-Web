@@ -135,7 +135,7 @@ const ContestDetailPage = () => {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      <BackNavigate pathname="/contest" text="CONTEST" variant="secondary" />
+      <BackNavigate back={true} text="CONTEST" variant="secondary" />
 
       <div className="max-w-300 mx-auto px-6 mt-6 pb-40">
         {/* 소유자 전용 액션 */}

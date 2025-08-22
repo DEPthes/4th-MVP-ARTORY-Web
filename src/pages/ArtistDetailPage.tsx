@@ -538,7 +538,7 @@ const ArtistDetailPage: React.FC = () => {
                       </div>
                     ) : getFilteredData().length > 0 ? (
                       <>
-                        {getFilteredData().map((item) => (
+                        {getFilteredData().map((item: any) => (
                           <ArtworkCard
                             key={item.postId}
                             imageUrl={item.imageUrls?.[0] ?? ""}
@@ -547,9 +547,14 @@ const ArtistDetailPage: React.FC = () => {
                             likes={item.archived ?? 0}
                             variant="primary"
                             onClick={() => {
-                              console.log(
-                                `${selectedTabId}의 ${item.title} 상세페이지`
-                              );
+                              // postType에 따라 상세페이지로 이동
+                              if (item.postType === "ART") {
+                                window.location.href = `/collection/${item.postId}`;
+                              } else if (item.postType === "EXHIBITION") {
+                                window.location.href = `/exhibition/${item.postId}`;
+                              } else if (item.postType === "CONTEST") {
+                                window.location.href = `/contest/${item.postId}`;
+                              }
                             }}
                           />
                         ))}

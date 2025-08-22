@@ -178,6 +178,16 @@ const SearchResultPage = () => {
               likes={artworkItem.archived}
               liked={artworkItem.isArchived}
               isArchived={artworkItem.isArchived}
+              onClick={() => {
+                // postType에 따라 상세페이지로 이동
+                if (artworkItem.postType === "ART") {
+                  window.location.href = `/collection/${artworkItem.postId}`;
+                } else if (artworkItem.postType === "EXHIBITION") {
+                  window.location.href = `/exhibition/${artworkItem.postId}`;
+                } else if (artworkItem.postType === "CONTEST") {
+                  window.location.href = `/contest/${artworkItem.postId}`;
+                }
+              }}
             />
           );
         });
@@ -194,6 +204,16 @@ const SearchResultPage = () => {
               liked={exhibitionItem.isArchived}
               isArchived={exhibitionItem.isArchived}
               variant="secondary"
+              onClick={() => {
+                // postType에 따라 상세페이지로 이동
+                if (exhibitionItem.postType === "ART") {
+                  window.location.href = `/collection/${exhibitionItem.postId}`;
+                } else if (exhibitionItem.postType === "EXHIBITION") {
+                  window.location.href = `/exhibition/${exhibitionItem.postId}`;
+                } else if (exhibitionItem.postType === "CONTEST") {
+                  window.location.href = `/contest/${exhibitionItem.postId}`;
+                }
+              }}
             />
           );
         });
@@ -210,6 +230,16 @@ const SearchResultPage = () => {
               liked={contestItem.isArchived}
               isArchived={contestItem.isArchived}
               variant="secondary"
+              onClick={() => {
+                // postType에 따라 상세페이지로 이동
+                if (contestItem.postType === "ART") {
+                  window.location.href = `/collection/${contestItem.postId}`;
+                } else if (contestItem.postType === "EXHIBITION") {
+                  window.location.href = `/exhibition/${contestItem.postId}`;
+                } else if (contestItem.postType === "CONTEST") {
+                  window.location.href = `/contest/${contestItem.postId}`;
+                }
+              }}
             />
           );
         });

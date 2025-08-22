@@ -136,11 +136,7 @@ const ExhibitionDetailPage = () => {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      <BackNavigate
-        pathname="/exhibition"
-        text="EXHIBITION"
-        variant="secondary"
-      />
+      <BackNavigate back={true} text="EXHIBITION" variant="secondary" />
 
       <div className="max-w-300 mx-auto px-6 mt-6 pb-40">
         {/* 소유자 전용 액션 */}

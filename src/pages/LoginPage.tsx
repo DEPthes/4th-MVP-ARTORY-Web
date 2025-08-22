@@ -13,7 +13,7 @@ const LoginPage = () => {
   useEffect(() => {
     if (isLoggedIn) {
       console.log("🏠 이미 로그인된 상태 - 홈페이지로 이동");
-      window.location.href = "/";
+      window.location.href = "/note";
     }
   }, [isLoggedIn]);
 

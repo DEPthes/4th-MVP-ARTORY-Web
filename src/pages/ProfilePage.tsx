@@ -1005,17 +1005,13 @@ const ProfilePage: React.FC = () => {
                                 }
                                 variant="primary"
                                 onClick={() => {
-                                  // 아카이브 탭의 게시물을 상세페이지로 이동
-                                  if (selectedTabId === "archive") {
-                                    if (post.postType === "ART") {
-                                      navigate(`/collection/${post.postId}`);
-                                    } else if (post.postType === "EXHIBITION") {
-                                      navigate(`/exhibition/${post.postId}`);
-                                    } else if (post.postType === "CONTEST") {
-                                      navigate(`/contest/${post.postId}`);
-                                    }
-                                  } else {
-                                    navigate(`/posts/${post.postId}`);
+                                  // postType에 따라 상세페이지로 이동
+                                  if (post.postType === "ART") {
+                                    navigate(`/collection/${post.postId}`);
+                                  } else if (post.postType === "EXHIBITION") {
+                                    navigate(`/exhibition/${post.postId}`);
+                                  } else if (post.postType === "CONTEST") {
+                                    navigate(`/contest/${post.postId}`);
                                   }
                                 }}
                               />

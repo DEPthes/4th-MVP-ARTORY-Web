@@ -96,7 +96,7 @@ const GoogleAuthCallback = () => {
             window.location.href = redirectUrl;
           } else {
             console.log("🏠 홈페이지로 이동");
-            window.location.href = "/";
+            window.location.href = "/note";
           }
         }
       } catch (error) {

@@ -59,13 +59,13 @@ const HomePage = () => {
           />
           <InfoCard
             job={UserJob.ART_COLLECTOR}
-            description1="작품 구매"
-            description2="소장품 관리"
+            description1="청년 작가 탐색"
+            description2="작품 아카이빙"
           />
           <InfoCard
             job={UserJob.GALLERY}
-            description1="전시 기획"
-            description2="아티스트 발굴"
+            description1="청년 작가 발굴"
+            description2="전시 및 공모전 홍보"
           />
         </div>
         <div className="flex flex-col items-center mt-30">
