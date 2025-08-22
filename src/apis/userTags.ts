@@ -1,10 +1,5 @@
 import type { PostType } from "../utils/postType";
 
-const API_BASE =
-  import.meta.env.MODE === "development"
-    ? ""
-    : import.meta.env.VITE_API_BASE_URL ?? "";
-
 // 응답 예: { code, status, message, data: [{ id, name }] }
 export async function getUserTags(params: {
   userID: number;
@@ -15,7 +10,7 @@ export async function getUserTags(params: {
     postType: params.postType,
   });
 
-  const res = await fetch(`${API_BASE}/api/tag/user?${qs.toString()}`, {
+  const res = await fetch(`/api/tag/user?${qs.toString()}`, {
     method: "GET",
     credentials: "include",
   });
@@ -26,5 +21,5 @@ export async function getUserTags(params: {
   const json = await res.json();
   // data가 배열 [{ id, name }] 형태라고 가정. 다르면 콘솔로 구조 보고 맞추면 됨.
   const list = Array.isArray(json?.data) ? json.data : [];
-  return list.map((t: any) => t.name).filter(Boolean);
+  return list.map((t: { name: string }) => t.name).filter(Boolean);
 }
