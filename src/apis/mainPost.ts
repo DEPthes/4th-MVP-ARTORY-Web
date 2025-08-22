@@ -24,22 +24,29 @@ export const mainPostApi = {
     // tagName이 있으면 추가 (선택적 파라미터)
     if (params.tagName) {
       queryParams.append("tagName", params.tagName);
+      console.log("🏷️ 태그명 추가됨:", params.tagName);
+    } else {
+      console.log("🏷️ 태그명 없음 - 전체 카테고리 조회");
     }
 
+    const finalUrl = `/api/post/main?${queryParams.toString()}`;
+    console.log("🔗 최종 API URL:", finalUrl);
     console.log("🔗 메인 게시물 리스트 API 호출");
-    const response = await axios.get<MainPostApiResponse>(
-      `/api/post/main?${queryParams.toString()}`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        timeout: 30000,
-      }
-    );
+
+    const response = await axios.get<MainPostApiResponse>(finalUrl, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      timeout: 30000,
+    });
 
     console.log("📦 메인 게시물 리스트 백엔드 응답:", response.data);
     console.log("📋 메인 게시물 리스트 데이터:", response.data.data);
     console.log("🎭 실제 content 배열:", response.data.data.content);
+    console.log(
+      "🏷️ 응답된 게시물 수:",
+      response.data.data.content?.length || 0
+    );
 
     return response.data;
   },

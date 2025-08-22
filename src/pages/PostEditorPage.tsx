@@ -104,6 +104,7 @@ export default function PostEditorPage({ mode }: { mode: EditorMode }) {
   const onSubmit = async () => {
     if (!isValid || !type) return;
     setSubmitting(true);
+
     try {
       // 서버 스펙: list<MultipartFile> → 파일 있는 항목만 전송
       const imagesOnlyFile = form.images.filter((i) => !!i.file);
@@ -114,20 +115,12 @@ export default function PostEditorPage({ mode }: { mode: EditorMode }) {
         .filter((v): v is number => Number.isFinite(v));
 
       const urlInput: string = form.url ?? "";
+      const myGoogleId = localStorage.getItem("googleID") || "";
 
       if (mode === "edit" && id) {
-        // 수정 모드: 수정 API 호출
-        const myGoogleId = localStorage.getItem("googleID") || "";
-        const postId = parseInt(id);
-        if (isNaN(postId)) {
-          throw new Error("유효하지 않은 게시물 ID입니다.");
-        }
-
+        // 수정 모드: 기존 로직
         await postChangeApi.changePost(
-          {
-            postID: postId,
-            googleID: myGoogleId,
-          },
+          { postID: Number(id), googleID: myGoogleId },
           {
             type: type as EditorType,
             title: form.title,
@@ -138,10 +131,26 @@ export default function PostEditorPage({ mode }: { mode: EditorMode }) {
           }
         );
 
-        // 수정 후 해당 디테일 페이지로 이동
-        const detailPath = `/${
-          editorTypeToTabId[type as EditorType]
-        }/${postId}`;
+        // 수정 성공 후 관련된 모든 쿼리 무효화
+        queryClient.invalidateQueries({
+          predicate: (query) => {
+            const queryKey = query.queryKey;
+            return (
+              // 사용자 게시물 관련 쿼리들
+              (Array.isArray(queryKey) && queryKey[0] === "userPosts") ||
+              // 메인 게시물 목록 관련 쿼리들
+              (Array.isArray(queryKey) && queryKey[0] === "mainPost") ||
+              // 검색 결과 관련 쿼리들
+              (Array.isArray(queryKey) && queryKey[0] === "search") ||
+              // 아카이브 관련 쿼리들
+              (Array.isArray(queryKey) && queryKey[0] === "userArchive") ||
+              // 컬렉션 상세 관련 쿼리들
+              (Array.isArray(queryKey) && queryKey[0] === "collectionDetail")
+            );
+          },
+        });
+
+        const detailPath = `/collection/${id}`;
         navigate(detailPath, { replace: true });
       } else {
         // 생성 모드: 기존 로직
@@ -154,15 +163,26 @@ export default function PostEditorPage({ mode }: { mode: EditorMode }) {
           tagIds,
         });
 
-        const myGoogleId = localStorage.getItem("googleID") || "";
         const tab = editorTypeToTabId[type];
         const profilePath = myGoogleId
           ? `/profile/${myGoogleId}`
           : "/profile/me";
 
+        // 생성 성공 후 관련된 모든 쿼리 무효화
         queryClient.invalidateQueries({
-          predicate: (q) =>
-            Array.isArray(q.queryKey) && q.queryKey[0] === "userPosts",
+          predicate: (query) => {
+            const queryKey = query.queryKey;
+            return (
+              // 사용자 게시물 관련 쿼리들
+              (Array.isArray(queryKey) && queryKey[0] === "userPosts") ||
+              // 메인 게시물 목록 관련 쿼리들
+              (Array.isArray(queryKey) && queryKey[0] === "mainPost") ||
+              // 검색 결과 관련 쿼리들
+              (Array.isArray(queryKey) && queryKey[0] === "search") ||
+              // 아카이브 관련 쿼리들
+              (Array.isArray(queryKey) && queryKey[0] === "userArchive")
+            );
+          },
         });
 
         navigate(`${profilePath}?tab=${tab}`, {

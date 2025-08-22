@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import {
   useInfiniteQuery,
   useMutation,
@@ -401,43 +401,22 @@ const ProfilePage: React.FC = () => {
     ? selectedTagByType[postType] ?? null
     : null;
 
-  useEffect(() => {
-    if (!viewerGoogleID) navigate("/login");
-  }, [viewerGoogleID, navigate]);
-
-  useEffect(() => {
-    if (userProfile && !currentTabs.some((tab) => tab.id === selectedTabId)) {
-      setSelectedTabId(currentTabs[0].id);
-    }
-  }, [userProfile, currentTabs, selectedTabId]);
-
-  useEffect(() => {
-    if (!targetUserId || !postType) return;
-    if ((tagsByType[postType] ?? []).length > 0) return;
-    let mounted = true;
-    (async () => {
-      try {
-        const names = await getUserTags({
-          userID: targetUserId,
-          postType,
-        });
-        if (mounted) {
-          setTagsByType((s) => ({ ...s, [postType]: names }));
-        }
-      } catch (e) {
-        console.error("태그 조회 실패", e);
-        if (mounted) {
-          setTagsByType((s) => ({ ...s, [postType]: [] }));
-        }
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, [targetUserId, postType, tagsByType]);
-
   // --- 4. 탭 콘텐츠 데이터 조회 ---
   const pageSize = 10;
+
+  // 탭 변경 시 불필요한 쿼리 실행 방지를 위한 메모이제이션
+  const memoizedQueryKey = useMemo(() => {
+    const key = [
+      "userPosts",
+      targetUserId ?? 0,
+      postType ?? "NONE",
+      normalizeTagName(currentSelectedTag ?? selectedTag),
+      pageSize,
+    ];
+    console.log(`🔑 쿼리 키 생성:`, key);
+    return key;
+  }, [targetUserId, postType, currentSelectedTag, selectedTag, pageSize]);
+
   const {
     data: postsData,
     fetchNextPage,
@@ -445,14 +424,11 @@ const ProfilePage: React.FC = () => {
     isLoading: isPostsLoading,
     isFetchingNextPage,
   } = useInfiniteQuery<ProfilePostsPage, Error>({
-    queryKey: [
-      "userPosts",
-      targetUserId ?? 0,
-      postType ?? "NONE",
-      normalizeTagName(currentSelectedTag ?? selectedTag),
-      pageSize,
-    ],
+    queryKey: memoizedQueryKey,
     queryFn: ({ pageParam = 0 }) => {
+      console.log(
+        `🚀 API 호출 시작: postType=${postType}, page=${pageParam}, tabId=${selectedTabId}`
+      );
       const params = {
         page: Number(pageParam),
         size: pageSize,
@@ -470,8 +446,131 @@ const ProfilePage: React.FC = () => {
       !!viewerGoogleID &&
       !!targetUserId &&
       !!postType &&
-      selectedTabId !== "archive",
+      selectedTabId !== "archive" &&
+      selectedTabId !== "artistNote" &&
+      (selectedTabId === "works" ||
+        selectedTabId === "exhibition" ||
+        selectedTabId === "contest"), // 명시적으로 허용된 탭만 활성화
+    staleTime: 5 * 60 * 1000, // 5분간 데이터를 신선하게 유지
+    gcTime: 10 * 60 * 1000, // 10분간 가비지 컬렉션 방지
+    refetchOnWindowFocus: false, // 윈도우 포커스 시 자동 재요청 방지
+    refetchOnMount: false, // 컴포넌트 마운트 시 자동 재요청 방지
+    refetchOnReconnect: false, // 네트워크 재연결 시 자동 재요청 방지
   });
+
+  // 쿼리 상태 모니터링
+  useEffect(() => {
+    if (
+      postType &&
+      selectedTabId !== "archive" &&
+      selectedTabId !== "artistNote"
+    ) {
+      console.log(`📊 ${selectedTabId} 탭 쿼리 상태:`, {
+        isLoading: isPostsLoading,
+        isFetchingNextPage,
+        hasNextPage,
+        dataLength: postsData?.pages?.length || 0,
+        totalPosts: postsData?.pages?.[0]?.totalElements || 0,
+      });
+    }
+  }, [
+    selectedTabId,
+    postType,
+    isPostsLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    postsData,
+  ]);
+
+  // 탭 변경 핸들러 최적화
+  const handleTabChange = useCallback(
+    (tabId: string) => {
+      console.log(`🔄 탭 변경: ${selectedTabId} → ${tabId}`);
+      setSelectedTabId(tabId);
+      setIsEditing(false);
+      const nextType = getPostType(tabId) as PostType | null;
+      if (nextType) {
+        setSelectedTag(selectedTagByType[nextType] ?? null);
+        console.log(`📊 ${tabId} 탭의 postType: ${nextType}`);
+      } else {
+        setSelectedTag(null);
+        console.log(`📊 ${tabId} 탭은 postType이 없음`);
+      }
+    },
+    [selectedTabId, selectedTagByType]
+  );
+
+  // 태그 선택 핸들러 최적화
+  const handleTagSelect = useCallback(
+    (tag: string | null) => {
+      console.log(`🏷️ 태그 선택: ${tag}`);
+      setSelectedTag(tag);
+      if (postType) {
+        setSelectedTagByType((s) => ({ ...s, [postType]: tag }));
+      }
+    },
+    [postType]
+  );
+
+  useEffect(() => {
+    if (!viewerGoogleID) navigate("/login");
+  }, [viewerGoogleID, navigate]);
+
+  useEffect(() => {
+    if (userProfile && !currentTabs.some((tab) => tab.id === selectedTabId)) {
+      setSelectedTabId(currentTabs[0].id);
+    }
+  }, [userProfile, currentTabs, selectedTabId]);
+
+  // 태그 데이터를 React Query로 관리하여 캐싱과 중복 요청 방지
+  const { data: tagsData, isLoading: isTagsLoading } = useQuery({
+    queryKey: ["userTags", targetUserId, postType],
+    queryFn: async () => {
+      if (!targetUserId || !postType) return [];
+      console.log(
+        `🏷️ 태그 API 호출: postType=${postType}, userID=${targetUserId}`
+      );
+      try {
+        const names = await getUserTags({
+          userID: targetUserId,
+          postType,
+        });
+        console.log(`✅ 태그 로드 완료: ${postType}`, names);
+        return names;
+      } catch (e) {
+        console.error("태그 조회 실패", e);
+        return [];
+      }
+    },
+    enabled: !!targetUserId && !!postType && selectedTabId !== "artistNote",
+    staleTime: 10 * 60 * 1000, // 10분간 태그 데이터를 신선하게 유지
+    gcTime: 30 * 60 * 1000, // 30분간 가비지 컬렉션 방지
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    retry: 1, // 재시도 횟수 제한
+    retryDelay: 1000, // 재시도 간격 1초
+  });
+
+  // 태그 데이터를 상태에 동기화 (중복 설정 방지)
+  useEffect(() => {
+    if (tagsData && postType && !tagsByType[postType]?.length) {
+      console.log(`🔄 태그 상태 동기화: ${postType}`, tagsData);
+      setTagsByType((s) => ({ ...s, [postType]: tagsData }));
+    }
+  }, [tagsData, postType, tagsByType]);
+
+  // 태그 API 호출 모니터링
+  useEffect(() => {
+    if (postType && selectedTabId !== "artistNote") {
+      console.log(`📊 태그 상태: ${selectedTabId} 탭`, {
+        postType,
+        tagsData: tagsData?.length || 0,
+        isTagsLoading,
+        currentTags: tagsByType[postType]?.length || 0,
+      });
+    }
+  }, [selectedTabId, postType, tagsData, isTagsLoading, tagsByType]);
 
   // 아카이브 탭용 별도 API 쿼리
   const { data: archiveData, isLoading: isArchiveLoading } = useQuery({
@@ -485,79 +584,115 @@ const ProfilePage: React.FC = () => {
         size: pageSize,
       }),
     enabled: !!viewerGoogleID && !!targetUserId && selectedTabId === "archive",
+    staleTime: 5 * 60 * 1000, // 5분간 데이터를 신선하게 유지
+    gcTime: 10 * 60 * 1000, // 10분간 가비지 컬렉션 방지
+    refetchOnWindowFocus: false, // 윈도우 포커스 시 자동 재요청 방지
+    refetchOnMount: false, // 컴포넌트 마운트 시 자동 재요청 방지
+    refetchOnReconnect: false, // 네트워크 재연결 시 자동 재요청 방지
   });
-
-  // 아카이브 토글 뮤테이션
-  const toggleArchiveMutation = useMutation({
-    mutationFn: ({ postId }: { postId: string }) =>
-      archiveApi.toggleArchive({ postId, googleID: viewerGoogleID! }),
-    onSuccess: () => {
-      // 아카이브 상태가 변경되면 아카이브 쿼리 무효화
-      queryClient.invalidateQueries({
-        queryKey: ["userArchive", targetUserId, selectedTag],
-      });
-      // 게시물 목록도 무효화 (아카이브 상태가 변경되었을 수 있음)
-      queryClient.invalidateQueries({
-        queryKey: ["userPosts"],
-      });
-    },
-    onError: (error) => {
-      console.error("❌ 아카이브 토글 실패:", error);
-      alert("아카이브 상태 변경에 실패했습니다.");
-    },
-  });
-
-  // 아카이브 토글 핸들러
-  const handleToggleArchive = (postId: string | number) => {
-    toggleArchiveMutation.mutate({ postId: String(postId) });
-  };
 
   // 현재 로드된 데이터로 카드/태그 도출
   const allPosts: ProfilePost[] =
     postsData?.pages.flatMap((page) => (page?.content ?? []).filter(Boolean)) ??
     [];
 
+  // ProfilePost에 isArchived 속성 추가 (기본값: false)
+  const allPostsWithArchiveStatus: ProfilePost[] = allPosts.map((post) => ({
+    ...post,
+    isArchived: false, // 일반 게시물은 기본적으로 아카이브되지 않음
+  }));
+
   const archivePosts = archiveData?.content ?? [];
 
+  // 아카이브 게시물에 isArchived 속성 추가 (기본값: true)
+  const archivePostsWithArchiveStatus = archivePosts.map((post) => ({
+    ...post,
+    isArchived: true, // 아카이브 탭의 게시물은 모두 아카이브된 상태
+  }));
+
   // 현재 탭의 작품 리스트(필터 태그 적용 전)
-  let data: ProfilePost[] | typeof archivePosts = [];
+  let data: ProfilePost[] | typeof archivePostsWithArchiveStatus = [];
 
   if (selectedTabId === "archive") {
-    data = archivePosts;
+    data = archivePostsWithArchiveStatus;
   } else if (postType) {
-    data = allPosts;
+    data = allPostsWithArchiveStatus;
   }
 
   // --- 5. 이벤트 핸들러 ---
-  const handleTabChange = (tabId: string) => {
-    setSelectedTabId(tabId);
-    setIsEditing(false);
-    const nextType = getPostType(tabId) as PostType | null;
-    if (nextType) {
-      setSelectedTag(selectedTagByType[nextType] ?? null);
-    } else {
-      setSelectedTag(null);
-    }
-  };
-
-  const handleProfileImageChange = (file: File) => {
-    console.log("업로드할 이미지 파일:", file);
-
-    // 프로필 이미지 변경 후 관련 쿼리 캐시 갱신
-    if (userProfile?.artistID) {
-      queryClient.invalidateQueries({
-        queryKey: ["userProfile", userProfile.artistID.toString()],
-      });
-    }
-
-    // 사이드바 프로필 정보도 갱신
-    if (viewerGoogleID) {
-      queryClient.invalidateQueries({
-        queryKey: ["sidebarProfile", viewerGoogleID],
-      });
-    }
-  };
   const handleEditClick = () => setIsEditing(true);
+
+  const handleProfileImageChange = useCallback(
+    (file: File) => {
+      console.log("🔄 프로필 이미지 변경 시작:", file.name);
+
+      // 즉시 UI 업데이트를 위한 낙관적 업데이트
+      if (viewerGoogleID) {
+        // 사이드바 프로필에 낙관적 업데이트 적용
+        const currentSidebarProfile = queryClient.getQueryData([
+          "sidebarProfile",
+          viewerGoogleID,
+        ]);
+
+        if (currentSidebarProfile) {
+          // File을 base64로 변환하여 즉시 표시
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const imageUrl = e.target?.result as string;
+
+            // 사이드바 프로필 데이터를 낙관적으로 업데이트
+            queryClient.setQueryData(["sidebarProfile", viewerGoogleID], {
+              ...currentSidebarProfile,
+              profileImageURL: imageUrl,
+            });
+
+            console.log("🔄 사이드바 프로필 낙관적 업데이트 완료");
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+
+      // 프로필 이미지 변경 후 관련 쿼리 캐시 갱신
+      if (userProfile?.artistID) {
+        queryClient.invalidateQueries({
+          queryKey: ["userProfile", userProfile.artistID.toString()],
+        });
+      }
+
+      // 사이드바 프로필 정보도 갱신 - 더 포괄적인 무효화
+      if (viewerGoogleID) {
+        console.log("🔄 사이드바 프로필 캐시 무효화 시작");
+
+        // 사이드바 프로필 관련 모든 쿼리 무효화
+        queryClient.invalidateQueries({
+          predicate: (query) => {
+            const queryKey = query.queryKey;
+            return (
+              // 사이드바 프로필 관련 쿼리들
+              (Array.isArray(queryKey) && queryKey[0] === "sidebarProfile") ||
+              // 사용자 프로필 관련 쿼리들
+              (Array.isArray(queryKey) && queryKey[0] === "userProfile") ||
+              // 사용자 관련 모든 쿼리들
+              (Array.isArray(queryKey) && queryKey[0] === "user")
+            );
+          },
+        });
+
+        // 사이드바 프로필 캐시를 완전히 제거하여 즉시 새로운 데이터 가져오기
+        queryClient.removeQueries({
+          queryKey: ["sidebarProfile", viewerGoogleID],
+        });
+
+        // 강제로 사이드바 프로필 쿼리 재실행
+        queryClient.refetchQueries({
+          queryKey: ["sidebarProfile", viewerGoogleID],
+        });
+
+        console.log("✅ 프로필 이미지 변경으로 인한 캐시 무효화 완료");
+      }
+    },
+    [viewerGoogleID, userProfile?.artistID, queryClient]
+  );
 
   const handleRegisterClick = () => {
     const editorType = tabIdToEditorType(selectedTabId);
@@ -568,12 +703,6 @@ const ProfilePage: React.FC = () => {
     navigate(`/editor/${editorType}/new`);
   };
 
-  const handleTagSelect = (tag: string | null) => {
-    setSelectedTag(tag);
-    if (postType) {
-      setSelectedTagByType((s) => ({ ...s, [postType]: tag }));
-    }
-  };
   const currentTotal = postsData?.pages?.[0]?.totalElements ?? 0;
 
   // --- 6. 작가노트 로직 ---
@@ -824,8 +953,10 @@ const ProfilePage: React.FC = () => {
                         tags={serverTags}
                         selectedTag={currentSelectedTag ?? selectedTag}
                         onTagSelect={handleTagSelect}
+                        isLoading={isTagsLoading}
                       />
-                      {isPostsLoading || isArchiveLoading ? (
+                      {isPostsLoading ||
+                      (selectedTabId === "archive" && isArchiveLoading) ? (
                         <div className="text-center py-10">
                           {selectedTabId === "archive"
                             ? "아카이브를 불러오는 중..."
@@ -834,31 +965,61 @@ const ProfilePage: React.FC = () => {
                       ) : data.length > 0 ? (
                         <>
                           <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6 px-13.5">
-                            {data.map(
-                              (
-                                post: ProfilePost | (typeof archivePosts)[0]
-                              ) => (
-                                <ArtworkCard
-                                  key={post.postId}
-                                  imageUrl={post.imageUrls?.[0] ?? ""}
-                                  title={post.title ?? ""}
-                                  author={post.userName ?? ""}
-                                  likes={post.archived ?? 0}
-                                  liked={
-                                    selectedTabId === "archive" ? true : false
-                                  } // 아카이브 탭에서는 항상 채워진 하트
-                                  onToggleLike={
-                                    selectedTabId === "archive"
-                                      ? () => handleToggleArchive(post.postId) // 아카이브 탭에서는 아카이브 제거
-                                      : undefined // 다른 탭에서는 기본 좋아요 동작
+                            {data.map((post: any) => (
+                              <ArtworkCard
+                                key={post.postId}
+                                imageUrl={post.imageUrls?.[0] ?? ""}
+                                title={post.title ?? ""}
+                                author={post.userName ?? ""}
+                                likes={post.archived ?? 0}
+                                liked={post.isArchived} // 아카이브 상태와 하트 상태를 동기화
+                                isArchived={post.isArchived}
+                                isDetailPage={selectedTabId === "archive"} // 아카이브 탭에서는 토글 가능
+                                onToggleLike={
+                                  selectedTabId === "archive"
+                                    ? () => {
+                                        // 아카이브 탭에서는 아카이브 제거
+                                        if (post.postId) {
+                                          // 아카이브 제거 API 호출
+                                          console.log(
+                                            "아카이브 제거:",
+                                            post.postId
+                                          );
+                                        }
+                                      }
+                                    : undefined
+                                }
+                                onToggleArchive={
+                                  selectedTabId === "archive"
+                                    ? () => {
+                                        // 아카이브 탭에서는 아카이브 제거
+                                        if (post.postId) {
+                                          // 아카이브 제거 API 호출
+                                          console.log(
+                                            "아카이브 제거:",
+                                            post.postId
+                                          );
+                                        }
+                                      }
+                                    : undefined
+                                }
+                                variant="primary"
+                                onClick={() => {
+                                  // 아카이브 탭의 게시물을 상세페이지로 이동
+                                  if (selectedTabId === "archive") {
+                                    if (post.postType === "ART") {
+                                      navigate(`/collection/${post.postId}`);
+                                    } else if (post.postType === "EXHIBITION") {
+                                      navigate(`/exhibition/${post.postId}`);
+                                    } else if (post.postType === "CONTEST") {
+                                      navigate(`/contest/${post.postId}`);
+                                    }
+                                  } else {
+                                    navigate(`/posts/${post.postId}`);
                                   }
-                                  variant="primary"
-                                  onClick={() =>
-                                    navigate(`/posts/${post.postId}`)
-                                  }
-                                />
-                              )
-                            )}
+                                }}
+                              />
+                            ))}
                           </div>
                           {/* 더 보기 버튼 (아카이브가 아닌 경우에만) */}
                           {selectedTabId !== "archive" && hasNextPage && (

@@ -4,6 +4,7 @@ export interface ProfilePost {
   userName: string;
   imageUrls: string[];
   archived: number;
+  isArchived?: boolean; // 아카이브 상태를 나타내는 속성 추가
   tags?: string[];
 }
 

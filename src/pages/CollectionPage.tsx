@@ -1,5 +1,6 @@
 // src/pages/CollectionPage.tsx
 import React, { useMemo, useState } from "react";
+
 import ArtworkCard from "../components/ArtworkCard";
 import Chip from "../components/Chip";
 import Header from "../components/Layouts/Header";
@@ -7,6 +8,7 @@ import BannerControl from "../components/Profile/BannerControl";
 import EmptyState from "../components/EmptyState";
 import { useTagList } from "../hooks/useTag";
 import { useMainPostListByType } from "../hooks/useMainPost";
+
 import { useNavigate } from "react-router-dom";
 
 type Category = "전체" | string;
@@ -21,14 +23,14 @@ const CollectionPage: React.FC = () => {
   // 태그 리스트 조회
   const { data: tagResponse } = useTagList();
 
-  // 메인 게시물 조회 - ART 타입만
+  // 메인 게시물 조회 - EXHIBITION 타입만
   const {
     data: mainPostResponse,
     isLoading,
     error,
   } = useMainPostListByType(
     googleID,
-    "ART", // ART 타입 게시물만 조회
+    "EXHIBITION", // EXHIBITION 타입 게시물만 조회
     {
       page: 0,
       size: 50, // 충분한 데이터를 가져와서 클라이언트에서 필터링
@@ -56,21 +58,19 @@ const CollectionPage: React.FC = () => {
       title: post.title,
       author: post.userName,
       likes: post.archived, // archived를 likes로 매핑 (API 스펙에 따라 조정 필요)
-      category: "전체" as Category, // API에 카테고리 정보가 없으므로 기본값
+      category: "전체", // 태그 정보는 백엔드에서 제공하지 않음
       postType: post.postType,
       isMine: post.isMine,
       isArchived: post.isArchived,
     }));
   }, [mainPostResponse]);
 
-  // 선택된 카테고리에 따라 필터링 (서버 필터링으로 대체 가능)
+  // 선택된 카테고리에 따라 필터링 (서버에서 이미 필터링된 데이터를 받아오므로 단순히 반환)
   const filteredArtworks = useMemo(() => {
-    if (selectedCategory === "전체") {
-      return artworks;
-    }
-    // 실제로는 서버에서 태그 필터링을 하므로 이 로직은 필요없을 수 있음
-    return artworks.filter((artwork) => artwork.category === selectedCategory);
-  }, [artworks, selectedCategory]);
+    // 서버에서 이미 태그별로 필터링된 데이터를 받아오므로
+    // 프론트엔드에서 추가 필터링할 필요가 없음
+    return artworks;
+  }, [artworks]);
 
   // 로딩 상태
   if (isLoading) {
@@ -141,6 +141,8 @@ const CollectionPage: React.FC = () => {
                   title={artwork.title}
                   author={artwork.author}
                   likes={artwork.likes}
+                  liked={artwork.isArchived} // 아카이브 상태와 하트 상태를 동기화
+                  isArchived={artwork.isArchived}
                   onClick={() => {
                     navigate(`/collection/${artwork.id}`, {
                       state: { authorFromList: artwork.author },

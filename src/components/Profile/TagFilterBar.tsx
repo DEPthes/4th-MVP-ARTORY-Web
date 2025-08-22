@@ -4,12 +4,14 @@ interface TagFilterBarProps {
   tags: string[]; // 유저가 등록한 추가 태그들
   selectedTag: string | null; // 현재 선택된 태그 (null이면 '전체' 선택 상태)
   onTagSelect: (tag: string | null) => void; // 태그 선택 시 부모 콜백 호출
+  isLoading?: boolean; // 태그 로딩 상태
 }
 
 const TagFilterBar: React.FC<TagFilterBarProps> = ({
   tags,
   selectedTag,
   onTagSelect,
+  isLoading = false,
 }) => {
   return (
     <div className="flex gap-4 pt-2 py-6">
@@ -24,8 +26,19 @@ const TagFilterBar: React.FC<TagFilterBarProps> = ({
         전체
       </button>
 
-      {/* 추가 태그들 */}
-      {tags.length > 0 &&
+      {/* 로딩 중일 때 스켈레톤 UI */}
+      {isLoading ? (
+        <div className="flex gap-4">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="w-16 h-8 bg-gray-200 animate-pulse rounded"
+            />
+          ))}
+        </div>
+      ) : (
+        /* 추가 태그들 */
+        tags.length > 0 &&
         tags.map((tag) => (
           <button
             key={tag}
@@ -37,7 +50,8 @@ const TagFilterBar: React.FC<TagFilterBarProps> = ({
           >
             {tag}
           </button>
-        ))}
+        ))
+      )}
     </div>
   );
 };

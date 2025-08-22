@@ -6,10 +6,8 @@ import TabMenu from "../components/Profile/TabMenu";
 import ArtworkCard from "../components/ArtworkCard";
 import Chip from "../components/Chip";
 import { useTagList } from "../hooks/useTag";
-import { useSearchPosts, searchKeys } from "../hooks/useSearch";
+import { useSearchPosts } from "../hooks/useSearch";
 import type { SearchItem, PostType } from "../apis/search";
-import { useQueryClient } from "@tanstack/react-query";
-import { useToggleArchive } from "../hooks/useArchive";
 
 // 탭별 카테고리 정의 (동적으로 생성됨)
 
@@ -61,54 +59,6 @@ const SearchResultPage = () => {
   });
 
   // 좋아요(아카이브) 토글
-  const queryClient = useQueryClient();
-  const toggleArchive = useToggleArchive();
-
-  const currentQueryKey = searchKeys.list({
-    text: submittedSearchText,
-    postType:
-      selectedTabId === "artworkCollection"
-        ? ("ART" as PostType)
-        : selectedTabId === "exhibition"
-        ? ("EXHIBITION" as PostType)
-        : ("CONTEST" as PostType),
-    tagName: selectedCategory === "전체" ? "ALL" : selectedCategory,
-    page: 0,
-    size: 30,
-  });
-
-  const handleToggleArchive = (item: ArtworkItem) => {
-    const googleID = localStorage.getItem("googleID");
-    if (!googleID) {
-      window.location.href = "/login";
-      return;
-    }
-
-    const previous = queryClient.getQueryData<SearchItem[]>(currentQueryKey);
-
-    // 낙관적 업데이트
-    queryClient.setQueryData<SearchItem[] | undefined>(currentQueryKey, (old) =>
-      (old || []).map((it) =>
-        it.postId === item.postId
-          ? {
-              ...it,
-              isArchived: !it.isArchived,
-              archived: it.archived + (it.isArchived ? -1 : 1),
-            }
-          : it
-      )
-    );
-
-    toggleArchive.mutate(
-      { postId: item.postId, googleID },
-      {
-        onError: () => {
-          // 롤백
-          queryClient.setQueryData(currentQueryKey, previous);
-        },
-      }
-    );
-  };
 
   // 검색 API 실패(예: 401) 시에도 페이지는 유지되며 빈 결과로 처리
 
@@ -227,7 +177,7 @@ const SearchResultPage = () => {
               imageUrl={artworkItem.imageUrls?.[0] || ""}
               likes={artworkItem.archived}
               liked={artworkItem.isArchived}
-              onToggleLike={() => handleToggleArchive(artworkItem)}
+              isArchived={artworkItem.isArchived}
             />
           );
         });
@@ -242,7 +192,7 @@ const SearchResultPage = () => {
               imageUrl={exhibitionItem.imageUrls?.[0] || ""}
               likes={exhibitionItem.archived}
               liked={exhibitionItem.isArchived}
-              onToggleLike={() => handleToggleArchive(exhibitionItem)}
+              isArchived={exhibitionItem.isArchived}
               variant="secondary"
             />
           );
@@ -258,7 +208,7 @@ const SearchResultPage = () => {
               imageUrl={contestItem.imageUrls?.[0] || ""}
               likes={contestItem.archived}
               liked={contestItem.isArchived}
-              onToggleLike={() => handleToggleArchive(contestItem)}
+              isArchived={contestItem.isArchived}
               variant="secondary"
             />
           );

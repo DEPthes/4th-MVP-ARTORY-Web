@@ -1,6 +1,7 @@
 // src/pages/CollectionDetailPage.tsx
 import { useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import Header from "../components/Layouts/Header";
 import BackNavigate from "../components/Layouts/BackNavigate";
@@ -18,6 +19,7 @@ import { useResolvedAuthor, attachAuthor } from "../hooks/useAuthor";
 const CollectionDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const {
     data: artwork,
@@ -31,6 +33,8 @@ const CollectionDetailPage = () => {
   const artworkForMeta = artwork
     ? attachAuthor(artwork, finalAuthor)
     : undefined;
+
+  // ArchiveBar 제거로 인해 handleArchiveToggle 함수도 제거
 
   if (isLoading) {
     return (
@@ -102,6 +106,25 @@ const CollectionDetailPage = () => {
         googleID: myGoogleId,
       });
 
+      // 삭제 성공 후 관련된 모든 쿼리 무효화
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const queryKey = query.queryKey;
+          return (
+            // 사용자 게시물 관련 쿼리들
+            (Array.isArray(queryKey) && queryKey[0] === "userPosts") ||
+            // 메인 게시물 목록 관련 쿼리들
+            (Array.isArray(queryKey) && queryKey[0] === "mainPost") ||
+            // 검색 결과 관련 쿼리들
+            (Array.isArray(queryKey) && queryKey[0] === "search") ||
+            // 아카이브 관련 쿼리들
+            (Array.isArray(queryKey) && queryKey[0] === "userArchive") ||
+            // 컬렉션 목록 관련 쿼리들
+            (Array.isArray(queryKey) && queryKey[0] === "collection")
+          );
+        },
+      });
+
       setOpenDelete(false);
       navigate("/collection");
     } catch (error: any) {
@@ -139,7 +162,32 @@ const CollectionDetailPage = () => {
         <div className="my-8 mx-6 h-0.5 bg-neutral-200" />
         <ArtworkGallery artwork={artworkForMeta} />
         <DescriptionCard description={artworkForMeta.description || ""} />
-        <ArchiveBar artwork={artworkForMeta} />
+        <ArchiveBar
+          artwork={artworkForMeta}
+          onArchiveToggle={() => {
+            // 아카이브 상태 변경 후 관련된 모든 쿼리 무효화
+            queryClient.invalidateQueries({
+              predicate: (query) => {
+                const queryKey = query.queryKey;
+                return (
+                  // 사용자 게시물 관련 쿼리들
+                  (Array.isArray(queryKey) && queryKey[0] === "userPosts") ||
+                  // 메인 게시물 목록 관련 쿼리들
+                  (Array.isArray(queryKey) && queryKey[0] === "mainPost") ||
+                  // 검색 결과 관련 쿼리들
+                  (Array.isArray(queryKey) && queryKey[0] === "search") ||
+                  // 아카이브 관련 쿼리들
+                  (Array.isArray(queryKey) && queryKey[0] === "userArchive") ||
+                  // 컬렉션 상세 관련 쿼리들
+                  (Array.isArray(queryKey) &&
+                    queryKey[0] === "collectionDetail") ||
+                  // 컬렉션 목록 관련 쿼리들
+                  (Array.isArray(queryKey) && queryKey[0] === "collection")
+                );
+              },
+            });
+          }}
+        />
       </div>
 
       <ConfirmModal

@@ -149,7 +149,7 @@ export const archiveApi = {
         size,
       });
 
-      const response = await apiClient.get("/api/post/user/archived", {
+      const response = await apiClient.post("/api/archive", {
         params: {
           googleID,
           userID,

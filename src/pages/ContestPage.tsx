@@ -55,7 +55,7 @@ const ContestPage: React.FC = () => {
       imageUrl: post.imageUrls[0] || "", // 첫 번째 이미지를 썸네일로 사용
       contestName: post.title,
       likes: post.archived, // archived를 likes로 매핑 (API 스펙에 따라 조정 필요)
-      category: "전체" as Category, // API에 카테고리 정보가 없으므로 기본값
+      category: "전체", // 태그 정보는 백엔드에서 제공하지 않음
       author: post.userName,
       postType: post.postType,
       isMine: post.isMine,
@@ -63,13 +63,12 @@ const ContestPage: React.FC = () => {
     }));
   }, [mainPostResponse]);
 
-  // 선택된 카테고리에 따라 필터링
+  // 선택된 카테고리에 따라 필터링 (서버에서 이미 필터링된 데이터를 받아오므로 단순히 반환)
   const filteredContests = useMemo(() => {
-    if (selectedCategory === "전체") {
-      return contests;
-    }
-    return contests.filter((contest) => contest.category === selectedCategory);
-  }, [contests, selectedCategory]);
+    // 서버에서 이미 태그별로 필터링된 데이터를 받아오므로
+    // 프론트엔드에서 추가 필터링할 필요가 없음
+    return contests;
+  }, [contests]);
 
   // 로딩 상태
   if (isLoading) {
@@ -141,6 +140,8 @@ const ContestPage: React.FC = () => {
                   title={contest.contestName}
                   author={contest.author}
                   likes={contest.likes}
+                  liked={contest.isArchived} // 아카이브 상태와 하트 상태를 동기화
+                  isArchived={contest.isArchived}
                   onClick={() => {
                     navigate(`/contest/${contest.id}`, {
                       state: { authorFromList: contest.author },

@@ -1,7 +1,9 @@
 // src/components/Collection/ArtworkThumbnail.tsx
 import type { DetailArtwork } from "../../types/detail";
 
-type Props = { artwork: DetailArtwork };
+type Props = {
+  artwork: DetailArtwork;
+};
 
 const ArtworkThumbnail = ({ artwork }: Props) => {
   const thumbSrc =

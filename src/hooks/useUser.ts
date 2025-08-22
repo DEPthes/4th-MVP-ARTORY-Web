@@ -29,10 +29,17 @@ export const useGoogleLogin = () => {
 
 // 작가 회원가입 (실제 제공된 API)
 export const useRegisterArtist = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: userApi.registerArtist,
     onSuccess: () => {
       console.log("✅ 작가 회원가입 성공");
+
+      // 회원가입 성공 후 사용자 관련 쿼리 무효화
+      queryClient.invalidateQueries({
+        queryKey: userKeys.all,
+      });
     },
     onError: (error: unknown) => {
       console.error("💥 작가 회원가입 실패:", error);
@@ -42,10 +49,17 @@ export const useRegisterArtist = () => {
 
 // 컬렉터 회원가입 (실제 제공된 API)
 export const useRegisterCollector = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: userApi.registerCollector,
     onSuccess: () => {
       console.log("✅ 컬렉터 회원가입 성공");
+
+      // 회원가입 성공 후 사용자 관련 쿼리 무효화
+      queryClient.invalidateQueries({
+        queryKey: userKeys.all,
+      });
     },
     onError: (error: unknown) => {
       console.error("💥 컬렉터 회원가입 실패:", error);
@@ -55,10 +69,17 @@ export const useRegisterCollector = () => {
 
 // 갤러리 회원가입 (실제 제공된 API)
 export const useRegisterGallery = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: userApi.registerGallery,
     onSuccess: () => {
       console.log("✅ 갤러리 회원가입 성공");
+
+      // 회원가입 성공 후 사용자 관련 쿼리 무효화
+      queryClient.invalidateQueries({
+        queryKey: userKeys.all,
+      });
     },
     onError: (error: unknown) => {
       console.error("💥 갤러리 회원가입 실패:", error);
@@ -125,10 +146,11 @@ export const useSidebarProfile = (googleId: string | null) => {
       return userApi.getSidebarProfile(googleId);
     },
     enabled: !!googleId, // googleId가 있으면 자동으로 한 번 호출
-    staleTime: 30 * 60 * 1000, // 30분간 fresh 상태 유지 (재호출 안함)
-    gcTime: 60 * 60 * 1000, // 1시간간 가비지 컬렉션 방지
+    staleTime: 1 * 60 * 1000, // 1분간 fresh 상태 유지 (프로필 변경 감지)
+    gcTime: 15 * 60 * 1000, // 15분간 가비지 컬렉션 방지
     retry: 1, // 실패 시 1회만 재시도
-    refetchOnWindowFocus: false, // 창 포커스 시 재호출 방지
-    refetchOnMount: false, // 컴포넌트 마운트 시 재호출 방지 (캐시가 있으면)
+    refetchOnWindowFocus: true, // 창 포커스 시 재호출 허용 (프로필 변경 감지)
+    refetchOnMount: true, // 컴포넌트 마운트 시 재호출 허용 (프로필 변경 감지)
+    refetchOnReconnect: true, // 네트워크 재연결 시 재호출 허용
   });
 };

@@ -502,14 +502,24 @@ const ArtistDetailPage: React.FC = () => {
                             author={item.userName ?? ""}
                             likes={item.archived ?? 0}
                             liked={true} // 아카이브 탭에서는 항상 채워진 하트
+                            isArchived={true} // 아카이브 상태
+                            isDetailPage={true} // 상세페이지에서는 토글 가능
                             onToggleLike={() =>
+                              handleToggleArchive(item.postId)
+                            } // 아카이브 제거
+                            onToggleArchive={() =>
                               handleToggleArchive(item.postId)
                             } // 아카이브 제거
                             variant="primary"
                             onClick={() => {
-                              console.log(
-                                `아카이브의 ${item.title} 상세페이지`
-                              );
+                              // 아카이브 탭의 게시물을 상세페이지로 이동
+                              if (item.postType === "ART") {
+                                window.location.href = `/collection/${item.postId}`;
+                              } else if (item.postType === "EXHIBITION") {
+                                window.location.href = `/exhibition/${item.postId}`;
+                              } else if (item.postType === "CONTEST") {
+                                window.location.href = `/contest/${item.postId}`;
+                              }
                             }}
                           />
                         ))

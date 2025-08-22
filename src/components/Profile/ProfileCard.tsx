@@ -115,7 +115,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
       try {
         setIsUpdating(true);
         await changeProfile(viewerGoogleID, file);
+
+        // 이미지 업로드 성공 후 부모 컴포넌트에 알림
         if (onImageChange) onImageChange(file);
+
+        // 추가적인 캐시 무효화를 위해 부모 컴포넌트의 핸들러 호출
+        console.log("✅ 프로필 이미지 업로드 성공 - 캐시 무효화 필요");
       } catch (error) {
         console.error("프로필 이미지 변경 실패:", error);
         alert("프로필 이미지 변경에 실패했습니다.");
@@ -183,9 +188,21 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
 
       // 팔로우 상태만 업데이트, 숫자는 서버에서 관리
 
-      // 팔로워/팔로잉 관련 쿼리 캐시 무효화하여 즉시 업데이트
-      queryClient.invalidateQueries({ queryKey: ["followers", targetUserId] });
-      queryClient.invalidateQueries({ queryKey: ["following", targetUserId] });
+      // 팔로우/언팔로우 후 관련된 모든 쿼리 무효화
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const queryKey = query.queryKey;
+          return (
+            // 팔로워/팔로잉 관련 쿼리들
+            (Array.isArray(queryKey) && queryKey[0] === "followers") ||
+            (Array.isArray(queryKey) && queryKey[0] === "following") ||
+            // 사용자 프로필 관련 쿼리들
+            (Array.isArray(queryKey) && queryKey[0] === "userProfile") ||
+            // 사이드바 프로필 관련 쿼리들
+            (Array.isArray(queryKey) && queryKey[0] === "sidebarProfile")
+          );
+        },
+      });
 
       // 팔로워 수만 즉시 업데이트 (대상 사용자의 팔로워 수)
       if (localFollowers !== undefined) {

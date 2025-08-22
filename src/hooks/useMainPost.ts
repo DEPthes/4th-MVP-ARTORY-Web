@@ -1,22 +1,87 @@
 // hooks/useMainPost.ts
-import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
-import { mainPostApi } from '../apis/mainPost';
+import {
+  useQuery,
+  useInfiniteQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { mainPostApi } from "../apis/mainPost";
 import type {
   MainPostListParams,
   MainPostApiResponse,
-} from '../types/mainPost';
+} from "../types/mainPost";
 
 // Query Keys 정의
 export const mainPostKeys = {
-  all: ['mainPost'] as const,
-  lists: () => [...mainPostKeys.all, 'list'] as const,
+  all: ["mainPost"] as const,
+  lists: () => [...mainPostKeys.all, "list"] as const,
   list: (params: MainPostListParams) =>
-    [...mainPostKeys.lists(), params] as const,
+    [
+      ...mainPostKeys.lists(),
+      params.googleID,
+      params.postType,
+      params.page ?? 0,
+      params.size ?? 10,
+      params.tagName || "ALL",
+    ] as const,
   // 특정 게시물 타입별 키
   byType: (postType: string) =>
-    [...mainPostKeys.all, 'type', postType] as const,
+    [...mainPostKeys.all, "type", postType] as const,
   // 특정 태그별 키
-  byTag: (tagName: string) => [...mainPostKeys.all, 'tag', tagName] as const,
+  byTag: (tagName: string) => [...mainPostKeys.all, "tag", tagName] as const,
+};
+
+// 메인 게시물 관련 쿼리들을 무효화하는 유틸리티 함수
+export const useInvalidateMainPost = () => {
+  const queryClient = useQueryClient();
+
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({
+      queryKey: mainPostKeys.all,
+    });
+  };
+
+  const invalidateByType = (postType: string) => {
+    queryClient.invalidateQueries({
+      queryKey: mainPostKeys.byType(postType),
+    });
+  };
+
+  const invalidateByTag = (tagName: string) => {
+    queryClient.invalidateQueries({
+      queryKey: mainPostKeys.byTag(tagName),
+    });
+  };
+
+  const invalidateByParams = (params: Partial<MainPostListParams>) => {
+    queryClient.invalidateQueries({
+      predicate: (query) => {
+        const queryKey = query.queryKey;
+        if (!Array.isArray(queryKey) || queryKey[0] !== "mainPost") {
+          return false;
+        }
+
+        // params의 각 속성과 일치하는지 확인
+        if (params.postType && queryKey.includes(params.postType)) {
+          return true;
+        }
+        if (params.tagName && queryKey.includes(params.tagName)) {
+          return true;
+        }
+        if (params.googleID && queryKey.includes(params.googleID)) {
+          return true;
+        }
+
+        return true; // 기본적으로 모든 mainPost 쿼리 무효화
+      },
+    });
+  };
+
+  return {
+    invalidateAll,
+    invalidateByType,
+    invalidateByTag,
+    invalidateByParams,
+  };
 };
 
 // 메인 게시물 리스트 조회 훅
@@ -34,10 +99,17 @@ export const useMainPostList = (params: MainPostListParams) => {
 
 // 무한 스크롤을 위한 useInfiniteQuery 버전
 export const useInfiniteMainPostList = (
-  baseParams: Omit<MainPostListParams, 'page'>
+  baseParams: Omit<MainPostListParams, "page">
 ) => {
   return useInfiniteQuery({
-    queryKey: [...mainPostKeys.lists(), 'infinite', baseParams],
+    queryKey: [
+      ...mainPostKeys.lists(),
+      "infinite",
+      baseParams.googleID,
+      baseParams.postType,
+      baseParams.size ?? 10,
+      baseParams.tagName || "ALL",
+    ],
     queryFn: ({ pageParam = 0 }) =>
       mainPostApi.getMainPostList({
         ...baseParams,
@@ -62,7 +134,7 @@ export const useInfiniteMainPostList = (
 // 특정 게시물 타입의 데이터만 조회하는 훅
 export const useMainPostListByType = (
   googleID: string,
-  postType: MainPostListParams['postType'],
+  postType: MainPostListParams["postType"],
   options?: {
     page?: number;
     size?: number;
@@ -83,7 +155,7 @@ export const useMainPostListByType = (
 // 여러 게시물 타입을 동시에 조회하는 훅
 export const useMultipleMainPostTypes = (
   googleID: string,
-  postTypes: MainPostListParams['postType'][],
+  postTypes: MainPostListParams["postType"][],
   options?: {
     page?: number;
     size?: number;
@@ -93,7 +165,7 @@ export const useMultipleMainPostTypes = (
   // React Hooks의 규칙에 따라 각 타입별로 개별 훅 호출
   const artQuery = useMainPostList({
     googleID,
-    postType: 'ART',
+    postType: "ART",
     page: options?.page ?? 0,
     size: options?.size ?? 10,
     tagName: options?.tagName,
@@ -101,7 +173,7 @@ export const useMultipleMainPostTypes = (
 
   const exhibitionQuery = useMainPostList({
     googleID,
-    postType: 'EXHIBITION',
+    postType: "EXHIBITION",
     page: options?.page ?? 0,
     size: options?.size ?? 10,
     tagName: options?.tagName,
@@ -109,7 +181,7 @@ export const useMultipleMainPostTypes = (
 
   const contestQuery = useMainPostList({
     googleID,
-    postType: 'CONTEST',
+    postType: "CONTEST",
     page: options?.page ?? 0,
     size: options?.size ?? 10,
     tagName: options?.tagName,
@@ -118,11 +190,11 @@ export const useMultipleMainPostTypes = (
   // postTypes 배열 순서에 맞게 쿼리 결과 매핑
   const queries = postTypes.map((postType) => {
     switch (postType) {
-      case 'ART':
+      case "ART":
         return artQuery;
-      case 'EXHIBITION':
+      case "EXHIBITION":
         return exhibitionQuery;
-      case 'CONTEST':
+      case "CONTEST":
         return contestQuery;
       default:
         throw new Error(`Unsupported post type: ${postType}`);
