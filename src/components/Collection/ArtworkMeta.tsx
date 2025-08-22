@@ -1,9 +1,16 @@
 // src/components/Collection/ArtworkMeta.tsx
-import type { DetailArtwork } from '../../types/detail';
+import { useNavigate } from "react-router-dom";
+import type { DetailArtwork } from "../../types/detail";
 
 type Props = { artwork: DetailArtwork };
 
 const ArtworkMeta = ({ artwork }: Props) => {
+  const navigate = useNavigate();
+
+  const handleAuthorClick = () => {
+    navigate(`/profile/${artwork.userId}`);
+  };
+
   return (
     <div className="flex-1 flex flex-col min-h-128 pt-2">
       <div>
@@ -14,22 +21,24 @@ const ArtworkMeta = ({ artwork }: Props) => {
 
         {/* 작가 이름 (아래 줄) */}
         {artwork.author && (
-          <span className="mt-4 inline-flex items-center font-light text-xl text-zinc-900">
-            {artwork.author}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="17"
-              viewBox="0 0 16 17"
-              fill="none"
-              className="ml-2"
-            >
-              <path
-                d="M4.66675 1.83331L11.3334 8.49998L4.66675 15.1666"
-                stroke="#717478"
-              />
-            </svg>
-          </span>
+          <div onClick={handleAuthorClick} className="cursor-pointer">
+            <span className="mt-4 inline-flex items-center font-light text-xl text-zinc-900">
+              {artwork.author}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="17"
+                viewBox="0 0 16 17"
+                fill="none"
+                className="ml-2"
+              >
+                <path
+                  d="M4.66675 1.83331L11.3334 8.49998L4.66675 15.1666"
+                  stroke="#717478"
+                />
+              </svg>
+            </span>
+          </div>
         )}
       </div>
     </div>

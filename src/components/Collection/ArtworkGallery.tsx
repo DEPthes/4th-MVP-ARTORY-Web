@@ -4,39 +4,29 @@ import type { DetailArtwork } from "../../types/detail";
 type Props = { artwork: DetailArtwork };
 
 const ArtworkGallery = ({ artwork }: Props) => {
-  const hasWide = Array.isArray(artwork.images) && artwork.images.length >= 2;
-  const hasTall = Array.isArray(artwork.images) && artwork.images.length >= 3;
-
-  const wideSrc = hasWide ? artwork.images![1]?.trim() || "" : "";
-  const tallSrc = hasTall ? artwork.images![2]?.trim() || "" : "";
-
-  if (!hasWide && !hasTall) return null;
+  // 이미지가 없거나 배열이 아닌 경우 null 반환
+  if (!Array.isArray(artwork.images) || artwork.images.length === 0)
+    return null;
 
   return (
-    <div className="mt-6 space-y-10">
-      {hasWide && (
-        <div className="mx-auto w-full max-w-3xl bg-gray-200 rounded-md overflow-hidden aspect-video">
-          {wideSrc && (
-            <img
-              src={wideSrc}
-              alt={`${artwork.title} 추가 이미지 1`}
-              className="w-full h-full object-cover"
-            />
-          )}
-        </div>
-      )}
+    <div className="mt-6 grid grid-cols-1 gap-10">
+      {artwork.images.map((imageSrc, index) => {
+        const trimmedSrc = imageSrc?.trim();
+        if (!trimmedSrc) return null;
 
-      {hasTall && (
-        <div className="mx-auto w-full max-w-lg bg-gray-200 rounded-md overflow-hidden aspect-[3/4]">
-          {tallSrc && (
+        return (
+          <div
+            key={index}
+            className="mx-auto size-full flex justify-center rounded-md"
+          >
             <img
-              src={tallSrc}
-              alt={`${artwork.title} 추가 이미지 2`}
-              className="w-full h-full object-cover"
+              src={trimmedSrc}
+              alt={`${artwork.title} 이미지 ${index + 1}`}
+              className="object-fit"
             />
-          )}
-        </div>
-      )}
+          </div>
+        );
+      })}
     </div>
   );
 };

@@ -84,12 +84,8 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({
     >
       {/* 상단 이미지 */}
       <div className="flex justify-center w-full items-center pt-3 sm:pt-4 md:pt-5 px-3 sm:px-4 md:px-5 pb-2">
-        <div className="w-full h-84 bg-gray-200 rounded overflow-hidden">
-          <img
-            src={imageUrl}
-            alt={title}
-            className="w-full h-full object-cover"
-          />
+        <div className="w-full flex items-center h-84 bg-gray-200 rounded overflow-hidden">
+          <img src={imageUrl} alt={title} className="object-fit p-3" />
         </div>
       </div>
 

@@ -12,12 +12,12 @@ const ArtworkThumbnail = ({ artwork }: Props) => {
     "";
 
   return (
-    <div className="bg-gray-200 w-100 h-128 overflow-hidden">
+    <div className="flex items-center bg-gray-200 w-100 h-128 overflow-hidden">
       {thumbSrc && (
         <img
           src={thumbSrc}
           alt={`${artwork.title} 썸네일`}
-          className="w-full h-full object-cover"
+          className="object-fit p-5"
         />
       )}
     </div>
